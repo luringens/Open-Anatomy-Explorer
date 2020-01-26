@@ -1,0 +1,29 @@
+{
+  "name": "inf319",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stisol/INFF319.git"
+  },
+  "author": "Stian Soltvedt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stisol/INFF319/issues"
+  },
+  "homepage": "https://github.com/stisol/INFF319#readme",
+  "devDependencies": {
+    "@types/three": "^0.103.2",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.5",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
+  },
+  "dependencies": {
+    "@types/node": "^13.5.0",
+    "three": "^0.112.1"
+  }
+}
