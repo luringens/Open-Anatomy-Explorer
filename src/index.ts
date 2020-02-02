@@ -28,9 +28,18 @@ let controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.update();
 
+// Leader label
+
+var plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
+var helper = new THREE.PlaneHelper(plane, 500, 0xFFF);
+scene.add(helper);
+
 // Light
-let dirLight = new THREE.DirectionalLight(0xffffff, 1);
-dirLight.color.setHSL(0.5, 1, 0.95);
+var light = new THREE.AmbientLight(0x404040);
+scene.add(light);
+
+let dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.color.setHSL(0.5, 1, 1);
 dirLight.position.set(-1, 3, 1);
 dirLight.position.multiplyScalar(30);
 scene.add(dirLight);
