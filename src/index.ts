@@ -1,4 +1,5 @@
 import * as THREE from "three"
+import * as dat from "dat.gui";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
@@ -17,7 +18,7 @@ loader.load("model.glb", function (gltf) {
 let renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 let container = renderer.domElement;
-document.body.appendChild(container);
+document.getElementById("canvas-container").appendChild(container);
 
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(-300, 0, 0);
@@ -114,3 +115,7 @@ function onWindowResize() {
 
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+var gui = new dat.GUI();
+gui.add(light, "intensity", 0, 5, 0.05).name("Ambient light");
+gui.add(dirLight, "intensity", 0, 5, 0.05).name("Directional light");

@@ -16,6 +16,7 @@
   },
   "homepage": "https://github.com/stisol/INFF319#readme",
   "devDependencies": {
+    "@types/dat.gui": "^0.7.5",
     "@types/three": "^0.103.2",
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.5",
@@ -24,6 +25,7 @@
   },
   "dependencies": {
     "@types/node": "^13.5.0",
+    "dat.gui": "^0.7.6",
     "three": "^0.112.1"
   }
 }
