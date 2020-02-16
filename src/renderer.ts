@@ -130,13 +130,13 @@ export class Renderer {
             if (isNullOrUndefined(face)) return;
             let pUnit = face.normal;
             pUnit.multiplyScalar(25);
-            this.directionalLight.position.set(p.x, p.y, p.z);
-            this.directionalLight.position.add(pUnit);
+            this.directionalLight.position.set(pUnit.x, pUnit.y, pUnit.z);
 
             this.scene.remove(this.directionalLightHelper)
             this.directionalLightHelper =
                 new THREE.DirectionalLightHelper(this.directionalLight, 10);
             this.scene.add(this.directionalLightHelper);
+            this.directionalLight.position.add(p);
 
             this.lastMouseClickPosition = p;
         }
