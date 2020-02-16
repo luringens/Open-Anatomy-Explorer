@@ -10,7 +10,14 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Publish",
+            "type": "shell",
+            "command": "scp dist\\* root@51.15.231.127:\\var\\www\\oah.stiansoltvedt.com",
+            "problemMatcher": []
         }
     ]
 }
