@@ -15,10 +15,11 @@ loader.load("model.glb", function (gltf) {
     console.error(error);
 });
 
+let wrapper = document.getElementById("canvas-container")
 let renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
 let container = renderer.domElement;
-document.getElementById("canvas-container").appendChild(container);
+renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
+wrapper.appendChild(container);
 
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(-300, 0, 0);
@@ -110,12 +111,13 @@ function getIntersects(point: THREE.Vector2, object: THREE.Object3D) {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = wrapper.clientWidth / wrapper.clientHeight;
     camera.updateProjectionMatrix();
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
 }
 
-var gui = new dat.GUI();
+var gui = new dat.GUI({ autoPlace: false });
+wrapper.prepend(gui.domElement);
 gui.add(light, "intensity", 0, 5, 0.05).name("Ambient light");
 gui.add(dirLight, "intensity", 0, 5, 0.05).name("Directional light");
