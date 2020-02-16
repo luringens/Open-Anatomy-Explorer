@@ -8,8 +8,8 @@ export class LabelManager {
 
     constructor(renderer: Renderer) {
         this.renderer = renderer;
-        this.listContainer = document.getElementById("labels");
-        let saveButton = document.getElementById("save-label");
+        this.listContainer = <HTMLElement>document.getElementById("labels");
+        let saveButton = <HTMLElement>document.getElementById("save-label");
         saveButton.addEventListener("click", this.saveCurrentPosition.bind(this));
     }
 

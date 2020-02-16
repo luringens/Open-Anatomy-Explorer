@@ -3,7 +3,7 @@ import { Renderer } from "./renderer";
 import { LabelManager } from "./labels";
 
 // Set up renderer.
-let wrapper = document.getElementById("canvas-container");
+let wrapper = <HTMLElement>document.getElementById("canvas-container");
 let renderer = new Renderer(wrapper);
 renderer.startRendering();
 

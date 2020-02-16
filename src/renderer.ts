@@ -1,21 +1,24 @@
 import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { isNullOrUndefined } from "util";
 
 export class Renderer {
-    object: THREE.Object3D = null;
+    object: THREE.Object3D | null = null;
     scene: THREE.Scene = new THREE.Scene();
     renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer();
     wrapper: HTMLElement;
     container: HTMLCanvasElement;
 
-    camera: THREE.PerspectiveCamera;
-    controls: OrbitControls;
-    gui: dat.GUI;
-
-    ambientLight: THREE.AmbientLight;
-    directionalLight: THREE.DirectionalLight;
-    directionalLightHelper: THREE.DirectionalLightHelper;
+    // For the sake of clean code, these are initiliazed in functions called by
+    // the contructor. Unfortunately, TS will not detect their initialization
+    // as a result. The exclamation mark squashes this warning :/
+    camera!: THREE.PerspectiveCamera;
+    controls!: OrbitControls;
+    gui!: dat.GUI;
+    ambientLight!: THREE.AmbientLight;
+    directionalLight!: THREE.DirectionalLight;
+    directionalLightHelper!: THREE.DirectionalLightHelper;
 
     mouse = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
@@ -101,13 +104,18 @@ export class Renderer {
     private onMouseMove(evt: any) {
         evt.preventDefault();
 
+        // Don't continue if object is not yet loaded.
+        if (this.object === null) return;
+
         var array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
         this.onClickPosition.fromArray(array);
 
         var intersects: THREE.Intersection[] = this.getIntersects(this.onClickPosition, this.object);
         if (intersects.length > 0) {
             let p = intersects[0].point;
-            let pUnit = intersects[0].face.normal;
+            let face = intersects[0].face;
+            if (isNullOrUndefined(face)) return;
+            let pUnit = face.normal;
             pUnit.multiplyScalar(25);
             this.directionalLight.position.set(p.x, p.y, p.z);
             this.directionalLight.position.add(pUnit);
