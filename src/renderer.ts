@@ -19,6 +19,8 @@ export class Renderer {
     ambientLight!: THREE.AmbientLight;
     directionalLight!: THREE.DirectionalLight;
     directionalLightHelper!: THREE.DirectionalLightHelper;
+    plane!: THREE.PlaneHelper;
+    planeVisible: boolean = true;
 
     mouse = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
@@ -77,21 +79,31 @@ export class Renderer {
         this.directionalLight = dirLight;
 
         // Indicator for where the light is shining.
-        this.directionalLightHelper = new THREE.DirectionalLightHelper(dirLight, 10);
+        this.directionalLightHelper =
+            new THREE.DirectionalLightHelper(dirLight, 10);
         this.scene.add(this.directionalLightHelper);
     }
 
     private setupGui() {
         this.gui = new dat.GUI({ autoPlace: false });
         this.wrapper.prepend(this.gui.domElement);
-        this.gui.add(this.ambientLight, "intensity", 0, 5, 0.05).name("Ambient light");
-        this.gui.add(this.directionalLight, "intensity", 0, 5, 0.05).name("Directional light");
+        this.gui.add(this.ambientLight, "intensity", 0, 5, 0.05)
+            .name("Ambient light");
+        this.gui.add(this.directionalLight, "intensity", 0, 5, 0.05)
+            .name("Directional light");
+
+        let planeVisible = { planeVisible: true };
+        let planeVisibleHandler = this.gui.add(planeVisible, "planeVisible")
+            .name("Display plane");
+        planeVisibleHandler.onChange(this.setPlaneVisibility.bind(this));
+
+        this.planeVisible = true;
     }
 
     private addDefaultPlane() {
         var plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
-        var helper = new THREE.PlaneHelper(plane, 500, 0xFFF);
-        this.scene.add(helper);
+        this.plane = new THREE.PlaneHelper(plane, 500, 0xFFFFFF);
+        this.scene.add(this.plane);
     }
 
     private onWindowResize() {
@@ -110,7 +122,8 @@ export class Renderer {
         var array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
         this.onClickPosition.fromArray(array);
 
-        var intersects: THREE.Intersection[] = this.getIntersects(this.onClickPosition, this.object);
+        var intersects: THREE.Intersection[] =
+            this.getIntersects(this.onClickPosition, this.object);
         if (intersects.length > 0) {
             let p = intersects[0].point;
             let face = intersects[0].face;
@@ -121,7 +134,8 @@ export class Renderer {
             this.directionalLight.position.add(pUnit);
 
             this.scene.remove(this.directionalLightHelper)
-            this.directionalLightHelper = new THREE.DirectionalLightHelper(this.directionalLight, 10);
+            this.directionalLightHelper =
+                new THREE.DirectionalLightHelper(this.directionalLight, 10);
             this.scene.add(this.directionalLightHelper);
 
             this.lastMouseClickPosition = p;
@@ -148,5 +162,15 @@ export class Renderer {
         };
 
         animate();
+    }
+
+    public setPlaneVisibility(visible: boolean) {
+        if (visible && !this.planeVisible) {
+            this.scene.add(this.plane);
+            this.planeVisible = true;
+        } else if (!visible && this.planeVisible) {
+            this.scene.remove(this.plane);
+            this.planeVisible = false;
+        }
     }
 }
