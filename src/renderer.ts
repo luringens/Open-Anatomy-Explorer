@@ -9,6 +9,7 @@ export class Renderer {
     renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer();
     wrapper: HTMLElement;
     container: HTMLCanvasElement;
+    private clickEventHandlers: ((object: THREE.Object3D) => boolean)[] = [];
 
     // For the sake of clean code, these are initiliazed in functions called by
     // the contructor. Unfortunately, TS will not detect their initialization
@@ -38,7 +39,7 @@ export class Renderer {
         this.setupGui();
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
-        this.container.addEventListener('mousedown', this.onMouseMove.bind(this), false);
+        this.container.addEventListener('mousedown', this.onMouseClick.bind(this), false);
     }
 
     private setupCamera() {
@@ -113,7 +114,7 @@ export class Renderer {
         this.renderer.setSize(this.wrapper.clientWidth, this.wrapper.clientHeight);
     }
 
-    private onMouseMove(evt: any) {
+    private onMouseClick(evt: any) {
         evt.preventDefault();
 
         // Don't continue if object is not yet loaded.
@@ -123,8 +124,14 @@ export class Renderer {
         this.onClickPosition.fromArray(array);
 
         var intersects: THREE.Intersection[] =
-            this.getIntersects(this.onClickPosition, this.object);
+            this.getIntersects(this.onClickPosition, this.scene.children);
         if (intersects.length > 0) {
+            // Check event handlers
+            this.clickEventHandlers.forEach(func => {
+                let handled = func(intersects[0].object);
+                if (handled) return;
+            });
+
             let p = intersects[0].point;
             let face = intersects[0].face;
             if (isNullOrUndefined(face)) return;
@@ -147,10 +154,10 @@ export class Renderer {
         return [(x - rect.left) / rect.width, (y - rect.top) / rect.height];
     }
 
-    private getIntersects(point: THREE.Vector2, object: THREE.Object3D) {
+    private getIntersects(point: THREE.Vector2, objects: THREE.Object3D[]) {
         this.mouse.set((point.x * 2) - 1, - (point.y * 2) + 1);
         this.raycaster.setFromCamera(this.mouse, this.camera);
-        return this.raycaster.intersectObject(object, true);
+        return this.raycaster.intersectObjects(objects, true);
     }
 
     public startRendering() {
@@ -172,5 +179,11 @@ export class Renderer {
             this.scene.remove(this.plane);
             this.planeVisible = false;
         }
+    }
+
+    // Register a click event handler.
+    // It should return "true" if the click has been handled.
+    public addClickEventListener(func: (object: THREE.Object3D) => boolean) {
+        this.clickEventHandlers.push(func);
     }
 }
