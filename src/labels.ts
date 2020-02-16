@@ -68,7 +68,7 @@ class SavedPosition {
         this.pos = pos;
 
         let geometry = new THREE.SphereGeometry();
-        let material = new THREE.MeshBasicMaterial({ color: "0x00ff00" });
+        let material = new THREE.MeshBasicMaterial({ color: "#FFFFFF" });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.add(pos);
     }
