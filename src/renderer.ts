@@ -20,6 +20,7 @@ export class Renderer {
     mouse = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
     onClickPosition = new THREE.Vector2();
+    lastMouseClickPosition = new THREE.Vector3();
 
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
@@ -114,6 +115,8 @@ export class Renderer {
             this.scene.remove(this.directionalLightHelper)
             this.directionalLightHelper = new THREE.DirectionalLightHelper(this.directionalLight, 10);
             this.scene.add(this.directionalLightHelper);
+
+            this.lastMouseClickPosition = p;
         }
     }
 
