@@ -9,7 +9,7 @@ export class Renderer {
     renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer();
     wrapper: HTMLElement;
     container: HTMLCanvasElement;
-    private clickEventHandlers: ((object: THREE.Object3D) => boolean)[] = [];
+    private clickEventHandlers: ((object: THREE.Intersection) => boolean)[] = [];
 
     // For the sake of clean code, these are initiliazed in functions called by
     // the contructor. Unfortunately, TS will not detect their initialization
@@ -27,6 +27,7 @@ export class Renderer {
     raycaster = new THREE.Raycaster();
     onClickPosition = new THREE.Vector2();
     lastMouseClickPosition = new THREE.Vector3();
+    lastMouseClickTexturePosition = new THREE.Vector2();
 
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
@@ -128,7 +129,7 @@ export class Renderer {
         if (intersects.length > 0) {
             // Check event handlers
             this.clickEventHandlers.forEach(func => {
-                let handled = func(intersects[0].object);
+                let handled = func(intersects[0]);
                 if (handled) return;
             });
 
@@ -146,6 +147,8 @@ export class Renderer {
             this.directionalLight.position.add(p);
 
             this.lastMouseClickPosition = p;
+            if (!isNullOrUndefined(intersects[0].uv))
+                this.lastMouseClickTexturePosition = intersects[0].uv;
         }
     }
 
@@ -183,7 +186,7 @@ export class Renderer {
 
     // Register a click event handler.
     // It should return "true" if the click has been handled.
-    public addClickEventListener(func: (object: THREE.Object3D) => boolean) {
+    public addClickEventListener(func: (object: THREE.Intersection) => boolean) {
         this.clickEventHandlers.push(func);
     }
 }

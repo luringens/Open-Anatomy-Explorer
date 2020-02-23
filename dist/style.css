@@ -39,7 +39,9 @@ button {
     display: inline-block;
     font-size: 14px;
     width: 100%;
+    margin: 0, 0, 5px, 0;
 }
+
 .grid {
     display: grid;
     grid-template-columns: auto 300px;
@@ -69,6 +71,7 @@ button {
 
 .button-remove {
     background-color: #ff6666;
+    margin: 0;
 }
 
 .label-name {
