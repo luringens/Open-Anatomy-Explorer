@@ -12,6 +12,7 @@ export class LabelManager {
     private regionSize = 20;
     private regionColor = "#FF00FF";
     private regionColorIntensity = 100;
+    private visible = true;
 
     constructor(renderer: Renderer, object: THREE.Object3D) {
         this.renderer = renderer;
@@ -31,6 +32,9 @@ export class LabelManager {
         f.add(this, "regionSize", 5, 100, 1).name("Region radius");
         f.addColor(this, "regionColor").name("Region color");
         f.add(this, "regionColorIntensity", 0, 255, 1).name("Region transparency");
+        const planeVisibleHandler = f.add(this, "visible").name("Show tags");
+        planeVisibleHandler.onChange(this.toggleVisibility.bind(this));
+
         f.open();
     }
 
@@ -88,7 +92,9 @@ export class LabelManager {
 
         const savedPosition = new SavedPosition(pos, this.regionColor, this.nextLabelId++);
         this.positions.push(savedPosition);
-        this.renderer.scene.add(savedPosition.mesh);
+
+        if (this.visible)
+            this.renderer.scene.add(savedPosition.mesh);
 
         const element = this.createRow(savedPosition);
         this.listContainer.append(element);
@@ -104,7 +110,8 @@ export class LabelManager {
         const element = this.createRow(savedRegion);
         this.listContainer.append(element);
 
-        this.canvasWrapper.draw(this.positions);
+        if (this.visible)
+            this.canvasWrapper.draw(this.positions);
     }
 
     private createRow(pos: SavedItem): HTMLElement {
@@ -150,8 +157,26 @@ export class LabelManager {
 
         if (pos instanceof SavedPosition)
             this.renderer.scene.remove(pos.mesh)
-        else if (pos instanceof SavedRegion)
+        else if (pos instanceof SavedRegion && this.visible)
             this.canvasWrapper.draw(this.positions);
+    }
+
+    public toggleVisibility(): void {
+        if (this.visible) {
+            this.canvasWrapper.draw(this.positions);
+            this.positions.forEach(element => {
+                if (element instanceof SavedPosition) {
+                    this.renderer.scene.add(element.mesh);
+                }
+            });
+        } else {
+            this.canvasWrapper.draw([]);
+            this.positions.forEach(element => {
+                if (element instanceof SavedPosition) {
+                    this.renderer.scene.remove(element.mesh);
+                }
+            });
+        }
     }
 }
 
