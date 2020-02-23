@@ -14,7 +14,8 @@ canvas {
 h1,
 h2,
 h3,
-h4 {
+h4,
+p {
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -69,8 +70,7 @@ button {
     position: relative;
 }
 
-.button-remove {
-    background-color: #ff6666;
+.btn-remove {
     margin: 0;
 }
 
@@ -79,6 +79,9 @@ button {
     color: #E7E7E7;
     font-size: 15px;
     border: none;
+    height: 100%;
+    padding: 5px 2px;
+    margin: 0;
 }
 
 @keyframes example {
@@ -86,8 +89,6 @@ button {
     to { background-color: #282828; }
 }
 
-.row-animate tr,
-.row-animate td,
 .row-animate input {
     animation-name: example;
     animation-duration: 3s;

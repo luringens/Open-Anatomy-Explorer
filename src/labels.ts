@@ -30,6 +30,7 @@ export class LabelManager {
         f.add(this, "regionSize", 5, 100, 1).name("Region radius");
         f.addColor(this, "regionColor").name("Region color");
         f.add(this, "regionColorIntensity", 0, 255, 1).name("Region transparency");
+        f.open();
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
@@ -84,7 +85,7 @@ export class LabelManager {
     private savePosAsLabel(_: Event) {
         let pos = this.renderer.lastMouseClickPosition;
 
-        let savedPosition = new SavedPosition(pos, this.nextLabelId++);
+        let savedPosition = new SavedPosition(pos, this.regionColor, this.nextLabelId++);
         this.positions.push(savedPosition);
         this.renderer.scene.add(savedPosition.mesh);
 
@@ -116,11 +117,17 @@ export class LabelManager {
         td_label.append(td_label_input);
         element.append(td_label);
 
+        let td_color = document.createElement("td");
+        td_color.setAttribute("style", "background-color: " + this.regionColor + ";");
+        element.append(td_color);
+
         let td_remove_btn = document.createElement("button");
         td_remove_btn.innerText = "Remove";
         td_remove_btn.className = "btn-remove";
+        td_remove_btn.setAttribute("style", "background-color: #ff6666;");
         td_remove_btn.addEventListener("click", this.remove.bind(this, element, pos));
         let td_remove = document.createElement("td");
+        td_remove.setAttribute("style", "background-color: #ff6666;");
         td_remove.append(td_remove_btn)
         element.append(td_remove);
 
@@ -205,13 +212,15 @@ class SavedPosition implements SavedItem {
     pos: THREE.Vector3;
     mesh: THREE.Mesh;
     id: number;
+    color: string;
 
-    constructor(pos: THREE.Vector3, id: number) {
+    constructor(pos: THREE.Vector3, color: string, id: number) {
         this.pos = pos;
+        this.color = color;
         this.id = id;
 
         let geometry = new THREE.SphereGeometry();
-        let material = new THREE.MeshBasicMaterial({ color: "#FFFFFF" });
+        let material = new THREE.MeshBasicMaterial({ color: color });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.add(pos);
         this.mesh.name = "label_" + String(id);
