@@ -21,7 +21,7 @@ export class Renderer {
     directionalLight!: THREE.DirectionalLight;
     directionalLightHelper!: THREE.DirectionalLightHelper;
     plane!: THREE.PlaneHelper;
-    planeVisible: boolean = true;
+    planeVisible = true;
 
     mouse = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
@@ -43,7 +43,7 @@ export class Renderer {
         this.container.addEventListener('mousedown', this.onMouseClick.bind(this), false);
     }
 
-    private setupCamera() {
+    private setupCamera(): void {
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(-300, 0, 0);
 
@@ -55,13 +55,13 @@ export class Renderer {
         this.controls.update();
     }
 
-    private setupLighting() {
+    private setupLighting(): void {
         // Ambient light.
         this.ambientLight = new THREE.AmbientLight(0x404040);
         this.scene.add(this.ambientLight);
 
         // Directional light.
-        let dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
         dirLight.color.setHSL(0.5, 1, 1);
         dirLight.position.set(-1, 3, 1);
         dirLight.position.multiplyScalar(30);
@@ -71,7 +71,7 @@ export class Renderer {
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
 
-        let d = 50;
+        const d = 50;
         dirLight.shadow.camera.left = - d;
         dirLight.shadow.camera.right = d;
         dirLight.shadow.camera.top = d;
@@ -86,7 +86,7 @@ export class Renderer {
         this.scene.add(this.directionalLightHelper);
     }
 
-    private setupGui() {
+    private setupGui(): void {
         this.gui = new dat.GUI({ autoPlace: false });
         this.wrapper.prepend(this.gui.domElement);
         this.gui.add(this.ambientLight, "intensity", 0, 5, 0.05)
@@ -94,49 +94,49 @@ export class Renderer {
         this.gui.add(this.directionalLight, "intensity", 0, 5, 0.05)
             .name("Directional light");
 
-        let planeVisible = { planeVisible: true };
-        let planeVisibleHandler = this.gui.add(planeVisible, "planeVisible")
+        const planeVisible = { planeVisible: true };
+        const planeVisibleHandler = this.gui.add(planeVisible, "planeVisible")
             .name("Display plane");
         planeVisibleHandler.onChange(this.setPlaneVisibility.bind(this));
 
         this.planeVisible = true;
     }
 
-    private addDefaultPlane() {
-        var plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
+    private addDefaultPlane(): void {
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
         this.plane = new THREE.PlaneHelper(plane, 500, 0xFFFFFF);
         this.scene.add(this.plane);
     }
 
-    private onWindowResize() {
+    private onWindowResize(): void {
         this.camera.aspect = this.wrapper.clientWidth / this.wrapper.clientHeight;
         this.camera.updateProjectionMatrix();
 
         this.renderer.setSize(this.wrapper.clientWidth, this.wrapper.clientHeight);
     }
 
-    private onMouseClick(evt: any) {
+    private onMouseClick(evt: MouseEvent): void {
         evt.preventDefault();
 
         // Don't continue if object is not yet loaded.
         if (this.object === null) return;
 
-        var array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
+        const array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
         this.onClickPosition.fromArray(array);
 
-        var intersects: THREE.Intersection[] =
+        const intersects: THREE.Intersection[] =
             this.getIntersects(this.onClickPosition, this.scene.children);
         if (intersects.length > 0) {
             // Check event handlers
             this.clickEventHandlers.forEach(func => {
-                let handled = func(intersects[0]);
+                const handled = func(intersects[0]);
                 if (handled) return;
             });
 
-            let p = intersects[0].point;
-            let face = intersects[0].face;
+            const p = intersects[0].point;
+            const face = intersects[0].face;
             if (isNullOrUndefined(face)) return;
-            let pUnit = face.normal;
+            const pUnit = face.normal;
             pUnit.multiplyScalar(25);
             this.directionalLight.position.set(pUnit.x, pUnit.y, pUnit.z);
 
@@ -152,20 +152,20 @@ export class Renderer {
         }
     }
 
-    private static getMousePosition(dom: HTMLElement, x: number, y: number) {
-        var rect = dom.getBoundingClientRect();
+    private static getMousePosition(dom: HTMLElement, x: number, y: number): number[] {
+        const rect = dom.getBoundingClientRect();
         return [(x - rect.left) / rect.width, (y - rect.top) / rect.height];
     }
 
-    private getIntersects(point: THREE.Vector2, objects: THREE.Object3D[]) {
+    private getIntersects(point: THREE.Vector2, objects: THREE.Object3D[]): THREE.Intersection[] {
         this.mouse.set((point.x * 2) - 1, - (point.y * 2) + 1);
         this.raycaster.setFromCamera(this.mouse, this.camera);
         return this.raycaster.intersectObjects(objects, true);
     }
 
-    public startRendering() {
+    public startRendering(): void {
         // Sets up main rendering loop.
-        let animate = () => {
+        const animate = (): void => {
             requestAnimationFrame(animate);
             this.controls.update();
             this.renderer.render(this.scene, this.camera);
@@ -174,7 +174,7 @@ export class Renderer {
         animate();
     }
 
-    public setPlaneVisibility(visible: boolean) {
+    public setPlaneVisibility(visible: boolean): void {
         if (visible && !this.planeVisible) {
             this.scene.add(this.plane);
             this.planeVisible = true;
@@ -186,7 +186,7 @@ export class Renderer {
 
     // Register a click event handler.
     // It should return "true" if the click has been handled.
-    public addClickEventListener(func: (object: THREE.Intersection) => boolean) {
+    public addClickEventListener(func: (object: THREE.Intersection) => boolean): void {
         this.clickEventHandlers.push(func);
     }
 }

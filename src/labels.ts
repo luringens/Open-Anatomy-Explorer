@@ -6,27 +6,28 @@ export class LabelManager {
     private positions: SavedItem[] = [];
     private listContainer: HTMLElement;
     private renderer: Renderer;
-    private nextLabelId: number = 1;
     private canvasWrapper: CanvasWrapper;
-    private regionSize: number = 20;
-    private regionColor: string = "#FF00FF";
-    private regionColorIntensity: number = 100;
+
+    private nextLabelId = 1;
+    private regionSize = 20;
+    private regionColor = "#FF00FF";
+    private regionColorIntensity = 100;
 
     constructor(renderer: Renderer, object: THREE.Object3D) {
         this.renderer = renderer;
-        this.listContainer = <HTMLElement>document.getElementById("labels");
+        this.listContainer = document.getElementById("labels") as HTMLElement;
 
-        let saveLabelButton = <HTMLElement>document.getElementById("save-label");
+        const saveLabelButton = document.getElementById("save-label") as HTMLElement;
         saveLabelButton.addEventListener("click", this.savePosAsLabel.bind(this));
-        let saveRegionButton = <HTMLElement>document.getElementById("save-region");
+        const saveRegionButton = document.getElementById("save-region") as HTMLElement;
         saveRegionButton.addEventListener("click", this.savePosAsRegion.bind(this));
 
         this.renderer.addClickEventListener(this.clickHandler.bind(this));
 
-        let obj = object.children[0] ?? renderer.object;
+        const obj = object.children[0] ?? renderer.object;
         this.canvasWrapper = new CanvasWrapper(obj);
 
-        var f = renderer.gui.addFolder("Region settings");
+        const f = renderer.gui.addFolder("Region settings");
         f.add(this, "regionSize", 5, 100, 1).name("Region radius");
         f.addColor(this, "regionColor").name("Region color");
         f.add(this, "regionColorIntensity", 0, 255, 1).name("Region transparency");
@@ -46,7 +47,7 @@ export class LabelManager {
 
     private clickHandlerPosition(object: THREE.Object3D): boolean {
         this.positions.forEach(pos => {
-            let id = Number.parseInt(object.name.substring(6));
+            const id = Number.parseInt(object.name.substring(6));
             if (pos.id !== id) return;
 
             this.blinkRowId(pos.id);
@@ -57,13 +58,13 @@ export class LabelManager {
     private clickHandlerRegion(uv: THREE.Vector2): boolean {
         this.positions.forEach(item => {
             if (item instanceof SavedRegion) {
-                let canvas = this.canvasWrapper.canvas;
-                let sizeVector = new THREE.Vector2(canvas.width, canvas.height);
-                let regionPos = item.pos.clone().multiply(sizeVector);
-                let clickPos = uv.clone().multiply(sizeVector);
+                const canvas = this.canvasWrapper.canvas;
+                const sizeVector = new THREE.Vector2(canvas.width, canvas.height);
+                const regionPos = item.pos.clone().multiply(sizeVector);
+                const clickPos = uv.clone().multiply(sizeVector);
 
-                let withinX = Math.abs(clickPos.x - regionPos.x) < item.radius;
-                let withinY = Math.abs(clickPos.y - regionPos.y) < item.radius;
+                const withinX = Math.abs(clickPos.x - regionPos.x) < item.radius;
+                const withinY = Math.abs(clickPos.y - regionPos.y) < item.radius;
                 if (withinX && withinY)
                     this.blinkRowId(item.id);
             }
@@ -71,8 +72,8 @@ export class LabelManager {
         return true;
     }
 
-    private blinkRowId(id: number) {
-        let element = document.getElementById("label-row-" + String(id));
+    private blinkRowId(id: number): void {
+        const element = document.getElementById("label-row-" + String(id));
         if (element === null) throw "Could not find label row!";
 
         element.classList.add("row-animate");
@@ -82,59 +83,59 @@ export class LabelManager {
         }, 2900);
     }
 
-    private savePosAsLabel(_: Event) {
-        let pos = this.renderer.lastMouseClickPosition;
+    private savePosAsLabel(): void {
+        const pos = this.renderer.lastMouseClickPosition;
 
-        let savedPosition = new SavedPosition(pos, this.regionColor, this.nextLabelId++);
+        const savedPosition = new SavedPosition(pos, this.regionColor, this.nextLabelId++);
         this.positions.push(savedPosition);
         this.renderer.scene.add(savedPosition.mesh);
 
-        let element = this.createRow(savedPosition);
+        const element = this.createRow(savedPosition);
         this.listContainer.append(element);
     }
 
-    private savePosAsRegion(_: Event) {
-        let pos = this.renderer.lastMouseClickTexturePosition;
+    private savePosAsRegion(): void {
+        const pos = this.renderer.lastMouseClickTexturePosition;
 
-        let color = this.regionColor + this.regionColorIntensity.toString(16);
-        let savedRegion = new SavedRegion(pos, color, this.regionSize, this.nextLabelId++);
+        const color = this.regionColor + this.regionColorIntensity.toString(16);
+        const savedRegion = new SavedRegion(pos, color, this.regionSize, this.nextLabelId++);
         this.positions.push(savedRegion);
 
-        let element = this.createRow(savedRegion);
+        const element = this.createRow(savedRegion);
         this.listContainer.append(element);
 
         this.canvasWrapper.draw(this.positions);
     }
 
     private createRow(pos: SavedItem): HTMLElement {
-        let element = document.createElement("tr");
+        const element = document.createElement("tr");
         element.className = "label-row";
         element.id = "label-row-" + String(pos.id);
-        let td_label_input = document.createElement("input");
-        td_label_input.className = "label-name";
-        td_label_input.placeholder = "New label";
-        let td_label = document.createElement("td");
-        td_label.append(td_label_input);
-        element.append(td_label);
+        const tdLabelInput = document.createElement("input");
+        tdLabelInput.className = "label-name";
+        tdLabelInput.placeholder = "New label";
+        const tdLabel = document.createElement("td");
+        tdLabel.append(tdLabelInput);
+        element.append(tdLabel);
 
-        let td_color = document.createElement("td");
-        td_color.setAttribute("style", "background-color: " + this.regionColor + ";");
-        element.append(td_color);
+        const tdColor = document.createElement("td");
+        tdColor.setAttribute("style", "background-color: " + this.regionColor + ";");
+        element.append(tdColor);
 
-        let td_remove_btn = document.createElement("button");
-        td_remove_btn.innerText = "Remove";
-        td_remove_btn.className = "btn-remove";
-        td_remove_btn.setAttribute("style", "background-color: #ff6666;");
-        td_remove_btn.addEventListener("click", this.remove.bind(this, element, pos));
-        let td_remove = document.createElement("td");
-        td_remove.setAttribute("style", "background-color: #ff6666;");
-        td_remove.append(td_remove_btn)
-        element.append(td_remove);
+        const tdRemoveBtn = document.createElement("button");
+        tdRemoveBtn.innerText = "Remove";
+        tdRemoveBtn.className = "btn-remove";
+        tdRemoveBtn.setAttribute("style", "background-color: #ff6666;");
+        tdRemoveBtn.addEventListener("click", this.remove.bind(this, element, pos));
+        const tdRemove = document.createElement("td");
+        tdRemove.setAttribute("style", "background-color: #ff6666;");
+        tdRemove.append(tdRemoveBtn)
+        element.append(tdRemove);
 
         return element;
     }
 
-    private remove(element: HTMLElement, pos: SavedItem) {
+    private remove(element: HTMLElement, pos: SavedItem): void {
         let index = -1;
         for (let i = 0; i < this.positions.length; i++) {
             if (this.positions[i].id === pos.id) {
@@ -148,39 +149,37 @@ export class LabelManager {
         this.positions.splice(index, 1);
 
         if (pos instanceof SavedPosition)
-            this.renderer.scene.remove((<SavedPosition>pos).mesh)
+            this.renderer.scene.remove(pos.mesh)
         else if (pos instanceof SavedRegion)
             this.canvasWrapper.draw(this.positions);
     }
 }
 
 class CanvasWrapper {
-    material: THREE.MeshBasicMaterial;
+    material: THREE.MeshPhongMaterial;
     materialTex: THREE.Texture;
     texture: HTMLImageElement;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     constructor(obj: THREE.Object3D) {
-        // Type system hackery.
-        if (isNullOrUndefined((<any>obj).material)) {
-            throw "Object has no material!";
-        }
+        // Lots of type assumptions here...
+        const mesh = obj as THREE.Mesh;
+        this.material = mesh.material as THREE.MeshPhongMaterial;
 
         this.canvas = document.createElement("canvas");
-        this.material = (<any>obj).material;
         if (isNullOrUndefined(this.material.map)) throw "Missing material map";
         this.texture = this.material.map.image;
         this.materialTex = this.material.map;
 
         this.canvas.height = this.materialTex.image.height;
         this.canvas.width = this.materialTex.image.width;
-        this.ctx = <CanvasRenderingContext2D>this.canvas.getContext("2d");
+        this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
 
         this.material.map.image = this.canvas;
         this.draw([]);
     }
 
-    public draw(items: SavedItem[]) {
+    public draw(items: SavedItem[]): void {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(this.texture, 0, 0);
         items.forEach(item => {
@@ -219,8 +218,8 @@ class SavedPosition implements SavedItem {
         this.color = color;
         this.id = id;
 
-        let geometry = new THREE.SphereGeometry();
-        let material = new THREE.MeshBasicMaterial({ color: color });
+        const geometry = new THREE.SphereGeometry();
+        const material = new THREE.MeshBasicMaterial({ color: color });
         this.mesh = new THREE.Mesh(geometry, material);
         this.mesh.position.add(pos);
         this.mesh.name = "label_" + String(id);
