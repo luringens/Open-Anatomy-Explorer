@@ -1,15 +1,19 @@
 import * as THREE from "three"
 import { Renderer } from "./renderer";
 import { isNullOrUndefined } from "util";
+import CanvasWrapper from "./canvasWrapper";
 
 export class LabelManager {
     private positions: SavedItem[] = [];
     private listContainer: HTMLElement;
     private renderer: Renderer;
     private canvasWrapper: CanvasWrapper;
+    private uuid: String | null;
+    private url = "http://51.15.231.127:5000/LabelPoints";
+    //private url = "http://localhost:3000/LabelPoints";
 
     private nextLabelId = 1;
-    private regionSize = 20;
+    private regionSize = 50;
     private regionColor = "#FF00FF";
     private regionColorIntensity = 100;
     private visible = true;
@@ -29,13 +33,37 @@ export class LabelManager {
         this.canvasWrapper = new CanvasWrapper(obj);
 
         const f = renderer.gui.addFolder("Region settings");
-        f.add(this, "regionSize", 5, 100, 1).name("Region radius");
+        f.add(this, "regionSize", 5, 500, 1).name("Region radius");
         f.addColor(this, "regionColor").name("Region color");
-        f.add(this, "regionColorIntensity", 0, 255, 1).name("Region transparency");
+        f.add(this, "regionColorIntensity", 0, 255, 1).name("Transparency");
         const planeVisibleHandler = f.add(this, "visible").name("Show tags");
         planeVisibleHandler.onChange(this.toggleVisibility.bind(this));
 
         f.open();
+
+        // Store/update/delete label initialization
+        {
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            this.uuid = urlParams.get("id");
+
+            const saveAllLabelsButton = document.getElementById("labels-save") as HTMLElement;
+            const updateAllLabelsButton = document.getElementById("labels-update") as HTMLElement;
+            const deleteAllLabelsButton = document.getElementById("labels-delete") as HTMLElement;
+            saveAllLabelsButton.addEventListener("click", this.storeLabels.bind(this));
+            if (this.uuid == null) {
+                updateAllLabelsButton.remove();
+                deleteAllLabelsButton.remove();
+            } else {
+                this.loadLabels();
+                updateAllLabelsButton.addEventListener("click", this.updateLabels.bind(this));
+                deleteAllLabelsButton.addEventListener("click", this.deleteLabels.bind(this));
+                updateAllLabelsButton.classList.remove("hide");
+                deleteAllLabelsButton.classList.remove("hide");
+
+                // TODO: Load data.
+            }
+        }
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
@@ -119,14 +147,16 @@ export class LabelManager {
         element.className = "label-row";
         element.id = "label-row-" + String(pos.id);
         const tdLabelInput = document.createElement("input");
+        tdLabelInput.id = "label-input-" + String(pos.id);
         tdLabelInput.className = "label-name";
         tdLabelInput.placeholder = "New label";
+        tdLabelInput.value = pos.name;
         const tdLabel = document.createElement("td");
         tdLabel.append(tdLabelInput);
         element.append(tdLabel);
 
         const tdColor = document.createElement("td");
-        tdColor.setAttribute("style", "background-color: " + this.regionColor + ";");
+        tdColor.setAttribute("style", "background-color: " + pos.color + ";");
         element.append(tdColor);
 
         const tdRemoveBtn = document.createElement("button");
@@ -178,70 +208,131 @@ export class LabelManager {
             });
         }
     }
-}
 
-class CanvasWrapper {
-    material: THREE.MeshPhongMaterial;
-    materialTex: THREE.Texture;
-    texture: HTMLImageElement;
-    canvas: HTMLCanvasElement;
-    ctx: CanvasRenderingContext2D;
-    constructor(obj: THREE.Object3D) {
-        // Lots of type assumptions here...
-        const mesh = obj as THREE.Mesh;
-        this.material = mesh.material as THREE.MeshPhongMaterial;
-
-        this.canvas = document.createElement("canvas");
-        if (isNullOrUndefined(this.material.map)) throw "Missing material map";
-        this.texture = this.material.map.image;
-        this.materialTex = this.material.map;
-
-        this.canvas.height = this.materialTex.image.height;
-        this.canvas.width = this.materialTex.image.width;
-        this.ctx = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-
-        this.material.map.image = this.canvas;
-        this.draw([]);
+    private loadLabels(): void {
+        let options = { method: "GET" };
+        fetch(this.url + "/" + this.uuid, options)
+            .then(async (response) => {
+                if (!response.ok || response.body == null) {
+                    throw new Error(
+                        "Server responded " + response.status + " " + response.statusText
+                    );
+                }
+                let data = await response.json() as SavedItem[];
+                data.forEach(item => {
+                    if (item.radius == null) {
+                        const p = item as SavedPosition;
+                        const vec = new THREE.Vector3(p.pos.x, p.pos.y, p.pos.z);
+                        const savedPosition = new SavedPosition(vec, p.color, p.id, p.name);
+                        this.positions.push(savedPosition);
+                        if (this.visible)
+                            this.renderer.scene.add(savedPosition.mesh);
+                        const element = this.createRow(savedPosition);
+                        this.listContainer.append(element);
+                        this.nextLabelId = Math.max(this.nextLabelId, p.id);
+                    } else {
+                        const p = item as SavedRegion;
+                        const vec = new THREE.Vector2(p.pos.x, p.pos.y);
+                        const savedRegion = new SavedRegion(vec, p.color, p.radius, p.id, p.name);
+                        this.positions.push(savedRegion);
+                        const element = this.createRow(savedRegion);
+                        this.listContainer.append(element);
+                        if (this.visible)
+                            this.canvasWrapper.draw(this.positions);
+                        this.nextLabelId = Math.max(this.nextLabelId, p.id);
+                    }
+                });
+            });
     }
 
-    public draw(items: SavedItem[]): void {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.drawImage(this.texture, 0, 0);
-        items.forEach(item => {
-            if (item instanceof SavedRegion) {
-                this.ctx.fillStyle = item.color;
-                this.ctx.beginPath();
-                this.ctx.ellipse(
-                    item.pos.x * this.canvas.width,
-                    item.pos.y * this.canvas.height,
-                    item.radius,
-                    item.radius,
-                    0, // rotation
-                    0, // start radius
-                    2 * Math.PI // end radius
-                );
-                this.ctx.fill();
-            }
+    private storeLabels(): void {
+        this.updateNames();
+        let options = {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(this.positions)
+        };
+        fetch(this.url, options)
+            .then(async (response) => {
+                if (!response.ok || response.body == null) {
+                    throw new Error(
+                        "Server responded " + response.status + " " + response.statusText
+                    );
+                }
+                let data = await response.json();
+                console.info("Data stored - UUID: " + data)
+                window.location.href = window.origin + "?id=" + data;
+            });
+    }
+
+    private updateLabels(): void {
+        this.updateNames();
+        if (this.uuid == null) throw "UUID is null.";
+        let options = {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(this.positions)
+        };
+        fetch(this.url + "/" + this.uuid, options)
+            .then(async (response) => {
+                if (!response.ok || response.body == null) {
+                    throw new Error(
+                        "Server responded " + response.status + " " + response.statusText
+                    );
+                }
+                console.info("Data updated")
+                window.location.href = window.origin + "?id=" + this.uuid;
+            });
+    }
+
+    private deleteLabels(): void {
+        if (this.uuid == null) throw "UUID is null.";
+        let options = {
+            method: "DELETE",
+        };
+        fetch(this.url + "/" + this.uuid, options)
+            .then(async (response) => {
+                if (!response.ok || response.body == null) {
+                    throw new Error(
+                        "Server responded " + response.status + " " + response.statusText
+                    );
+                }
+                console.info("Data deleted")
+                window.location.href = window.origin;
+            });
+    }
+
+    private updateNames(): void {
+        this.positions.forEach(pos => {
+            const element = document.getElementById("label-input-" + String(pos.id)) as HTMLInputElement | null;
+            if (element === null) throw "Could not find label row!";
+
+            pos.name = element.value;
         });
-        this.materialTex.needsUpdate = true;
-        this.material.needsUpdate = true;
     }
 }
 
-interface SavedItem {
+export interface SavedItem {
     id: number;
+    pos: THREE.Vector2 | THREE.Vector3
+    color: string,
+    name: string,
+    radius: number | null,
 }
 
-class SavedPosition implements SavedItem {
+export class SavedPosition implements SavedItem {
     pos: THREE.Vector3;
     mesh: THREE.Mesh;
     id: number;
     color: string;
+    radius: null;
+    name: string = "";
 
-    constructor(pos: THREE.Vector3, color: string, id: number) {
+    constructor(pos: THREE.Vector3, color: string, id: number, name = "") {
         this.pos = pos;
         this.color = color;
         this.id = id;
+        this.name = name;
 
         const geometry = new THREE.SphereGeometry();
         const material = new THREE.MeshBasicMaterial({ color: color });
@@ -249,18 +340,38 @@ class SavedPosition implements SavedItem {
         this.mesh.position.add(pos);
         this.mesh.name = "label_" + String(id);
     }
+
+    toJSON: (key: any) => SavedItem = (key): SavedItem => {
+        return toJSON(this);
+    };
 }
 
-class SavedRegion implements SavedItem {
+export class SavedRegion implements SavedItem {
     pos: THREE.Vector2;
     id: number;
     radius: number;
     color: string;
+    name: string = "";
 
-    constructor(pos: THREE.Vector2, color: string, radius: number, id: number) {
+    constructor(pos: THREE.Vector2, color: string, radius: number, id: number, name = "") {
         this.pos = pos;
         this.color = color;
         this.radius = radius;
         this.id = id;
+        this.name = name;
     }
+
+    toJSON: (key: any) => SavedItem = (key): SavedItem => {
+        return toJSON(this);
+    };
+}
+
+function toJSON(item: SavedItem): SavedItem {
+    return {
+        id: item.id,
+        pos: item.pos,
+        color: item.color,
+        name: item.name,
+        radius: item.radius
+    };
 }

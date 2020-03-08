@@ -93,3 +93,7 @@ button {
     animation-name: example;
     animation-duration: 3s;
 }
+
+.hide {
+    display: none;
+}
