@@ -8,7 +8,7 @@ export class LabelManager {
     private listContainer: HTMLElement;
     private renderer: Renderer;
     private canvasWrapper: CanvasWrapper;
-    private uuid: String | null;
+    private uuid: string | null;
     private url = "http://51.15.231.127:5000/LabelPoints";
     //private url = "http://localhost:3000/LabelPoints";
 
@@ -210,7 +210,7 @@ export class LabelManager {
     }
 
     private loadLabels(): void {
-        let options = { method: "GET" };
+        const options = { method: "GET" };
         fetch(this.url + "/" + this.uuid, options)
             .then(async (response) => {
                 if (!response.ok || response.body == null) {
@@ -218,7 +218,7 @@ export class LabelManager {
                         "Server responded " + response.status + " " + response.statusText
                     );
                 }
-                let data = await response.json() as SavedItem[];
+                const data = await response.json() as SavedItem[];
                 data.forEach(item => {
                     if (item.radius == null) {
                         const p = item as SavedPosition;
@@ -247,7 +247,7 @@ export class LabelManager {
 
     private storeLabels(): void {
         this.updateNames();
-        let options = {
+        const options = {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(this.positions)
@@ -259,7 +259,7 @@ export class LabelManager {
                         "Server responded " + response.status + " " + response.statusText
                     );
                 }
-                let data = await response.json();
+                const data = await response.json();
                 console.info("Data stored - UUID: " + data)
                 window.location.href = window.origin + "?id=" + data;
             });
@@ -268,13 +268,13 @@ export class LabelManager {
     private updateLabels(): void {
         this.updateNames();
         if (this.uuid == null) throw "UUID is null.";
-        let options = {
+        const options = {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(this.positions)
         };
         fetch(this.url + "/" + this.uuid, options)
-            .then(async (response) => {
+            .then((response) => {
                 if (!response.ok || response.body == null) {
                     throw new Error(
                         "Server responded " + response.status + " " + response.statusText
@@ -287,11 +287,11 @@ export class LabelManager {
 
     private deleteLabels(): void {
         if (this.uuid == null) throw "UUID is null.";
-        let options = {
+        const options = {
             method: "DELETE",
         };
         fetch(this.url + "/" + this.uuid, options)
-            .then(async (response) => {
+            .then((response) => {
                 if (!response.ok || response.body == null) {
                     throw new Error(
                         "Server responded " + response.status + " " + response.statusText
@@ -314,10 +314,10 @@ export class LabelManager {
 
 export interface SavedItem {
     id: number;
-    pos: THREE.Vector2 | THREE.Vector3
-    color: string,
-    name: string,
-    radius: number | null,
+    pos: THREE.Vector2 | THREE.Vector3;
+    color: string;
+    name: string;
+    radius: number | null;
 }
 
 export class SavedPosition implements SavedItem {
@@ -326,7 +326,7 @@ export class SavedPosition implements SavedItem {
     id: number;
     color: string;
     radius: null;
-    name: string = "";
+    name = "";
 
     constructor(pos: THREE.Vector3, color: string, id: number, name = "") {
         this.pos = pos;
@@ -341,7 +341,7 @@ export class SavedPosition implements SavedItem {
         this.mesh.name = "label_" + String(id);
     }
 
-    toJSON: (key: any) => SavedItem = (key): SavedItem => {
+    toJSON: (key: unknown) => SavedItem = (): SavedItem => {
         return toJSON(this);
     };
 }
@@ -351,7 +351,7 @@ export class SavedRegion implements SavedItem {
     id: number;
     radius: number;
     color: string;
-    name: string = "";
+    name = "";
 
     constructor(pos: THREE.Vector2, color: string, radius: number, id: number, name = "") {
         this.pos = pos;
@@ -361,7 +361,7 @@ export class SavedRegion implements SavedItem {
         this.name = name;
     }
 
-    toJSON: (key: any) => SavedItem = (key): SavedItem => {
+    toJSON: (key: unknown) => SavedItem = (): SavedItem => {
         return toJSON(this);
     };
 }
