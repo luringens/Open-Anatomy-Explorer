@@ -60,10 +60,25 @@ export class LabelManager {
                 deleteAllLabelsButton.addEventListener("click", this.deleteLabels.bind(this));
                 updateAllLabelsButton.classList.remove("hide");
                 deleteAllLabelsButton.classList.remove("hide");
-
-                // TODO: Load data.
             }
         }
+    }
+
+    public reset(newModel: THREE.Object3D): void {
+        const obj = newModel.children[0] ?? this.renderer.object;
+        this.canvasWrapper = new CanvasWrapper(obj);
+
+        this.positions.forEach(pos => {
+            const id = "label-row-" + String(pos.id);
+            const elem = document.getElementById(id) as HTMLElement;
+            elem.remove();
+            if (pos instanceof SavedPosition)
+                this.renderer.scene.remove(pos.mesh)
+        });
+
+        this.positions = [];
+
+        if (this.visible) this.canvasWrapper.draw(this.positions);
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {

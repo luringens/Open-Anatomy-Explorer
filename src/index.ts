@@ -1,21 +1,23 @@
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Renderer } from "./renderer";
 import { LabelManager } from "./labels";
+import { ModelManager } from "./modelManager";
+import { Object3D } from "three";
 
 // Set up renderer.
 const wrapper = document.getElementById("canvas-container") as HTMLElement;
 const renderer = new Renderer(wrapper);
 renderer.startRendering();
 
-// Start loading the model.
-const loader = new GLTFLoader();
-loader.load("model.glb", function (gltf) {
+let labelManager: LabelManager | null = null;
+
+// Set up the model manager.
+const modelManager = new ModelManager((gltf) => {
     renderer.object = gltf.scene;
     renderer.object.translateZ(-150);
     renderer.scene.add(renderer.object);
 
-    // Set up label manager.
-    new LabelManager(renderer, gltf.scene);
-}, undefined, function (error: ErrorEvent) {
-    console.error(error);
-});
+    // Set up  the label manager.
+    labelManager = new LabelManager(renderer, gltf.scene);
+}, renderer);
+
+modelManager.setOnload((model: Object3D): void => labelManager?.reset(model));

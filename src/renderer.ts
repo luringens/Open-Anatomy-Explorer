@@ -4,6 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
 
 export class Renderer {
+    objectId: string | null = null;
     object: THREE.Object3D | null = null;
     scene: THREE.Scene = new THREE.Scene();
     renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer();

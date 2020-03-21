@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Online Anatomical Human</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="grid">
+        <div id="canvas-container" class="canvas-container"></div>
+        <div class="sidebar">
+            <div class="label-container">
+                <h3>Labels</h3>
+                <table>
+                    <coldef>
+                        <col />
+                        <col style="width: 50px;" />
+                        <col style="width: 0;" />
+                    </coldef>
+                    <tbody id="labels">
+                    </tbody>
+                </table>
+                <button id="save-label">Save label at current position</button>
+                <button id="save-region">Save region at current position</button>
+                <button id="labels-save">Save all labels to storage</button>
+                <button id="labels-update" class="hide">Update saved labels</button>
+                <button id="labels-delete" class="hide">Delete saved labels</button>
+            </div>
+            <br />
+            <div class="models-container">
+                <h3>Models</h3>
+                <table>
+                    <coldef>
+                        <col />
+                        <col style="width: 0;" />
+                    </coldef>
+                    <tbody id="models">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
