@@ -3,6 +3,8 @@ import { LabelManager } from "./labels";
 import { ModelManager } from "./modelManager";
 import { Object3D } from "three";
 
+const defaultModel = "arm";
+
 // Set up renderer.
 const wrapper = document.getElementById("canvas-container") as HTMLElement;
 const renderer = new Renderer(wrapper);
@@ -17,7 +19,7 @@ const modelManager = new ModelManager((gltf) => {
     renderer.scene.add(renderer.object);
 
     // Set up  the label manager.
-    labelManager = new LabelManager(renderer, gltf.scene);
-}, renderer);
+    labelManager = new LabelManager(renderer, gltf.scene, defaultModel);
+}, renderer, defaultModel);
 
-modelManager.setOnload((model: Object3D): void => labelManager?.reset(model));
+modelManager.setOnload((model: Object3D): void => labelManager?.reset(model, defaultModel));
