@@ -3,15 +3,11 @@ import { Renderer } from "./renderer";
 import { Object3D } from "three";
 
 export class ModelManager {
-    private static readonly defaultModel = "Arm";
     private static readonly url = "http://51.15.231.127:5000/models/";
     private readonly renderer: Renderer;
     private onload: ((model: Object3D) => void) | null = null;
 
-    public constructor(
-        callback: (_: GLTF) => void,
-        renderer: Renderer,
-        name = ModelManager.defaultModel) {
+    public constructor(callback: (_: GLTF) => void, renderer: Renderer, name: string) {
         this.renderer = renderer;
 
         this.getModelList(this.populateModelList.bind(this));
