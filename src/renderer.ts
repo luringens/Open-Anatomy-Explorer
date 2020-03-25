@@ -7,7 +7,7 @@ export class Renderer {
     objectId: string | null = null;
     object: THREE.Object3D | null = null;
     scene: THREE.Scene = new THREE.Scene();
-    renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer();
+    renderer: THREE.WebGLRenderer;
     wrapper: HTMLElement;
     container: HTMLCanvasElement;
     private clickEventHandlers: ((object: THREE.Intersection) => boolean)[] = [];
@@ -32,6 +32,13 @@ export class Renderer {
 
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
+
+        const canvas = document.createElement('canvas');
+        wrapper.appendChild(canvas);
+        const context = canvas.getContext('webgl2', { alpha: false });
+        if (context == null) throw "Failed to get WebGL2 context";
+        this.renderer = new THREE.WebGLRenderer({ canvas: canvas, context: context });
+
         this.container = this.renderer.domElement;
         this.renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
         wrapper.appendChild(this.container);
@@ -146,6 +153,20 @@ export class Renderer {
                 new THREE.DirectionalLightHelper(this.directionalLight, 10);
             this.scene.add(this.directionalLightHelper);
             this.directionalLight.position.add(p);
+
+            const updateShader = (obj: THREE.Object3D): void => {
+                if (obj.type === "Mesh") {
+                    const mesh = obj as THREE.Mesh;
+                    const material = mesh.material as THREE.ShaderMaterial;
+                    material.uniforms.worldLightPosition = {
+                        value: this.directionalLight.position
+                    };
+                    material.needsUpdate = true;
+                }
+
+                obj.children.forEach(updateShader);
+            };
+            updateShader(this.object);
 
             this.lastMouseClickPosition = p;
             if (!isNullOrUndefined(intersects[0].uv))

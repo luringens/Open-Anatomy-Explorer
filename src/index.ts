@@ -2,6 +2,7 @@ import { Renderer } from "./renderer";
 import { LabelManager } from "./labels";
 import { ModelManager } from "./modelManager";
 import { Object3D } from "three";
+import THREE = require("three");
 
 const defaultModel = "Arm";
 

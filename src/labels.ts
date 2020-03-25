@@ -66,24 +66,25 @@ export class LabelManager {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public reset(newModel: THREE.Object3D, modelName: string): void {
-        const obj = newModel.children[0] ?? this.renderer.object;
-        this.canvasWrapper = new CanvasWrapper(obj);
+        // const obj = newModel.children[0] ?? this.renderer.object;
+        // this.canvasWrapper = new CanvasWrapper(obj);
 
-        this.positions.forEach(pos => {
-            const id = "label-row-" + String(pos.id);
-            const elem = document.getElementById(id) as HTMLElement;
-            elem.remove();
-            if (pos instanceof SavedPosition)
-                this.renderer.scene.remove(pos.mesh)
-        });
+        // this.positions.forEach(pos => {
+        //     const id = "label-row-" + String(pos.id);
+        //     const elem = document.getElementById(id) as HTMLElement;
+        //     elem.remove();
+        //     if (pos instanceof SavedPosition)
+        //         this.renderer.scene.remove(pos.mesh)
+        // });
 
-        this.positions = [];
-        this.modelName = modelName;
+        // this.positions = [];
+        // this.modelName = modelName;
 
-        this.loadLabels();
+        // this.loadLabels();
 
-        if (this.visible) this.canvasWrapper.draw(this.positions);
+        // if (this.visible) this.canvasWrapper.draw(this.positions);
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
