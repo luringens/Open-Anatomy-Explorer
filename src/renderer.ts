@@ -2,10 +2,13 @@ import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
+import { Object3D } from "three";
+import FragmentShader from "./shader.frag";
+import VertexShader from "./shader.vert";
 
 export class Renderer {
     objectId: string | null = null;
-    object: THREE.Object3D | null = null;
+    private object: THREE.Object3D | null = null;
     scene: THREE.Scene = new THREE.Scene();
     renderer: THREE.WebGLRenderer;
     wrapper: HTMLElement;
@@ -97,10 +100,30 @@ export class Renderer {
     private setupGui(): void {
         this.gui = new dat.GUI({ autoPlace: false });
         this.wrapper.prepend(this.gui.domElement);
-        this.gui.add(this.ambientLight, "intensity", 0, 5, 0.05)
-            .name("Ambient light");
-        this.gui.add(this.directionalLight, "intensity", 0, 5, 0.05)
-            .name("Directional light");
+    }
+
+    public loadObject(obj: Object3D): void {
+        if (this.object != null)
+            this.scene.remove(this.object);
+
+        obj.children.forEach(Renderer.setMaterial.bind(this));
+        this.object = obj;
+        this.scene.add(obj);
+
+        // Reload GUI
+        this.gui.domElement.remove();
+        this.gui.destroy();
+        this.setupGui();
+
+        {
+            const mesh = (this.object.children[0] as THREE.Mesh);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const uniforms = (mesh.material as any).uniforms;
+            this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
+                .name("Ambient light");
+            this.gui.add(uniforms.diffuseIntensity, "value", 0, 10, 0.1)
+                .name("Directional light");
+        }
 
         const planeVisible = { planeVisible: true };
         const planeVisibleHandler = this.gui.add(planeVisible, "planeVisible")
@@ -210,5 +233,39 @@ export class Renderer {
     // It should return "true" if the click has been handled.
     public addClickEventListener(func: (object: THREE.Intersection) => boolean): void {
         this.clickEventHandlers.push(func);
+    }
+
+    private static setMaterial(obj: Object3D): void {
+        const mesh = obj as THREE.Mesh;
+        let texture: THREE.Texture | null = null;
+        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+            texture = mesh.material.map;
+        } else {
+            texture = THREE.Texture.DEFAULT_IMAGE;
+        }
+
+        mesh.material = new THREE.ShaderMaterial({
+            uniforms: {
+                worldLightPosition: {
+                    value: new THREE.Vector3(0.0, 100.0, 0.0)
+                },
+                baseColor: {
+                    value: new THREE.Vector3(1.0, 1.0, 1.0)
+                },
+                ambientIntensity: { value: 2.0 },
+                specularIntensity: { value: 1.0 },
+                diffuseIntensity: { value: 5.0 },
+                specularReflection: { value: 0.2 },
+                diffuseReflection: { value: 0.2 },
+                ambientReflection: { value: 0.2 },
+                shininess: { value: 50.0 },
+                texture1: { type: "t", value: texture },
+            },
+            vertexShader: VertexShader,
+            fragmentShader: FragmentShader,
+            name: "custom-material",
+        });
+
+        obj.children.forEach(Renderer.setMaterial.bind(this));
     }
 }

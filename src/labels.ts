@@ -31,7 +31,7 @@ export class LabelManager {
 
         this.renderer.addClickEventListener(this.clickHandler.bind(this));
 
-        const obj = object.children[0] ?? renderer.object;
+        const obj = object.children[0]; // ???
         this.canvasWrapper = new CanvasWrapper(obj);
 
         const f = renderer.gui.addFolder("Region settings");
