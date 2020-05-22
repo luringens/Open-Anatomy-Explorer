@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "launch": "browser-sync start -s dist -f dist --no-notify --host 127.0.0.1 --port 8000",
     "build": "webpack",
-    "watch": "webpack --watch"
+    "watch": "webpack-dev-server --open"
   },
   "repository": {
     "type": "git",
@@ -20,18 +18,18 @@
   "homepage": "https://github.com/stisol/INFF319#readme",
   "devDependencies": {
     "@types/dat.gui": "^0.7.5",
-    "@types/three": "^0.103.2",
     "@types/node": "^13.5.0",
-    "ts-loader": "^6.2.1",
+    "@types/three": "^0.103.2",
+    "@typescript-eslint/eslint-plugin": "^2.20.0",
+    "@typescript-eslint/parser": "^2.20.0",
+    "eslint": "^6.8.0",
     "file-loader": "^5.0.2",
     "raw-loader": "^4.0.0",
+    "ts-loader": "^6.2.1",
     "typescript": "^3.7.5",
     "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10",
-    "eslint": "^6.8.0",
-    "@typescript-eslint/eslint-plugin": "^2.20.0",
-    "@typescript-eslint/parser": "^2.20.0",
-    "browser-sync": "^2.26.7"
+    "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
     "dat.gui": "^0.7.6",
