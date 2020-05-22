@@ -18,4 +18,5 @@ const modelManager = new ModelManager((gltf) => {
     labelManager = new LabelManager(renderer, gltf.scene, defaultModel);
 }, renderer, defaultModel);
 
-modelManager.setOnload((model: Object3D): void => labelManager?.reset(model, defaultModel));
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+modelManager.setOnload((_: Object3D): void => labelManager?.reset(defaultModel));

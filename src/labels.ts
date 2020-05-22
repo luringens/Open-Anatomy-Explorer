@@ -1,6 +1,5 @@
 import * as THREE from "three"
 import { Renderer } from "./renderer";
-import { isNullOrUndefined } from "util";
 
 export class LabelManager {
     private positions: SavedRegion[] = [];
@@ -12,9 +11,8 @@ export class LabelManager {
     //private url = "http://localhost:3000/LabelPoints";
 
     private nextLabelId = 1;
-    private regionSize = 50;
+    private regionSize = 2;
     private regionColor = "#FF00FF";
-    private regionColorIntensity = 100;
     private visible = true;
 
     constructor(renderer: Renderer, object: THREE.Object3D, modelName: string) {
@@ -27,14 +25,7 @@ export class LabelManager {
 
         this.renderer.addClickEventListener(this.clickHandler.bind(this));
 
-        const f = renderer.gui.addFolder("Region settings");
-        f.add(this, "regionSize", 5, 500, 1).name("Region radius");
-        f.addColor(this, "regionColor").name("Region color");
-        f.add(this, "regionColorIntensity", 0, 255, 1).name("Transparency");
-        const planeVisibleHandler = f.add(this, "visible").name("Show tags");
-        planeVisibleHandler.onChange(this.toggleVisibility.bind(this));
-
-        f.open();
+        this.setupGui();
 
         // Store/update/delete label initialization
         {
@@ -59,86 +50,39 @@ export class LabelManager {
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public reset(newModel: THREE.Object3D, modelName: string): void {
-        // const obj = newModel.children[0] ?? this.renderer.object;
-        // this.canvasWrapper = new CanvasWrapper(obj);
-
-        // this.positions.forEach(pos => {
-        //     const id = "label-row-" + String(pos.id);
-        //     const elem = document.getElementById(id) as HTMLElement;
-        //     elem.remove();
-        //     if (pos instanceof SavedPosition)
-        //         this.renderer.scene.remove(pos.mesh)
-        // });
-
-        // this.positions = [];
-        // this.modelName = modelName;
-
-        // this.loadLabels();
-
-        // if (this.visible) this.canvasWrapper.draw(this.positions);
+    private setupGui(): void {
+        const f = this.renderer.gui.addFolder("Region settings");
+        f.add(this, "regionSize", 1, 50, 1).name("Region radius");
+        f.addColor(this, "regionColor").name("Region color");
+        const planeVisibleHandler = f.add(this, "visible").name("Show tags");
+        planeVisibleHandler.onChange(this.toggleVisibility.bind(this));
+        f.open();
     }
 
-    public getRegionTexture(): THREE.DataTexture {
-        const data = new Uint8Array(16 * 4);
-        for (let i = 0; i < 16 * 4; i++) {
-            data[i] = 255;
-        }
+    public reset(modelName: string): void {
+        this.positions.forEach(pos => {
+            const id = "label-row-" + String(pos.id);
+            const elem = document.getElementById(id) as HTMLElement;
+            elem.remove();
+        });
 
-        for (let i = 0; i < Math.min(this.positions.length, 8); i++) {
-            const pos = this.positions[i];
-            const off = i * 4 * 2;
+        this.positions = [];
+        this.modelName = modelName;
 
-            const len = pos.pos.length();
-            const adjpos = pos.pos.divideScalar(len).multiplyScalar(128).addScalar(128);
-
-            data[off + 0] = adjpos.x;
-            data[off + 1] = adjpos.y;
-            data[off + 2] = adjpos.z;
-            data[off + 3] = len / 100;
-            data[off + 4] = pos.color.x;
-            data[off + 5] = pos.color.y;
-            data[off + 6] = pos.color.z;
-            data[off + 7] = 255;
-        }
-        return new THREE.DataTexture(data, 16, 1, THREE.RGBAFormat);
+        this.renderer.resetlabelTexture();
+        this.loadLabels();
+        this.setupGui();
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
-        if (intersect.object.name.startsWith("label_"))
-            return this.clickHandlerPosition(intersect.object);
-
-        if (!isNullOrUndefined(intersect.uv)) {
-            return this.clickHandlerRegion(intersect.uv);
+        for (const pos of this.positions) {
+            if (pos.pos.clone().sub(intersect.point).length() < pos.radius) {
+                this.blinkRowId(pos.id);
+                return true;
+            }
         }
 
         return false;
-    }
-
-    private clickHandlerPosition(object: THREE.Object3D): boolean {
-        this.positions.forEach(pos => {
-            const id = Number.parseInt(object.name.substring(6));
-            if (pos.id !== id) return;
-
-            this.blinkRowId(pos.id);
-        });
-        return true;
-    }
-
-    private clickHandlerRegion(uv: THREE.Vector2): boolean {
-        this.positions.forEach(item => {
-            // const canvas = this.canvasWrapper.canvas;
-            // const sizeVector = new THREE.Vector2(canvas.width, canvas.height);
-            // const regionPos = item.pos.clone().multiply(sizeVector);
-            // const clickPos = uv.clone().multiply(sizeVector);
-
-            // const withinX = Math.abs(clickPos.x - regionPos.x) < item.radius;
-            // const withinY = Math.abs(clickPos.y - regionPos.y) < item.radius;
-            // if (withinX && withinY)
-            //     this.blinkRowId(item.id);
-        });
-        return true;
     }
 
     private blinkRowId(id: number): void {
@@ -155,7 +99,6 @@ export class LabelManager {
     private savePosAsRegion(): void {
         const pos = this.renderer.lastMouseClickPosition;
 
-        //const colorStr = this.regionColor + this.regionColorIntensity.toString(16);
         const color = new THREE.Vector3();
         color.x = parseInt(this.regionColor.slice(1, 3), 16);
         color.y = parseInt(this.regionColor.slice(3, 5), 16);
@@ -163,14 +106,22 @@ export class LabelManager {
         const savedRegion = new SavedRegion(pos, color, this.regionSize, this.nextLabelId++, this.modelName);
         this.positions.push(savedRegion);
 
-        const element = this.createRow(savedRegion);
+        const element = this.createRowColor(savedRegion, this.regionColor);
         this.listContainer.append(element);
 
         if (this.visible)
-            this.renderer.setTexture2(this.getRegionTexture());
+            this.renderer.setlabelPosition(pos, color);
     }
 
     private createRow(pos: SavedRegion): HTMLElement {
+        const str = "#"
+            + pos.color.x.toString(16)
+            + pos.color.y.toString(16)
+            + pos.color.z.toString(16);
+        return this.createRowColor(pos, str);
+    }
+
+    private createRowColor(pos: SavedRegion, colorstr: string): HTMLElement {
         const element = document.createElement("tr");
         element.className = "label-row";
         element.id = "label-row-" + String(pos.id);
@@ -184,7 +135,7 @@ export class LabelManager {
         element.append(tdLabel);
 
         const tdColor = document.createElement("td");
-        tdColor.setAttribute("style", "background-color: " + pos.color + ";");
+        tdColor.setAttribute("style", "background-color: " + colorstr + ";");
         element.append(tdColor);
 
         const tdRemoveBtn = document.createElement("button");
@@ -213,14 +164,22 @@ export class LabelManager {
         element.remove();
         this.positions.splice(index, 1);
 
-        this.renderer.setTexture2(this.getRegionTexture());
+        if (this.visible)
+            this.revisualize();
+    }
+
+    private revisualize(): void {
+        this.renderer.resetlabelTexture();
+        this.positions.forEach(pos => {
+            this.renderer.setlabelPosition(pos.pos, pos.color);
+        });
     }
 
     public toggleVisibility(): void {
         if (this.visible) {
-            this.renderer.setTexture2(this.getRegionTexture());
+            this.revisualize();
         } else {
-            this.renderer.resetTexture2();
+            this.renderer.resetlabelTexture();
         }
     }
 
@@ -244,8 +203,8 @@ export class LabelManager {
                     this.positions.push(savedRegion);
                     const element = this.createRow(savedRegion);
                     this.listContainer.append(element);
-                    if (this.visible)
-                        this.renderer.setTexture2(this.getRegionTexture());
+                    // if (this.visible)
+                    this.renderer.setlabelPosition(p.pos, p.color);
                     this.nextLabelId = Math.max(this.nextLabelId, p.id);
                 });
             });
