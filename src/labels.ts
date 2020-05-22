@@ -1,13 +1,11 @@
 import * as THREE from "three"
 import { Renderer } from "./renderer";
 import { isNullOrUndefined } from "util";
-import CanvasWrapper from "./canvasWrapper";
 
 export class LabelManager {
-    private positions: SavedItem[] = [];
+    private positions: SavedRegion[] = [];
     private listContainer: HTMLElement;
     private renderer: Renderer;
-    private canvasWrapper: CanvasWrapper;
     private uuid: string | null;
     private modelName: string;
     private url = "http://51.15.231.127:5000/LabelPoints";
@@ -24,15 +22,10 @@ export class LabelManager {
         this.modelName = modelName;
         this.listContainer = document.getElementById("labels") as HTMLElement;
 
-        const saveLabelButton = document.getElementById("save-label") as HTMLElement;
-        saveLabelButton.addEventListener("click", this.savePosAsLabel.bind(this));
         const saveRegionButton = document.getElementById("save-region") as HTMLElement;
         saveRegionButton.addEventListener("click", this.savePosAsRegion.bind(this));
 
         this.renderer.addClickEventListener(this.clickHandler.bind(this));
-
-        const obj = object.children[0]; // ???
-        this.canvasWrapper = new CanvasWrapper(obj);
 
         const f = renderer.gui.addFolder("Region settings");
         f.add(this, "regionSize", 5, 500, 1).name("Region radius");
@@ -87,6 +80,31 @@ export class LabelManager {
         // if (this.visible) this.canvasWrapper.draw(this.positions);
     }
 
+    public getRegionTexture(): THREE.DataTexture {
+        const data = new Uint8Array(16 * 4);
+        for (let i = 0; i < 16 * 4; i++) {
+            data[i] = 255;
+        }
+
+        for (let i = 0; i < Math.min(this.positions.length, 8); i++) {
+            const pos = this.positions[i];
+            const off = i * 4 * 2;
+
+            const len = pos.pos.length();
+            const adjpos = pos.pos.divideScalar(len).multiplyScalar(128).addScalar(128);
+
+            data[off + 0] = adjpos.x;
+            data[off + 1] = adjpos.y;
+            data[off + 2] = adjpos.z;
+            data[off + 3] = len / 100;
+            data[off + 4] = pos.color.x;
+            data[off + 5] = pos.color.y;
+            data[off + 6] = pos.color.z;
+            data[off + 7] = 255;
+        }
+        return new THREE.DataTexture(data, 16, 1, THREE.RGBAFormat);
+    }
+
     private clickHandler(intersect: THREE.Intersection): boolean {
         if (intersect.object.name.startsWith("label_"))
             return this.clickHandlerPosition(intersect.object);
@@ -110,17 +128,15 @@ export class LabelManager {
 
     private clickHandlerRegion(uv: THREE.Vector2): boolean {
         this.positions.forEach(item => {
-            if (item instanceof SavedRegion) {
-                const canvas = this.canvasWrapper.canvas;
-                const sizeVector = new THREE.Vector2(canvas.width, canvas.height);
-                const regionPos = item.pos.clone().multiply(sizeVector);
-                const clickPos = uv.clone().multiply(sizeVector);
+            // const canvas = this.canvasWrapper.canvas;
+            // const sizeVector = new THREE.Vector2(canvas.width, canvas.height);
+            // const regionPos = item.pos.clone().multiply(sizeVector);
+            // const clickPos = uv.clone().multiply(sizeVector);
 
-                const withinX = Math.abs(clickPos.x - regionPos.x) < item.radius;
-                const withinY = Math.abs(clickPos.y - regionPos.y) < item.radius;
-                if (withinX && withinY)
-                    this.blinkRowId(item.id);
-            }
+            // const withinX = Math.abs(clickPos.x - regionPos.x) < item.radius;
+            // const withinY = Math.abs(clickPos.y - regionPos.y) < item.radius;
+            // if (withinX && withinY)
+            //     this.blinkRowId(item.id);
         });
         return true;
     }
@@ -136,23 +152,14 @@ export class LabelManager {
         }, 2900);
     }
 
-    private savePosAsLabel(): void {
+    private savePosAsRegion(): void {
         const pos = this.renderer.lastMouseClickPosition;
 
-        const savedPosition = new SavedPosition(pos, this.regionColor, this.nextLabelId++, this.modelName);
-        this.positions.push(savedPosition);
-
-        if (this.visible)
-            this.renderer.scene.add(savedPosition.mesh);
-
-        const element = this.createRow(savedPosition);
-        this.listContainer.append(element);
-    }
-
-    private savePosAsRegion(): void {
-        const pos = this.renderer.lastMouseClickTexturePosition;
-
-        const color = this.regionColor + this.regionColorIntensity.toString(16);
+        //const colorStr = this.regionColor + this.regionColorIntensity.toString(16);
+        const color = new THREE.Vector3();
+        color.x = parseInt(this.regionColor.slice(1, 3), 16);
+        color.y = parseInt(this.regionColor.slice(3, 5), 16);
+        color.z = parseInt(this.regionColor.slice(5, 7), 16);
         const savedRegion = new SavedRegion(pos, color, this.regionSize, this.nextLabelId++, this.modelName);
         this.positions.push(savedRegion);
 
@@ -160,10 +167,10 @@ export class LabelManager {
         this.listContainer.append(element);
 
         if (this.visible)
-            this.canvasWrapper.draw(this.positions);
+            this.renderer.setTexture2(this.getRegionTexture());
     }
 
-    private createRow(pos: SavedItem): HTMLElement {
+    private createRow(pos: SavedRegion): HTMLElement {
         const element = document.createElement("tr");
         element.className = "label-row";
         element.id = "label-row-" + String(pos.id);
@@ -193,7 +200,7 @@ export class LabelManager {
         return element;
     }
 
-    private remove(element: HTMLElement, pos: SavedItem): void {
+    private remove(element: HTMLElement, pos: SavedRegion): void {
         let index = -1;
         for (let i = 0; i < this.positions.length; i++) {
             if (this.positions[i].id === pos.id) {
@@ -206,27 +213,14 @@ export class LabelManager {
         element.remove();
         this.positions.splice(index, 1);
 
-        if (pos instanceof SavedPosition)
-            this.renderer.scene.remove(pos.mesh)
-        else if (pos instanceof SavedRegion && this.visible)
-            this.canvasWrapper.draw(this.positions);
+        this.renderer.setTexture2(this.getRegionTexture());
     }
 
     public toggleVisibility(): void {
         if (this.visible) {
-            this.canvasWrapper.draw(this.positions);
-            this.positions.forEach(element => {
-                if (element instanceof SavedPosition) {
-                    this.renderer.scene.add(element.mesh);
-                }
-            });
+            this.renderer.setTexture2(this.getRegionTexture());
         } else {
-            this.canvasWrapper.draw([]);
-            this.positions.forEach(element => {
-                if (element instanceof SavedPosition) {
-                    this.renderer.scene.remove(element.mesh);
-                }
-            });
+            this.renderer.resetTexture2();
         }
     }
 
@@ -241,30 +235,18 @@ export class LabelManager {
                         "Server responded " + response.status + " " + response.statusText
                     );
                 }
-                const data = await response.json() as SavedItem[];
+                const data = await response.json() as SavedRegion[];
                 data.forEach(item => {
                     if (item.model !== this.modelName) return;
-                    if (item.radius == null) {
-                        const p = item as SavedPosition;
-                        const vec = new THREE.Vector3(p.pos.x, p.pos.y, p.pos.z);
-                        const savedPosition = new SavedPosition(vec, p.color, p.id, p.model, p.name);
-                        this.positions.push(savedPosition);
-                        if (this.visible)
-                            this.renderer.scene.add(savedPosition.mesh);
-                        const element = this.createRow(savedPosition);
-                        this.listContainer.append(element);
-                        this.nextLabelId = Math.max(this.nextLabelId, p.id);
-                    } else {
-                        const p = item as SavedRegion;
-                        const vec = new THREE.Vector2(p.pos.x, p.pos.y);
-                        const savedRegion = new SavedRegion(vec, p.color, p.radius, p.id, p.model, p.name);
-                        this.positions.push(savedRegion);
-                        const element = this.createRow(savedRegion);
-                        this.listContainer.append(element);
-                        if (this.visible)
-                            this.canvasWrapper.draw(this.positions);
-                        this.nextLabelId = Math.max(this.nextLabelId, p.id);
-                    }
+                    const p = item;
+                    const vec = new THREE.Vector3(p.pos.x, p.pos.y, p.pos.z);
+                    const savedRegion = new SavedRegion(vec, p.color, p.radius, p.id, p.model, p.name);
+                    this.positions.push(savedRegion);
+                    const element = this.createRow(savedRegion);
+                    this.listContainer.append(element);
+                    if (this.visible)
+                        this.renderer.setTexture2(this.getRegionTexture());
+                    this.nextLabelId = Math.max(this.nextLabelId, p.id);
                 });
             });
     }
@@ -336,52 +318,15 @@ export class LabelManager {
     }
 }
 
-export interface SavedItem {
-    id: number;
-    pos: THREE.Vector2 | THREE.Vector3;
-    color: string;
-    name: string;
-    radius: number | null;
-    model: string;
-}
-
-export class SavedPosition implements SavedItem {
+export class SavedRegion {
     pos: THREE.Vector3;
-    mesh: THREE.Mesh;
-    id: number;
-    color: string;
-    model: string;
-    radius: null;
-    name = "";
-
-    constructor(pos: THREE.Vector3, color: string, id: number, modelName: string, name = "") {
-        this.pos = pos;
-        this.color = color;
-        this.id = id;
-        this.name = name;
-        this.model = modelName;
-
-        const geometry = new THREE.SphereGeometry();
-        const material = new THREE.MeshBasicMaterial({ color: color });
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.add(pos);
-        this.mesh.name = "label_" + String(id);
-    }
-
-    toJSON: (key: unknown) => SavedItem = (): SavedItem => {
-        return toJSON(this);
-    };
-}
-
-export class SavedRegion implements SavedItem {
-    pos: THREE.Vector2;
     id: number;
     radius: number;
-    color: string;
+    color: THREE.Vector3;
     model: string;
-    name = "";
+    name: string;
 
-    constructor(pos: THREE.Vector2, color: string, radius: number, id: number, modelName: string, name = "") {
+    constructor(pos: THREE.Vector3, color: THREE.Vector3, radius: number, id: number, modelName: string, name = "") {
         this.pos = pos;
         this.color = color;
         this.radius = radius;
@@ -389,19 +334,4 @@ export class SavedRegion implements SavedItem {
         this.name = name;
         this.model = modelName;
     }
-
-    toJSON: (key: unknown) => SavedItem = (): SavedItem => {
-        return toJSON(this);
-    };
-}
-
-function toJSON(item: SavedItem): SavedItem {
-    return {
-        id: item.id,
-        pos: item.pos,
-        color: item.color,
-        name: item.name,
-        radius: item.radius,
-        model: item.model
-    };
 }

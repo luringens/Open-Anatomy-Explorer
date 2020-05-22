@@ -6,7 +6,7 @@ void main() {
     //vColor = color + (1.0 - color.a) * vec3(1.0, 1.0, 1.0);
     vec4 pos = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 
-    fragPosition = fragPosition;
+    fragPosition = position;
 	fragNormal = normal;
 	fragTexCoord = uv;
 

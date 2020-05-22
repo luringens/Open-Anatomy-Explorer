@@ -33,6 +33,18 @@ export class Renderer {
     lastMouseClickPosition = new THREE.Vector3();
     lastMouseClickTexturePosition = new THREE.Vector2();
 
+    private texture2default: THREE.DataTexture;
+    private texture2: THREE.DataTexture;
+
+    public setTexture2(tex: THREE.DataTexture): void {
+        this.texture2 = tex;
+        if (this.object != null) this.updateShader(this.object);
+    }
+
+    public resetTexture2(): void {
+        this.texture2 = this.texture2default;
+    }
+
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
 
@@ -49,6 +61,11 @@ export class Renderer {
         this.setupLighting();
         this.addDefaultPlane();
         this.setupGui();
+
+        const arr = new Uint8Array(16 * 4);
+        for (let i = 0; i < arr.length; i++) { arr[i] = 255; }
+        this.texture2default = new THREE.DataTexture(arr, 16, 1, THREE.RGBAFormat);
+        this.texture2 = this.texture2default;
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
         this.container.addEventListener('mousedown', this.onMouseClick.bind(this), false);
@@ -106,7 +123,7 @@ export class Renderer {
         if (this.object != null)
             this.scene.remove(this.object);
 
-        obj.children.forEach(Renderer.setMaterial.bind(this));
+        obj.children.forEach(this.setMaterial.bind(this));
         this.object = obj;
         this.scene.add(obj);
 
@@ -177,24 +194,28 @@ export class Renderer {
             this.scene.add(this.directionalLightHelper);
             this.directionalLight.position.add(p);
 
-            const updateShader = (obj: THREE.Object3D): void => {
-                if (obj.type === "Mesh") {
-                    const mesh = obj as THREE.Mesh;
-                    const material = mesh.material as THREE.ShaderMaterial;
-                    material.uniforms.worldLightPosition = {
-                        value: this.directionalLight.position
-                    };
-                    material.needsUpdate = true;
-                }
-
-                obj.children.forEach(updateShader);
-            };
-            updateShader(this.object);
+            this.updateShader(this.object);
 
             this.lastMouseClickPosition = p;
             if (!isNullOrUndefined(intersects[0].uv))
                 this.lastMouseClickTexturePosition = intersects[0].uv;
         }
+    }
+
+    private updateShader(obj: THREE.Object3D): void {
+        if (obj.type === "Mesh") {
+            const mesh = obj as THREE.Mesh;
+            const material = mesh.material as THREE.ShaderMaterial;
+            material.uniforms.texture2 = {
+                value: this.texture2
+            };
+            material.uniforms.worldLightPosition = {
+                value: this.directionalLight.position
+            };
+            material.needsUpdate = true;
+        }
+
+        obj.children.forEach(this.updateShader.bind(this));
     }
 
     private static getMousePosition(dom: HTMLElement, x: number, y: number): number[] {
@@ -235,7 +256,7 @@ export class Renderer {
         this.clickEventHandlers.push(func);
     }
 
-    private static setMaterial(obj: Object3D): void {
+    private setMaterial(obj: Object3D): void {
         const mesh = obj as THREE.Mesh;
         let texture: THREE.Texture | null = null;
         if (mesh.material instanceof THREE.MeshStandardMaterial) {
@@ -260,12 +281,13 @@ export class Renderer {
                 ambientReflection: { value: 0.2 },
                 shininess: { value: 50.0 },
                 texture1: { type: "t", value: texture },
+                texture2: { type: "t", value: this.texture2 },
             },
             vertexShader: VertexShader,
             fragmentShader: FragmentShader,
             name: "custom-material",
         });
 
-        obj.children.forEach(Renderer.setMaterial.bind(this));
+        obj.children.forEach(this.setMaterial.bind(this));
     }
 }
