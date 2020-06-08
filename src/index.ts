@@ -1,5 +1,5 @@
 import { Renderer } from "./renderer";
-import { LabelManager } from "./labels";
+import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import { Object3D } from "three";
 
@@ -13,9 +13,10 @@ renderer.startRendering();
 let labelManager: LabelManager | null = null;
 
 // Set up the model manager.
-const modelManager = new ModelManager((gltf) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const modelManager = new ModelManager((_) => {
     // Set up  the label manager.
-    labelManager = new LabelManager(renderer, gltf.scene, defaultModel);
+    labelManager = new LabelManager(renderer, defaultModel);
 }, renderer, defaultModel);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

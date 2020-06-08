@@ -2,38 +2,38 @@ import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
-import { Object3D, Vector3, BufferAttribute, BufferGeometry, Color } from "three";
+import { Object3D, Vector3, BufferAttribute, BufferGeometry, Intersection } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 
 export class Renderer {
-    objectId: string | null = null;
     private object: THREE.Object3D | null = null;
-    scene: THREE.Scene = new THREE.Scene();
-    renderer: THREE.WebGLRenderer;
-    wrapper: HTMLElement;
-    container: HTMLCanvasElement;
+    private scene: THREE.Scene = new THREE.Scene();
+    private renderer: THREE.WebGLRenderer;
+    private wrapper: HTMLElement;
+    private container: HTMLCanvasElement;
     private clickEventHandlers: ((object: THREE.Intersection) => boolean)[] = [];
+    private colorBufferAttribute: THREE.BufferAttribute | null = null;
 
     // For the sake of clean code, these are initiliazed in functions called by
     // the contructor. Unfortunately, TS will not detect their initialization
     // as a result. The exclamation mark squashes this warning :/
-    camera!: THREE.PerspectiveCamera;
-    controls!: OrbitControls;
-    gui!: dat.GUI;
-    ambientLight!: THREE.AmbientLight;
-    directionalLight!: THREE.DirectionalLight;
-    directionalLightHelper!: THREE.DirectionalLightHelper;
-    plane!: THREE.PlaneHelper;
-    planeVisible = true;
+    public gui!: dat.GUI;
+    private camera!: THREE.PerspectiveCamera;
+    private controls!: OrbitControls;
+    private ambientLight!: THREE.AmbientLight;
+    private directionalLight!: THREE.DirectionalLight;
+    private directionalLightHelper!: THREE.DirectionalLightHelper;
+    private plane!: THREE.PlaneHelper;
+    private planeVisible = true;
+    private mouseDown = false;
+    private mouseMoveHandler: ((_: THREE.Intersection) => void) | null = null;
 
-    mouse = new THREE.Vector2();
-    raycaster = new THREE.Raycaster();
-    onClickPosition = new THREE.Vector2();
-    lastMouseClickPosition = new THREE.Vector3();
-    lastMouseClickVerticeIds: [number, number, number] | null = null;
-
-    private colorBufferAttribute: THREE.BufferAttribute | null = null;
+    private mouse = new THREE.Vector2();
+    private raycaster = new THREE.Raycaster();
+    public onClickPosition = new THREE.Vector2();
+    public lastMouseClickPosition = new THREE.Vector3();
+    public lastMouseClickVerticeIds: [number, number, number] | null = null;
 
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
@@ -53,11 +53,13 @@ export class Renderer {
         this.setupGui();
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
-        this.container.addEventListener('mousedown', this.onMouseClick.bind(this), false);
+        this.container.addEventListener('mousedown', this.onMouseDown.bind(this), false);
+        this.container.addEventListener('mouseup', this.onMouseUp.bind(this), false);
+        this.container.addEventListener('mousemove', this.onMouseMove.bind(this), false);
     }
 
 
-    public setColorForVertices(vertices: [number, number, number], color: Vector3): void {
+    public setColorForVertices(vertices: number[], color: Vector3): void {
         for (const vertexId of vertices) {
             const val = [color.x / 255, color.y / 255, color.z / 255, 1];
             this.colorBufferAttribute?.set(val, vertexId * 4);
@@ -181,8 +183,34 @@ export class Renderer {
         this.renderer.setSize(this.wrapper.clientWidth, this.wrapper.clientHeight);
     }
 
-    private onMouseClick(evt: MouseEvent): void {
+    public overrideMouseControls(override: ((_: THREE.Intersection) => void) | null): void {
+        this.mouseMoveHandler = override;
+        this.controls.enabled = override == null;
+    }
+
+    private onMouseUp(evt: MouseEvent): void {
         evt.preventDefault();
+        this.mouseDown = false;
+    }
+
+    private onMouseMove(evt: MouseEvent): void {
+        evt.preventDefault();
+        if (!this.mouseDown || this.mouseMoveHandler == null) return;
+        const array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
+        this.onClickPosition.fromArray(array);
+        const intersects: THREE.Intersection[] =
+            this.getIntersects(this.onClickPosition, this.scene.children);
+        if (intersects.length > 0) this.mouseMoveHandler(intersects[0]);
+    }
+
+    private onMouseDown(evt: MouseEvent): void {
+        evt.preventDefault();
+        this.mouseDown = true;
+
+        // Check if another module has overridden mouse movement
+        if (this.mouseMoveHandler != null) {
+            return;
+        }
 
         // Don't continue if object is not yet loaded.
         if (this.object === null) return;

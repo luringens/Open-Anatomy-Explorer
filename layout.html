@@ -15,8 +15,9 @@
                 <h3>Labels</h3>
                 <table>
                     <coldef>
+                        <col style="width: 20px;" />
                         <col />
-                        <col style="width: 50px;" />
+                        <col style="width: 20px;" />
                         <col style="width: 0;" />
                     </coldef>
                     <tbody id="labels">
@@ -26,6 +27,14 @@
                 <button id="labels-save">Save all labels to storage</button>
                 <button id="labels-update" class="hide">Update saved labels</button>
                 <button id="labels-delete" class="hide">Delete saved labels</button>
+            </div>
+            <br />
+            <div class="label-container">
+                <h3>Tools</h3>
+                <input type="radio" id="tool-camera" name="tool" value="camera">
+                <label for="tool-camera">Male</label><br>
+                <input type="radio" id="tool-labeler" name="tool" value="labeler">
+                <label for="tool-labeler">Labeler</label><br>
             </div>
             <br />
             <div class="models-container">

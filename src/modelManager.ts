@@ -45,6 +45,7 @@ export class ModelManager {
     private populateModelList(names: string[]): void {
         const div = document.getElementById("models") as HTMLElement;
         names.forEach(name => {
+            if (name.endsWith(".ini") || name.endsWith(".dat")) return;
             const row = document.createElement("tr");
 
             const nameCell = document.createElement("td");
