@@ -2,10 +2,7 @@ precision mediump float;
 precision mediump sampler3D;
 
 uniform sampler2D texture1;
-uniform sampler3D labelTexture;
 uniform vec3 baseColor;
-uniform vec3 boundingMin;
-uniform vec3 boundingMax;
 
 uniform vec3 worldLightPosition;
 uniform float ambientIntensity;
@@ -16,6 +13,7 @@ uniform float diffuseReflection;
 uniform float ambientReflection;
 uniform float shininess;
 
+varying vec4 labelColor;
 varying vec3 fragPosition;
 varying vec3 fragNormal;
 varying vec2 fragTexCoord;
@@ -44,8 +42,6 @@ void main() {
         specularReflection * specularIntensity * pow(max(0.0, min(1.0, dot(rm, v))), shininess)
     );
 
-    vec3 relativePos = (pos - boundingMin) / (boundingMax - boundingMin);
-    vec4 labelColor = texture(labelTexture, relativePos);
     color = vec4(mix(color.rgb, labelColor.rgb, labelColor.a), 1.0);
     
     gl_FragColor = vec4(ip * color.rgb, 1.0);

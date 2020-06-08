@@ -2,7 +2,7 @@ import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
-import { Object3D, Vector3 } from "three";
+import { Object3D, Vector3, BufferAttribute, BufferGeometry, Color } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 
@@ -31,81 +31,9 @@ export class Renderer {
     raycaster = new THREE.Raycaster();
     onClickPosition = new THREE.Vector2();
     lastMouseClickPosition = new THREE.Vector3();
-    lastMouseClickTexturePosition = new THREE.Vector2();
+    lastMouseClickVerticeIds: [number, number, number] | null = null;
 
-    private static readonly labelTextureSize = 256;
-    private boundingMin = new THREE.Vector3();
-    private boundingMax = new THREE.Vector3();
-    private labelTextureData: Float32Array;
-    private labelTexture: THREE.DataTexture3D;
-
-    public setlabelTexture(tex: THREE.DataTexture3D): void {
-        this.labelTexture = tex;
-        this.labelTexture.needsUpdate = true;
-        if (this.object != null) this.updateShader(this.object);
-    }
-
-    public setlabelPosition(pos: Vector3, color: Vector3): void {
-        // Find scaled vector v
-        const a = pos.clone().sub(this.boundingMin);
-        const b = this.boundingMax.clone().sub(this.boundingMin);
-        const v = a.clone().divide(b);
-
-        // Calculate array index for vector
-        const w = Renderer.labelTextureSize;
-        const x = Math.floor(v.x * w);
-        const y = Math.floor(v.y * w);
-        const z = Math.floor(v.z * w);
-        this.drawTextureAt(x, y, z, color);
-        this.drawTextureAt(x + 1, y, z, color);
-        this.drawTextureAt(x, y + 1, z, color);
-        this.drawTextureAt(x, y, z + 1, color);
-        this.drawTextureAt(x - 1, y, z, color);
-        this.drawTextureAt(x, y - 1, z, color);
-        this.drawTextureAt(x, y, z - 1, color);
-
-        this.drawTextureAt(x + 1, y + 1, z, color, 0);
-        this.drawTextureAt(x + 1, y - 1, z, color, 0);
-        this.drawTextureAt(x - 1, y + 1, z, color, 0);
-        this.drawTextureAt(x - 1, y - 1, z, color, 0);
-        this.drawTextureAt(x + 1, y + 1, z + 1, color, 0);
-        this.drawTextureAt(x + 1, y - 1, z + 1, color, 0);
-        this.drawTextureAt(x - 1, y + 1, z + 1, color, 0);
-        this.drawTextureAt(x - 1, y - 1, z + 1, color, 0);
-        this.drawTextureAt(x + 1, y + 1, z - 1, color, 0);
-        this.drawTextureAt(x + 1, y - 1, z - 1, color, 0);
-        this.drawTextureAt(x - 1, y + 1, z - 1, color, 0);
-        this.drawTextureAt(x - 1, y - 1, z - 1, color, 0);
-        this.drawTextureAt(x + 2, y, z, color, 0);
-        this.drawTextureAt(x, y + 2, z, color, 0);
-        this.drawTextureAt(x, y, z + 2, color, 0);
-        this.drawTextureAt(x - 2, y, z, color, 0);
-        this.drawTextureAt(x, y - 2, z, color, 0);
-        this.drawTextureAt(x, y, z - 2, color, 0);
-
-        this.labelTexture.needsUpdate = true;
-        if (this.object != null) this.updateShader(this.object);
-    }
-
-    private drawTextureAt(x: number, y: number, z: number, color: Vector3, a = 1): void {
-        const w = Renderer.labelTextureSize;
-        const xOff = x;
-        const yOff = y * w;
-        const zOff = z * w * w;
-        const i = xOff + yOff + zOff;
-        this.labelTextureData[i * 4 + 0] = color.x / 255;
-        this.labelTextureData[i * 4 + 1] = color.y / 255;
-        this.labelTextureData[i * 4 + 2] = color.z / 255;
-        this.labelTextureData[i * 4 + 3] = a;
-    }
-
-    public resetlabelTexture(): void {
-        for (let i = 0; i < this.labelTextureData.length; i++) {
-            this.labelTextureData[i] = 0;
-        }
-        this.labelTexture.needsUpdate = true;
-        if (this.object != null) this.updateShader(this.object);
-    }
+    private colorBufferAttribute: THREE.BufferAttribute | null = null;
 
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
@@ -124,34 +52,31 @@ export class Renderer {
         this.addDefaultPlane();
         this.setupGui();
 
-        // this.labelTextureData = new Float32Array([
-        //     1, 0, 0, 1,
-        //     0, 1, 0, 1,
-        //     0, 0, 1, 1,
-        //     0, 0, 0, 1,
-        //     1, 1, 0, 1,
-        //     0, 1, 1, 1,
-        //     1, 0, 1, 1,
-        //     1, 1, 1, 1,
-        // ]);
-        // this.labelTexture = new THREE.DataTexture3D(
-        //     this.labelTextureData, 2, 2, 2
-        // );
-
-        const w = Renderer.labelTextureSize;
-        this.labelTextureData = new Float32Array(Math.pow(w, 3) * 4);
-        this.labelTexture = new THREE.DataTexture3D(
-            this.labelTextureData, w, w, w
-        );
-        this.labelTexture.format = THREE.RGBAFormat;
-        this.labelTexture.type = THREE.FloatType;
-        this.labelTexture.minFilter = THREE.LinearFilter;
-        this.labelTexture.magFilter = THREE.LinearFilter;
-        this.labelTexture.unpackAlignment = 1;
-        this.labelTexture.needsUpdate = true;
-
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
         this.container.addEventListener('mousedown', this.onMouseClick.bind(this), false);
+    }
+
+
+    public setColorForVertices(vertices: [number, number, number], color: Vector3): void {
+        for (const vertexId of vertices) {
+            const val = [color.x / 255, color.y / 255, color.z / 255, 1];
+            this.colorBufferAttribute?.set(val, vertexId * 4);
+        }
+        // for (let i = 0; i < this.colorBuffer.length; i++) {
+        //     this.colorBuffer.set([Math.random()], i);
+        // }
+
+        if (this.object != null) this.updateShader(this.object);
+    }
+
+    public resetColorForVertex(vertexId: number): void {
+        this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
+        if (this.object != null) this.updateShader(this.object);
+    }
+
+    public resetVertexColors(): void {
+        // this.colorBuffer = new Float32Array(this.colorBuffer.length);
+        // if (this.object != null) this.updateShader(this.object);
     }
 
     private setupCamera(): void {
@@ -213,8 +138,6 @@ export class Renderer {
             if (boundingMax == null) boundingMax = bounding.max;
             else boundingMax.min(bounding.max);
         });
-        this.boundingMin = boundingMin == null ? new Vector3() : boundingMin;
-        this.boundingMax = boundingMax == null ? new Vector3() : boundingMax;
 
         // Load shader and stuff
         if (this.object != null) this.scene.remove(this.object);
@@ -292,18 +215,24 @@ export class Renderer {
             this.updateShader(this.object);
 
             this.lastMouseClickPosition = p;
-            if (!isNullOrUndefined(intersects[0].uv))
-                this.lastMouseClickTexturePosition = intersects[0].uv;
+            if (intersects[0].face != null) {
+                this.lastMouseClickVerticeIds = [
+                    intersects[0].face.a,
+                    intersects[0].face.b,
+                    intersects[0].face.c,
+                ];
+            }
         }
     }
 
     private updateShader(obj: THREE.Object3D): void {
+        if (this.colorBufferAttribute != null) {
+            this.colorBufferAttribute.needsUpdate = true;
+        }
+
         if (obj.type === "Mesh") {
             const mesh = obj as THREE.Mesh;
             const material = mesh.material as THREE.ShaderMaterial;
-            material.uniforms.labelTexture = {
-                value: this.labelTexture
-            };
             material.uniforms.worldLightPosition = {
                 value: this.directionalLight.position
             };
@@ -360,6 +289,14 @@ export class Renderer {
             texture = THREE.Texture.DEFAULT_IMAGE;
         }
 
+        const bufferGeometry = mesh.geometry as BufferGeometry;
+        const verticeCount = bufferGeometry.index?.count ?? 0;
+        const colorBufferItemSize = 4;
+        const colorBufferSize = verticeCount * colorBufferItemSize;
+        const colorBuffer = new Float32Array(colorBufferSize);
+        this.colorBufferAttribute = new BufferAttribute(colorBuffer, colorBufferItemSize);
+        bufferGeometry.setAttribute("color", this.colorBufferAttribute);
+
         mesh.material = new THREE.ShaderMaterial({
             uniforms: {
                 worldLightPosition: {
@@ -368,12 +305,6 @@ export class Renderer {
                 baseColor: {
                     value: new THREE.Vector3(1.0, 1.0, 1.0)
                 },
-                boundingMin: {
-                    value: this.boundingMin
-                },
-                boundingMax: {
-                    value: this.boundingMax
-                },
                 ambientIntensity: { value: 3.0 },
                 specularIntensity: { value: 1.0 },
                 diffuseIntensity: { value: 1.0 },
@@ -381,8 +312,8 @@ export class Renderer {
                 diffuseReflection: { value: 0.2 },
                 ambientReflection: { value: 0.2 },
                 shininess: { value: 50.0 },
+                color: { value: this.colorBufferAttribute },
                 texture1: { type: "t", value: texture },
-                labelTexture: { type: "t", value: this.labelTexture },
             },
             vertexShader: VertexShader,
             fragmentShader: FragmentShader,

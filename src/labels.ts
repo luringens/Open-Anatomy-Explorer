@@ -69,7 +69,7 @@ export class LabelManager {
         this.positions = [];
         this.modelName = modelName;
 
-        this.renderer.resetlabelTexture();
+        this.renderer.resetVertexColors();
         this.loadLabels();
         this.setupGui();
     }
@@ -109,8 +109,9 @@ export class LabelManager {
         const element = this.createRowColor(savedRegion, this.regionColor);
         this.listContainer.append(element);
 
-        if (this.visible)
-            this.renderer.setlabelPosition(pos, color);
+        if (this.visible && this.renderer.lastMouseClickVerticeIds != null) {
+            this.renderer.setColorForVertices(this.renderer.lastMouseClickVerticeIds, color);
+        }
     }
 
     private createRow(pos: SavedRegion): HTMLElement {
@@ -169,9 +170,9 @@ export class LabelManager {
     }
 
     private revisualize(): void {
-        this.renderer.resetlabelTexture();
+        this.renderer.resetVertexColors();
         this.positions.forEach(pos => {
-            this.renderer.setlabelPosition(pos.pos, pos.color);
+            //this.renderer.setlabelPosition(pos.pos, pos.color);
         });
     }
 
@@ -179,7 +180,7 @@ export class LabelManager {
         if (this.visible) {
             this.revisualize();
         } else {
-            this.renderer.resetlabelTexture();
+            this.renderer.resetVertexColors();
         }
     }
 
@@ -204,7 +205,8 @@ export class LabelManager {
                     const element = this.createRow(savedRegion);
                     this.listContainer.append(element);
                     // if (this.visible)
-                    this.renderer.setlabelPosition(p.pos, p.color);
+                    // TODO: reimplement
+                    //this.renderer.setlabelPosition(p.pos, p.color);
                     this.nextLabelId = Math.max(this.nextLabelId, p.id);
                 });
             });
