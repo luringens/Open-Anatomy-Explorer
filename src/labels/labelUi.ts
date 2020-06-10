@@ -1,8 +1,9 @@
 import { GUI } from "dat.gui";
 import { LabelManager } from "./labelManager";
-import { Label } from "./SavedRegion";
+import { Label } from "./Label";
 import THREE = require("three");
 import { binarySearch } from "../utils";
+import { LabelStorage } from "./labelStorage";
 
 export class LabelUi {
     private visible = true;
@@ -79,7 +80,7 @@ export class LabelUi {
         color.z = parseInt(this.regionColor.slice(5, 7), 16);
 
         const savedRegion = new Label(vertices, color, this.nextLabelId++, this.modelName);
-        this.labelManager.positions.push(savedRegion);
+        this.labelManager.labels.push(savedRegion);
         this.activeLabel = savedRegion.id;
 
         const element = this.createRowColor(savedRegion, this.regionColor);
@@ -91,7 +92,7 @@ export class LabelUi {
     }
 
     private addVerticesToLabel(hit: THREE.Intersection): void {
-        const pos = this.labelManager.positions
+        const pos = this.labelManager.labels
             .find(label => label.id == this.activeLabel);
 
         if (this.activeLabel == null || hit.face == null || pos == null) return;
@@ -124,23 +125,45 @@ export class LabelUi {
         f.open();
 
         this.modelName = newModelName;
-        this.loadLabels();
+        if (this.uuid != null)
+            this.loadLabels();
     }
 
     private loadLabels(): void {
-        // TODO
+        if (this.uuid == null) {
+            alert("No UUID to load!");
+            return;
+        }
+
+        LabelStorage.loadLabels(this.uuid, (labels: Label[]) => {
+            this.labelManager.labels = [];
+            labels.forEach(label => {
+                if (label.model !== this.modelName) return;
+                this.labelManager.labels.push(label);
+                const element = this.createRow(label);
+                this.listContainer.append(element);
+                if (this.visible)
+                    this.labelManager.renderer.setColorForVertices(label.vertices, label.color);
+                this.nextLabelId = Math.max(this.nextLabelId, label.id + 1);
+            });
+        });
     }
 
     private storeLabels(): void {
-        // TODO
+        this.updateNames();
+        LabelStorage.storeLabels(this.labelManager.labels);
     }
 
     private updateLabels(): void {
-        // TODO
+        this.updateNames();
+        if (this.uuid == null) alert("No labels have been stored yet.");
+        else LabelStorage.updateLabels(this.uuid, this.labelManager.labels);
+
     }
 
     private deleteLabels(): void {
-        // TODO
+        if (this.uuid == null) alert("No labels have been stored yet.");
+        else LabelStorage.deleteLabels(this.uuid);
     }
 
     private setActiveLabel(event: Event): void {
@@ -148,27 +171,35 @@ export class LabelUi {
         if (target.checked) this.activeLabel = Number.parseInt(target.value);
     }
 
-    private createRowColor(pos: Label, colorstr: string): HTMLElement {
+    private createRow(label: Label): HTMLElement {
+        const str = "#"
+            + label.color.x.toString(16)
+            + label.color.y.toString(16)
+            + label.color.z.toString(16);
+        return this.createRowColor(label, str);
+    }
+
+    private createRowColor(label: Label, colorstr: string): HTMLElement {
         const element = document.createElement("tr");
         element.className = "label-row";
-        element.id = "label-row-" + String(pos.id);
+        element.id = "label-row-" + String(label.id);
 
         const labelRadio = document.createElement("input");
-        labelRadio.id = "label-radio-" + String(pos.id);
+        labelRadio.id = "label-radio-" + String(label.id);
         labelRadio.type = "radio";
         labelRadio.name = "label-radio";
         labelRadio.checked = true;
-        labelRadio.value = String(pos.id);
+        labelRadio.value = String(label.id);
         labelRadio.onchange = this.setActiveLabel.bind(this);
         const tdLabelRadio = document.createElement("td");
         tdLabelRadio.append(labelRadio);
         element.append(tdLabelRadio);
 
         const tdLabelInput = document.createElement("input");
-        tdLabelInput.id = "label-input-" + String(pos.id);
+        tdLabelInput.id = "label-input-" + String(label.id);
         tdLabelInput.className = "label-name";
         tdLabelInput.placeholder = "New label";
-        tdLabelInput.value = pos.name;
+        tdLabelInput.value = label.name;
         const tdLabel = document.createElement("td");
         tdLabel.append(tdLabelInput);
         element.append(tdLabel);
@@ -181,7 +212,7 @@ export class LabelUi {
         tdRemoveBtn.innerText = "Remove";
         tdRemoveBtn.className = "btn-remove";
         tdRemoveBtn.setAttribute("style", "background-color: #ff6666;");
-        tdRemoveBtn.addEventListener("click", this.remove.bind(this, element, pos));
+        tdRemoveBtn.addEventListener("click", this.remove.bind(this, element, label));
         const tdRemove = document.createElement("td");
         tdRemove.setAttribute("style", "background-color: #ff6666;");
         tdRemove.append(tdRemoveBtn)
@@ -196,7 +227,7 @@ export class LabelUi {
     }
 
     private updateNames(): void {
-        this.labelManager.positions.forEach(pos => {
+        this.labelManager.labels.forEach(pos => {
             const element = document.getElementById("label-input-" + String(pos.id)) as HTMLInputElement | null;
             if (element === null) throw "Could not find label row!";
 
