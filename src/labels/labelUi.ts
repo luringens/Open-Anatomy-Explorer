@@ -1,5 +1,6 @@
 import { GUI } from "dat.gui";
-import { LabelManager, SavedRegion } from "./labelManager";
+import { LabelManager } from "./labelManager";
+import { Label } from "./SavedRegion";
 import THREE = require("three");
 import { binarySearch } from "../utils";
 
@@ -77,7 +78,7 @@ export class LabelUi {
         color.y = parseInt(this.regionColor.slice(3, 5), 16);
         color.z = parseInt(this.regionColor.slice(5, 7), 16);
 
-        const savedRegion = new SavedRegion(vertices, color, this.nextLabelId++, this.modelName);
+        const savedRegion = new Label(vertices, color, this.nextLabelId++, this.modelName);
         this.labelManager.positions.push(savedRegion);
         this.activeLabel = savedRegion.id;
 
@@ -147,7 +148,7 @@ export class LabelUi {
         if (target.checked) this.activeLabel = Number.parseInt(target.value);
     }
 
-    private createRowColor(pos: SavedRegion, colorstr: string): HTMLElement {
+    private createRowColor(pos: Label, colorstr: string): HTMLElement {
         const element = document.createElement("tr");
         element.className = "label-row";
         element.id = "label-row-" + String(pos.id);
@@ -189,7 +190,7 @@ export class LabelUi {
         return element;
     }
 
-    private remove(element: HTMLElement, pos: SavedRegion): void {
+    private remove(element: HTMLElement, pos: Label): void {
         element.remove();
         this.labelManager.removeLabel(pos);
     }

@@ -2,9 +2,10 @@ import * as THREE from "three";
 import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
 import { binarySearch } from "../utils";
+import { Label } from "./SavedRegion";
 
 export class LabelManager {
-    public positions: SavedRegion[] = [];
+    public positions: Label[] = [];
     public renderer: Renderer;
     private userInterface: LabelUi;
     private visible = true;
@@ -45,7 +46,7 @@ export class LabelManager {
         return false;
     }
 
-    public removeLabel(pos: SavedRegion): void {
+    public removeLabel(pos: Label): void {
         let index = -1;
         for (let i = 0; i < this.positions.length; i++) {
             if (this.positions[i].id === pos.id) {
@@ -77,18 +78,4 @@ export class LabelManager {
     }
 }
 
-export class SavedRegion {
-    vertices: number[];
-    id: number;
-    color: THREE.Vector3;
-    model: string;
-    name: string;
 
-    constructor(vertices: number[], color: THREE.Vector3, id: number, modelName: string, name = "") {
-        this.vertices = vertices;
-        this.color = color;
-        this.id = id;
-        this.name = name;
-        this.model = modelName;
-    }
-}
