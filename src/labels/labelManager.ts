@@ -3,6 +3,7 @@ import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
 import { binarySearch } from "../utils";
 import { Label } from "./Label";
+import { Object3D, Mesh, BufferGeometry } from "three";
 
 export class LabelManager {
     public labels: Label[] = [];
@@ -16,7 +17,7 @@ export class LabelManager {
         this.userInterface = new LabelUi(renderer.gui, modelName, this);
     }
 
-    public reset(modelName: string): void {
+    public reset(modelName: string, object: Object3D): void {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
             const elem = document.getElementById(id) as HTMLElement;
@@ -27,6 +28,11 @@ export class LabelManager {
 
         this.renderer.resetVertexColors();
         this.userInterface.reload(this.renderer.gui, modelName);
+
+        const mesh = object.children[0] as Mesh;
+        const geo = mesh.geometry as BufferGeometry;
+        const vertices = geo.attributes.position.count;
+        this.userInterface.updateAdjacancy(vertices, geo.index?.array as number[]);
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
@@ -77,5 +83,3 @@ export class LabelManager {
         }
     }
 }
-
-

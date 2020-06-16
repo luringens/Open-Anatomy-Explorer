@@ -20,4 +20,4 @@ const modelManager = new ModelManager((_) => {
 }, renderer, defaultModel);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-modelManager.setOnload((_: Object3D): void => labelManager?.reset(defaultModel));
+modelManager.setOnload((obj: Object3D): void => labelManager?.reset(defaultModel, obj));

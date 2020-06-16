@@ -15,6 +15,7 @@ export class LabelUi {
     private modelName: string;
     private activeLabel: null | number = null;
     private toolEnabled = false;
+    private adjacency: number[][] = [];
 
     public constructor(gui: GUI, modelName: string, labelManager: LabelManager) {
         this.listContainer = document.getElementById("labels") as HTMLElement;
@@ -54,6 +55,20 @@ export class LabelUi {
             .onchange = this.onToolChange.bind(this);
         (document.getElementById("tool-labeler") as HTMLInputElement)
             .onchange = this.onToolChange.bind(this);
+    }
+
+    public updateAdjacancy(vertices: number, idx: number[]): void {
+        this.adjacency = Array(vertices);
+        for (let i = 0; i < vertices; i++) {
+            this.adjacency[i] = [];
+        }
+
+        for (let i = 0; i < idx.length; i += 3) {
+            const v1 = idx[i], v2 = idx[i + 1], v3 = idx[i + 2];
+            this.adjacency[v1].push(v2, v3);
+            this.adjacency[v2].push(v1, v3);
+            this.adjacency[v3].push(v1, v2);
+        }
     }
 
     private onToolChange(event: Event): void {
@@ -96,8 +111,15 @@ export class LabelUi {
             .find(label => label.id == this.activeLabel);
 
         if (this.activeLabel == null || hit.face == null || pos == null) return;
-        pos.vertices.sort();
+
         const vertices = [hit.face.a, hit.face.b, hit.face.c];
+        for (const v of [hit.face.a, hit.face.b, hit.face.c]) {
+            for (const v2 of this.adjacency[v]) {
+                vertices.push(v2);
+            }
+        }
+
+        pos.vertices.sort();
         for (const vertex of vertices) {
             if (binarySearch(pos.vertices, vertex) == null) {
                 pos.vertices.push(vertex);
