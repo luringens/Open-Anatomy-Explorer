@@ -1,5 +1,5 @@
 import { Label } from "./Label";
-import { Vector3 } from "three";
+import { Vector4 } from "three";
 
 export class LabelStorage {
     private static readonly url = "http://51.15.231.127:5000/LabelPoints";
@@ -81,14 +81,16 @@ class StoredLabel {
         this.color = "#"
             + label.color.x.toString(16)
             + label.color.y.toString(16)
-            + label.color.z.toString(16);
+            + label.color.z.toString(16)
+            + label.color.w.toString(16);
     }
 
     public toLabel(): Label {
-        const color = new Vector3();
+        const color = new Vector4();
         color.x = parseInt(this.color.slice(1, 3), 16);
         color.y = parseInt(this.color.slice(3, 5), 16);
         color.z = parseInt(this.color.slice(5, 7), 16);
+        color.w = parseInt(this.color.slice(9, 11), 16);
 
         return new Label(this.vertices, color, this.id, this.model, this.name)
     }

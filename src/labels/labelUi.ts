@@ -11,22 +11,18 @@ export class LabelUi {
     private labelManager: LabelManager
     private uuid: string | null;
     private regionColor = "#FF00FF";
+    private regionTransparency = 255;
     private nextLabelId = 1;
+    private brushSize = 2;
     private modelName: string;
     private activeLabel: null | number = null;
     private toolEnabled = false;
     private adjacency: number[][] = [];
 
-    public constructor(gui: GUI, modelName: string, labelManager: LabelManager) {
+    public constructor(modelName: string, labelManager: LabelManager) {
         this.listContainer = document.getElementById("labels") as HTMLElement;
         this.labelManager = labelManager;
         this.modelName = modelName;
-
-        const f = gui.addFolder("Labelling settings");
-        f.addColor(this, "regionColor").name("Region color");
-        const planeVisibleHandler = f.add(this, "visible").name("Show tags");
-        planeVisibleHandler.onChange(labelManager.toggleVisibility.bind(labelManager));
-        f.open();
 
         const saveRegionButton = document.getElementById("save-region") as HTMLElement;
         saveRegionButton.addEventListener("click", this.savenewLabel.bind(this));
@@ -89,10 +85,11 @@ export class LabelUi {
         const vertices = this.labelManager.renderer.lastMouseClickVerticeIds;
         if (vertices == null) return;
 
-        const color = new THREE.Vector3();
+        const color = new THREE.Vector4();
         color.x = parseInt(this.regionColor.slice(1, 3), 16);
         color.y = parseInt(this.regionColor.slice(3, 5), 16);
         color.z = parseInt(this.regionColor.slice(5, 7), 16);
+        color.w = this.regionTransparency;
 
         const savedRegion = new Label(vertices, color, this.nextLabelId++, this.modelName);
         this.labelManager.labels.push(savedRegion);
@@ -120,12 +117,16 @@ export class LabelUi {
         }
 
         pos.vertices.sort();
-        for (const vertex of vertices) {
-            if (binarySearch(pos.vertices, vertex) == null) {
-                pos.vertices.push(vertex);
-                pos.vertices.sort();
+        for (let i = this.brushSize; i > 1; i--) {
+            for (const vertex of vertices) {
+                if (binarySearch(pos.vertices, vertex) == null) {
+                    vertices.push(vertex);
+                    pos.vertices.push(vertex);
+                    pos.vertices.sort();
+                }
             }
         }
+
         this.labelManager.renderer.setColorForVertices(vertices, pos.color);
     }
 
@@ -142,6 +143,8 @@ export class LabelUi {
     public reload(gui: GUI, newModelName: string): void {
         const f = gui.addFolder("Labelling settings");
         f.addColor(this, "regionColor").name("Region color");
+        f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
+        f.add(this, "brushSize", 1, 5, 1).name("Brush size");
         const planeVisibleHandler = f.add(this, "visible").name("Show tags");
         planeVisibleHandler.onChange(this.labelManager.toggleVisibility.bind(this.labelManager));
         f.open();

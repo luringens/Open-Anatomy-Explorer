@@ -2,7 +2,7 @@ import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
-import { Object3D, Vector3, BufferAttribute, BufferGeometry, Intersection } from "three";
+import { Object3D, Vector3, Vector4, BufferAttribute, BufferGeometry } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 
@@ -59,14 +59,16 @@ export class Renderer {
     }
 
 
-    public setColorForVertices(vertices: number[], color: Vector3): void {
+    public setColorForVertices(vertices: number[], color: Vector4): void {
         for (const vertexId of vertices) {
-            const val = [color.x / 255, color.y / 255, color.z / 255, 1];
+            const val = [
+                color.x / 255,
+                color.y / 255,
+                color.z / 255,
+                color.w / 255
+            ];
             this.colorBufferAttribute?.set(val, vertexId * 4);
         }
-        // for (let i = 0; i < this.colorBuffer.length; i++) {
-        //     this.colorBuffer.set([Math.random()], i);
-        // }
 
         if (this.object != null) this.updateShader(this.object);
     }

@@ -14,7 +14,7 @@ export class LabelManager {
     constructor(renderer: Renderer, modelName: string) {
         this.renderer = renderer;
         this.renderer.addClickEventListener(this.clickHandler.bind(this));
-        this.userInterface = new LabelUi(renderer.gui, modelName, this);
+        this.userInterface = new LabelUi(modelName, this);
     }
 
     public reset(modelName: string, object: Object3D): void {
