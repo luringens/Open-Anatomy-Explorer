@@ -253,8 +253,6 @@ export class Renderer {
             value: this.directionalLight.position
         };
         material.needsUpdate = true;
-
-        this.updateShader(mesh);
     }
 
     private static getMousePosition(dom: HTMLElement, x: number, y: number): number[] {
@@ -296,11 +294,11 @@ export class Renderer {
     }
 
     private setMaterial(mesh: Mesh): void {
-        let texture;
-        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+        let texture = null;
+        let useTexture = false;
+        if (mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map != null) {
             texture = mesh.material.map;
-        } else {
-            texture = THREE.Texture.DEFAULT_IMAGE;
+            useTexture = true;
         }
 
         const bufferGeometry = mesh.geometry as BufferGeometry;
@@ -328,6 +326,7 @@ export class Renderer {
                 shininess: { value: 50.0 },
                 color: { value: this.colorBufferAttribute },
                 texture1: { type: "t", value: texture },
+                useTexture: { value: useTexture }
             },
             vertexShader: VertexShader,
             fragmentShader: FragmentShader,

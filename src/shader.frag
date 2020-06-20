@@ -4,6 +4,7 @@ precision mediump sampler3D;
 uniform sampler2D texture1;
 uniform vec3 baseColor;
 
+uniform bool useTexture;
 uniform vec3 worldLightPosition;
 uniform float ambientIntensity;
 uniform float specularIntensity;
@@ -19,8 +20,12 @@ varying vec3 fragNormal;
 varying vec2 fragTexCoord;
 
 void main() {
-    // vec4 color = vec4(baseColor, 1.0);
-    vec4 color = texture(texture1, fragTexCoord);
+    vec4 color;
+    if (useTexture) {
+        color = texture(texture1, fragTexCoord);
+    } else {
+        color = vec4(baseColor, 1.0);
+    }
     color.a = 1.0;
 
     vec3 pos = fragPosition;

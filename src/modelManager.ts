@@ -1,8 +1,6 @@
 import { Renderer } from "./renderer";
-import { Object3D, Group, Mesh, LoadingManager } from "three";
-import { DDSLoader } from 'three/examples/jsm/loaders/DDSLoader.js';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { Object3D, Mesh } from "three";
+import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class ModelManager {
     private static readonly url = "http://51.15.231.127:5000/models/";
@@ -13,11 +11,11 @@ export class ModelManager {
         this.renderer = renderer;
 
         this.getModelList(this.populateModelList.bind(this));
-        ModelManager.load(name, (group: Group) => {
-            const mesh = ModelManager.findMesh(group.children);
+        ModelManager.load(name, (GLTF: GLTF) => {
+            const mesh = ModelManager.findMesh(GLTF.scene.children);
             if (mesh == null) throw "Could not find mesh";
             callback(mesh);
-            this.loadModel(group);
+            this.loadModel(GLTF);
         });
     }
 
@@ -35,28 +33,17 @@ export class ModelManager {
         this.onload = callback;
     }
 
-    public static load(name: string, callback: (_: Group) => void): void {
-        const manager = new LoadingManager();
-        manager.addHandler(/\.dds$/i, new DDSLoader());
-
-        new MTLLoader(manager).load(
-            "HandArm-HR-reduced.obj.mtl",
-            (materials: MTLLoader.MaterialCreator) => {
-                materials.preload();
-                new OBJLoader(manager)
-                    .setMaterials(materials)
-                    .load(
-                        "HandArm-HR-reduced.obj",
-                        callback,
-                        undefined,
-                        (error: unknown) => console.error(error)
-                    );
-            }
+    public static load(name: string, callback: (_: GLTF) => void): void {
+        new GLTFLoader().load(
+            ModelManager.url + name,
+            callback,
+            undefined,
+            (error) => console.error(error)
         );
     }
 
-    private loadModel(group: Group): void {
-        const mesh = ModelManager.findMesh(group.children);
+    private loadModel(GLTF: GLTF): void {
+        const mesh = ModelManager.findMesh(GLTF.scene.children);
         if (mesh == null) throw "Could not find mesh";
         this.renderer.loadObject(mesh);
         if (this.onload != null && mesh != null)
