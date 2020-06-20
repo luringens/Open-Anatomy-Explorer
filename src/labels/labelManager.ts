@@ -10,6 +10,7 @@ export class LabelManager {
     public renderer: Renderer;
     private userInterface: LabelUi;
     private visible = true;
+    private adjacency: number[][] = [];
 
     constructor(renderer: Renderer, modelName: string) {
         this.renderer = renderer;
@@ -31,7 +32,21 @@ export class LabelManager {
 
         const geo = mesh.geometry as BufferGeometry;
         const vertices = geo.attributes.position.count;
-        this.userInterface.updateAdjacancy(vertices, geo.index?.array as number[]);
+        this.updateAdjacancy(vertices, geo.index?.array as number[]);
+    }
+
+    private updateAdjacancy(vertices: number, idx: number[]): void {
+        this.adjacency = Array(vertices);
+        for (let i = 0; i < vertices; i++) {
+            this.adjacency[i] = [];
+        }
+
+        for (let i = 0; i < idx.length; i += 3) {
+            const v1 = idx[i], v2 = idx[i + 1], v3 = idx[i + 2];
+            this.adjacency[v1].push(v2, v3);
+            this.adjacency[v2].push(v1, v3);
+            this.adjacency[v3].push(v1, v2);
+        }
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
@@ -83,5 +98,33 @@ export class LabelManager {
         } else {
             this.renderer.resetVertexColors();
         }
+    }
+
+    public addVerticesToLabel(hit: THREE.Intersection): void {
+        if (this.userInterface.activeLabel == null || hit.face == null) return;
+
+        const pos = this.labels
+            .find(label => label.id == this.userInterface.activeLabel);
+        if (pos == null) return;
+
+        const vertices = [hit.face.a, hit.face.b, hit.face.c];
+        for (const v of [hit.face.a, hit.face.b, hit.face.c]) {
+            for (const v2 of this.adjacency[v]) {
+                vertices.push(v2);
+            }
+        }
+
+        pos.vertices.sort();
+        for (let i = this.userInterface.brushSize; i > 1; i--) {
+            for (const vertex of vertices) {
+                if (binarySearch(pos.vertices, vertex) == null) {
+                    vertices.push(vertex);
+                    pos.vertices.push(vertex);
+                    pos.vertices.sort();
+                }
+            }
+        }
+
+        this.renderer.setColorForVertices(vertices, pos.color);
     }
 }

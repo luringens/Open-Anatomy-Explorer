@@ -2,7 +2,7 @@ import { GUI } from "dat.gui";
 import { LabelManager } from "./labelManager";
 import { Label } from "./Label";
 import THREE = require("three");
-import { binarySearch, toHex } from "../utils";
+import { toHex } from "../utils";
 import { LabelStorage } from "./labelStorage";
 
 export class LabelUi {
@@ -13,11 +13,10 @@ export class LabelUi {
     private regionColor = "#FF00FF";
     private regionTransparency = 255;
     private nextLabelId = 1;
-    private brushSize = 2;
     private modelName: string;
-    private activeLabel: null | number = null;
     private toolEnabled = false;
-    private adjacency: number[][] = [];
+    public activeLabel: null | number = null;
+    public brushSize = 2;
 
     public constructor(modelName: string, labelManager: LabelManager) {
         this.listContainer = document.getElementById("labels") as HTMLElement;
@@ -53,20 +52,6 @@ export class LabelUi {
             .onchange = this.onToolChange.bind(this);
     }
 
-    public updateAdjacancy(vertices: number, idx: number[]): void {
-        this.adjacency = Array(vertices);
-        for (let i = 0; i < vertices; i++) {
-            this.adjacency[i] = [];
-        }
-
-        for (let i = 0; i < idx.length; i += 3) {
-            const v1 = idx[i], v2 = idx[i + 1], v3 = idx[i + 2];
-            this.adjacency[v1].push(v2, v3);
-            this.adjacency[v2].push(v1, v3);
-            this.adjacency[v3].push(v1, v2);
-        }
-    }
-
     private onToolChange(event: Event): void {
         const target = event.target as HTMLInputElement;
         if (target.checked) {
@@ -74,7 +59,7 @@ export class LabelUi {
         }
 
         if (this.toolEnabled) {
-            const handler = this.addVerticesToLabel.bind(this);
+            const handler = this.labelManager.addVerticesToLabel.bind(this.labelManager);
             this.labelManager.renderer.overrideMouseControls(handler);
         } else {
             this.labelManager.renderer.overrideMouseControls(null);
@@ -101,33 +86,6 @@ export class LabelUi {
         if (this.visible) {
             this.labelManager.renderer.setColorForVertices(vertices, color);
         }
-    }
-
-    private addVerticesToLabel(hit: THREE.Intersection): void {
-        const pos = this.labelManager.labels
-            .find(label => label.id == this.activeLabel);
-
-        if (this.activeLabel == null || hit.face == null || pos == null) return;
-
-        const vertices = [hit.face.a, hit.face.b, hit.face.c];
-        for (const v of [hit.face.a, hit.face.b, hit.face.c]) {
-            for (const v2 of this.adjacency[v]) {
-                vertices.push(v2);
-            }
-        }
-
-        pos.vertices.sort();
-        for (let i = this.brushSize; i > 1; i--) {
-            for (const vertex of vertices) {
-                if (binarySearch(pos.vertices, vertex) == null) {
-                    vertices.push(vertex);
-                    pos.vertices.push(vertex);
-                    pos.vertices.sort();
-                }
-            }
-        }
-
-        this.labelManager.renderer.setColorForVertices(vertices, pos.color);
     }
 
     public blinkRowId(id: number): void {
