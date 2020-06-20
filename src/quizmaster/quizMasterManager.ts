@@ -1,16 +1,19 @@
 /* eslint-disable */
 
 import { Question, QuestionName, QuestionLocate, QuestionType } from "./Question";
+import { LabelManager } from "../labels/labelManager";
 
 
 export default class QuizMasterManager {
     private questions: Question[] = [];
     private labelGuid: string;
     private quizGuid: string | null = null;
+    private labelManager: LabelManager;
 
-    public constructor(labelGuid: string, quizGuid: string | null) {
+    public constructor(labelGuid: string, quizGuid: string | null, labelManager: LabelManager) {
         this.labelGuid = labelGuid;
         this.quizGuid = quizGuid;
+        this.labelManager = labelManager;
 
         if (quizGuid != null) {
             this.loadQuestions(quizGuid);
@@ -31,8 +34,45 @@ export default class QuizMasterManager {
         this.createRow(question);
     }
 
-    public createRow(question: Question): void {
-        throw "Unimplemented";
+    public createRow(question: Question): HTMLDivElement {
+        const label = this.labelManager.labels[question.id];
+        const element = document.createElement("div");
+        element.className = "question-editor";
+        element.id = "question-" + String(question.id);
+
+        const header = document.createElement("h3");
+        header.innerText = "Question #" + String(question.id) + ": " + question.questionType.toString();
+        element.append(header);
+
+        const textArea = document.createElement("textarea");
+        textArea.innerText = question.textPrompt;
+        textArea.id = element.id + "-textPrompt"
+        element.append(textArea);
+
+        const regionPicker = document.createElement("button");
+        regionPicker.innerText = "Selected: " + label.name;
+        // TODO: onclick
+        element.append(regionPicker);
+
+        if (question.questionType == QuestionType.Locate) {
+            const q = question as QuestionLocate;
+            const showRegionsCheck = document.createElement("input");
+            showRegionsCheck.type = "checkbox";
+            showRegionsCheck.checked = q.showRegions;
+            showRegionsCheck.id = element.id + "-showRegions";
+            element.append(showRegionsCheck);
+
+            const showRegionsLabel = document.createElement("label");
+            showRegionsLabel.innerText = "Display regions";
+            element.append(showRegionsLabel);
+        }
+
+        const deleteLink = document.createElement("a");
+        deleteLink.innerText = "❌";
+        // TODO: onclick
+        element.append(deleteLink);
+
+        return element;
     }
 
     public deleteRow(questionId: number): void {
