@@ -98,3 +98,31 @@ button {
 .hide {
     display: none;
 }
+
+#label-editor {
+    display: none;
+}
+
+#quiz-editor {
+    display: visible;
+}
+
+.question-editor {
+    border: solid 2px grey;
+    margin-bottom: 5px;
+    padding: 3px;
+}
+
+.question-editor h3 {
+    margin-top: 0.25em;
+}
+
+.question-editor a {
+    float: right;
+    text-decoration: none;
+}
+
+textarea {
+    width: 98%;
+    resize:vertical;
+}
