@@ -1,7 +1,7 @@
 import { Renderer } from "./renderer";
 import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
-import { Object3D } from "three";
+import { Mesh } from "three";
 
 const defaultModel = "Arm";
 
@@ -20,4 +20,4 @@ const modelManager = new ModelManager((_) => {
 }, renderer, defaultModel);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-modelManager.setOnload((obj: Object3D): void => labelManager?.reset(defaultModel, obj));
+modelManager.setOnload((obj: Mesh): void => labelManager?.reset(defaultModel, obj));

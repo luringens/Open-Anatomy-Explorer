@@ -2,12 +2,12 @@ import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
-import { Object3D, Vector3, Vector4, BufferAttribute, BufferGeometry } from "three";
+import { Mesh, Vector4, BufferAttribute, BufferGeometry } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 
 export class Renderer {
-    private object: THREE.Object3D | null = null;
+    private object: THREE.Mesh | null = null;
     private scene: THREE.Scene = new THREE.Scene();
     private renderer: THREE.WebGLRenderer;
     private wrapper: HTMLElement;
@@ -131,38 +131,24 @@ export class Renderer {
         this.wrapper.prepend(this.gui.domElement);
     }
 
-    public loadObject(obj: Object3D): void {
-        // Calculate bounding box
-        let boundingMin: Vector3 | null = null;
-        let boundingMax: Vector3 | null = null;
-        obj.children.forEach((obj) => {
-            const bounding = new THREE.Box3().setFromObject(obj);
-            if (boundingMin == null) boundingMin = bounding.min;
-            else boundingMin.min(bounding.min);
-            if (boundingMax == null) boundingMax = bounding.max;
-            else boundingMax.min(bounding.max);
-        });
-
+    public loadObject(mesh: Mesh): void {
         // Load shader and stuff
         if (this.object != null) this.scene.remove(this.object);
-        obj.children.forEach(this.setMaterial.bind(this));
-        this.object = obj;
-        this.scene.add(obj);
+        this.setMaterial(mesh);
+        this.object = mesh;
+        this.scene.add(mesh);
 
         // Reload GUI
         this.gui.domElement.remove();
         this.gui.destroy();
         this.setupGui();
 
-        {
-            const mesh = (this.object.children[0] as THREE.Mesh);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const uniforms = (mesh.material as any).uniforms;
-            this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
-                .name("Ambient light");
-            this.gui.add(uniforms.diffuseIntensity, "value", 0, 10, 0.1)
-                .name("Directional light");
-        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const uniforms = (mesh.material as any).uniforms;
+        this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
+            .name("Ambient light");
+        this.gui.add(uniforms.diffuseIntensity, "value", 0, 10, 0.1)
+            .name("Directional light");
 
         const planeVisible = { planeVisible: true };
         const planeVisibleHandler = this.gui.add(planeVisible, "planeVisible")
@@ -197,11 +183,12 @@ export class Renderer {
 
     private onMouseMove(evt: MouseEvent): void {
         evt.preventDefault();
+        if (this.object === null) return;
         if (!this.mouseDown || this.mouseMoveHandler == null) return;
         const array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
         this.onClickPosition.fromArray(array);
         const intersects: THREE.Intersection[] =
-            this.getIntersects(this.onClickPosition, this.scene.children);
+            this.getIntersects(this.onClickPosition, [this.object]);
         if (intersects.length > 0) this.mouseMoveHandler(intersects[0]);
     }
 
@@ -221,7 +208,7 @@ export class Renderer {
         this.onClickPosition.fromArray(array);
 
         const intersects: THREE.Intersection[] =
-            this.getIntersects(this.onClickPosition, this.scene.children);
+            this.getIntersects(this.onClickPosition, [this.object]);
         if (intersects.length > 0) {
             // Check event handlers
             this.clickEventHandlers.forEach(func => {
@@ -255,21 +242,19 @@ export class Renderer {
         }
     }
 
-    private updateShader(obj: THREE.Object3D): void {
+    private updateShader(mesh: THREE.Mesh): void {
         if (this.colorBufferAttribute != null) {
             this.colorBufferAttribute.needsUpdate = true;
         }
 
-        if (obj.type === "Mesh") {
-            const mesh = obj as THREE.Mesh;
-            const material = mesh.material as THREE.ShaderMaterial;
-            material.uniforms.worldLightPosition = {
-                value: this.directionalLight.position
-            };
-            material.needsUpdate = true;
-        }
 
-        obj.children.forEach(this.updateShader.bind(this));
+        const material = mesh.material as THREE.ShaderMaterial;
+        material.uniforms.worldLightPosition = {
+            value: this.directionalLight.position
+        };
+        material.needsUpdate = true;
+
+        this.updateShader(mesh);
     }
 
     private static getMousePosition(dom: HTMLElement, x: number, y: number): number[] {
@@ -277,7 +262,7 @@ export class Renderer {
         return [(x - rect.left) / rect.width, (y - rect.top) / rect.height];
     }
 
-    private getIntersects(point: THREE.Vector2, objects: THREE.Object3D[]): THREE.Intersection[] {
+    private getIntersects(point: THREE.Vector2, objects: THREE.Mesh[]): THREE.Intersection[] {
         this.mouse.set((point.x * 2) - 1, - (point.y * 2) + 1);
         this.raycaster.setFromCamera(this.mouse, this.camera);
         return this.raycaster.intersectObjects(objects, true);
@@ -310,8 +295,7 @@ export class Renderer {
         this.clickEventHandlers.push(func);
     }
 
-    private setMaterial(obj: Object3D): void {
-        const mesh = obj as THREE.Mesh;
+    private setMaterial(mesh: Mesh): void {
         let texture;
         if (mesh.material instanceof THREE.MeshStandardMaterial) {
             texture = mesh.material.map;
@@ -349,7 +333,5 @@ export class Renderer {
             fragmentShader: FragmentShader,
             name: "custom-material",
         });
-
-        obj.children.forEach(this.setMaterial.bind(this));
     }
 }

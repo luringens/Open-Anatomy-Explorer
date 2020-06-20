@@ -1,5 +1,6 @@
 import { Label } from "./Label";
 import { Vector4 } from "three";
+import { toHex } from "../utils";
 
 export class LabelStorage {
     private static readonly url = "http://51.15.231.127:5000/LabelPoints";
@@ -10,7 +11,7 @@ export class LabelStorage {
             .then(async (response) => {
                 LabelStorage.handleError(response);
                 const data = await response.json() as StoredLabel[];
-                callback(data.map(l => l.toLabel()));
+                callback(data.map(l => StoredLabel.toLabel(l)));
             });
     }
 
@@ -79,19 +80,23 @@ class StoredLabel {
         this.model = label.model;
         this.name = label.name;
         this.color = "#"
-            + label.color.x.toString(16)
-            + label.color.y.toString(16)
-            + label.color.z.toString(16)
-            + label.color.w.toString(16);
+            + toHex(label.color.x)
+            + toHex(label.color.y)
+            + toHex(label.color.z)
+            + toHex(label.color.w);
     }
 
     public toLabel(): Label {
-        const color = new Vector4();
-        color.x = parseInt(this.color.slice(1, 3), 16);
-        color.y = parseInt(this.color.slice(3, 5), 16);
-        color.z = parseInt(this.color.slice(5, 7), 16);
-        color.w = parseInt(this.color.slice(9, 11), 16);
+        return StoredLabel.toLabel(this);
+    }
 
-        return new Label(this.vertices, color, this.id, this.model, this.name)
+    public static toLabel(label: StoredLabel): Label {
+        const color = new Vector4();
+        color.x = parseInt(label.color.slice(1, 3), 16);
+        color.y = parseInt(label.color.slice(3, 5), 16);
+        color.z = parseInt(label.color.slice(5, 7), 16);
+        color.w = parseInt(label.color.slice(7, 9), 16);
+
+        return new Label(label.vertices, color, label.id, label.model, label.name)
     }
 }

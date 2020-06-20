@@ -2,7 +2,7 @@ import { GUI } from "dat.gui";
 import { LabelManager } from "./labelManager";
 import { Label } from "./Label";
 import THREE = require("three");
-import { binarySearch } from "../utils";
+import { binarySearch, toHex } from "../utils";
 import { LabelStorage } from "./labelStorage";
 
 export class LabelUi {
@@ -198,9 +198,9 @@ export class LabelUi {
 
     private createRow(label: Label): HTMLElement {
         const str = "#"
-            + label.color.x.toString(16)
-            + label.color.y.toString(16)
-            + label.color.z.toString(16);
+            + toHex(label.color.x)
+            + toHex(label.color.y)
+            + toHex(label.color.z);
         return this.createRowColor(label, str);
     }
 

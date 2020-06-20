@@ -15,3 +15,11 @@ export function binarySearch(array: number[], value: number): number | null {
     }
     return null;
 }
+
+export function toHex(i: number): string {
+    let s = i.toString(16);
+    while (s.length < 2) {
+        s = "0" + s;
+    }
+    return s;
+}
