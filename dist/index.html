@@ -11,7 +11,7 @@
     <div class="grid">
         <div id="canvas-container" class="canvas-container"></div>
         <div class="sidebar">
-            <div id="label-editor">
+            <div id="label-editor" class="hide">
                 <div id="label-container">
                     <h3>Labels</h3>
                     <table>
@@ -50,34 +50,20 @@
                     </table>
                 </div>
             </div>
-            <div id="quiz-editor">
+            <div id="quiz-editor" class="hide">
                 <div id="question-container">
                     <h3>Questions</h3>
                     <div id="questions">
-                        <div class="question-editor">
-                            <h3>Question #1</h3>
-                            <textarea>Question...</textarea>
-                            <button>Select area</button>
-                            <input type="checkbox" checked>
-                            <label>Hide regions</label>
-                        </div>
-                        <div class="question-editor">
-                            <h3>Question #2</h3>
-                            <textarea>Question...</textarea>
-                            <button>Select area</button>
-                            <input type="checkbox" checked>
-                            <label>Hide regions</label>
-                            <a href="#">❌</a>
-                        </div>
                     </div>
-                    <button id="save-region">Save label at current position</button>
-                    <button id="labels-save">Save all labels to storage</button>
-                    <button id="labels-update" class="hide">Update saved labels</button>
-                    <button id="labels-delete" class="hide">Delete saved labels</button>
                 </div>
                 <br />
                 <div id="question-tools">
-
+                    <button id="quiz-add-locate">Add new locate question</button>
+                    <button id="quiz-add-name">Add new name question</button>
+                    <br />
+                    <button id="quiz-save">Save as new quiz</button>
+                    <button id="quiz-update" class="hide">Update saved quiz</button>
+                    <button id="quiz-delete" class="hide">Delete this quiz</button>
                 </div>
             </div>
         </div>

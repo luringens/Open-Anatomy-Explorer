@@ -1,6 +1,6 @@
 export enum QuestionType {
-    Locate,
-    Name,
+    Locate = 0,
+    Name = 1,
 }
 
 export interface Question {
@@ -17,8 +17,9 @@ export class QuestionLocate implements Question {
     public labelId: number;
     public showRegions = true;
 
-    public constructor(id: number) {
+    public constructor(id: number, labelId: number) {
         this.id = id;
+        this.labelId = labelId;
     }
 }
 
@@ -28,7 +29,17 @@ export class QuestionName implements Question {
     public textPrompt = "";
     public labelId: number;
 
-    public constructor(id: number) {
+    public constructor(id: number, labelId: number) {
         this.id = id;
+        this.labelId = labelId;
+    }
+}
+
+export function GetQuestionTypeName(questionType: QuestionType): string {
+    switch (questionType) {
+        case QuestionType.Locate:
+            return "Locate the region";
+        case QuestionType.Name:
+            return "Name the region";
     }
 }

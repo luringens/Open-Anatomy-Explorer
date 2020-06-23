@@ -14,8 +14,11 @@ export class LabelManager {
 
     constructor(renderer: Renderer, modelName: string) {
         this.renderer = renderer;
-        this.renderer.addClickEventListener(this.clickHandler.bind(this));
         this.userInterface = new LabelUi(modelName, this);
+    }
+
+    public getLabel(labelId: number): Label | null {
+        return this.labels.find(l => l.id == labelId) ?? null;
     }
 
     public reset(modelName: string, mesh: Mesh): void {
@@ -47,23 +50,6 @@ export class LabelManager {
             this.adjacency[v2].push(v1, v3);
             this.adjacency[v3].push(v1, v2);
         }
-    }
-
-    private clickHandler(intersect: THREE.Intersection): boolean {
-        if (intersect.face == null) return false;
-        const face = intersect.face;
-        for (const pos of this.labels) {
-            pos.vertices.sort();
-            for (const v of [face.a, face.b, face.c]) {
-                const idx = binarySearch(pos.vertices, v);
-                if (idx != null) {
-                    this.userInterface.blinkRowId(pos.id);
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     public removeLabel(pos: Label): void {
@@ -107,7 +93,7 @@ export class LabelManager {
             .find(label => label.id == this.userInterface.activeLabel);
         if (pos == null) return;
 
-        const vertices = [hit.face.a, hit.face.b, hit.face.c];
+        let vertices = [hit.face.a, hit.face.b, hit.face.c];
         for (const v of [hit.face.a, hit.face.b, hit.face.c]) {
             for (const v2 of this.adjacency[v]) {
                 vertices.push(v2);
@@ -115,16 +101,33 @@ export class LabelManager {
         }
 
         pos.vertices.sort();
+        const vertices2 = [];
+
         for (let i = this.userInterface.brushSize; i > 1; i--) {
             for (const vertex of vertices) {
                 if (binarySearch(pos.vertices, vertex) == null) {
-                    vertices.push(vertex);
+                    vertices2.push(vertex);
                     pos.vertices.push(vertex);
                     pos.vertices.sort();
                 }
             }
+            vertices = vertices2;
         }
 
         this.renderer.setColorForVertices(vertices, pos.color);
+    }
+
+    public lastClickedLabel(): Label | null {
+        const index = this.userInterface.activeLabel;
+        if (index == null) return null;
+        return this.labels[index];
+    }
+
+    public getSavedLabelUuid(): string | null {
+        return this.userInterface.getSavedLabelUuid();
+    }
+
+    public getModelName(): string {
+        return this.userInterface.getModelName();
     }
 }

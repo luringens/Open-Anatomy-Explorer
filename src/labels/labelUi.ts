@@ -2,7 +2,7 @@ import { GUI } from "dat.gui";
 import { LabelManager } from "./labelManager";
 import { Label } from "./Label";
 import THREE = require("three");
-import { toHex } from "../utils";
+import { toHex, binarySearch } from "../utils";
 import { LabelStorage } from "./labelStorage";
 
 export class LabelUi {
@@ -23,6 +23,11 @@ export class LabelUi {
         this.labelManager = labelManager;
         this.modelName = modelName;
 
+        // Show editor
+        document.getElementById("label-editor")?.classList.remove("hide");
+
+        labelManager.renderer.addClickEventListener(this.clickHandler.bind(this));
+
         const saveRegionButton = document.getElementById("save-region") as HTMLElement;
         saveRegionButton.addEventListener("click", this.savenewLabel.bind(this));
 
@@ -39,7 +44,6 @@ export class LabelUi {
             updateAllLabelsButton.remove();
             deleteAllLabelsButton.remove();
         } else {
-            this.loadLabels();
             updateAllLabelsButton.addEventListener("click", this.updateLabels.bind(this));
             deleteAllLabelsButton.addEventListener("click", this.deleteLabels.bind(this));
             updateAllLabelsButton.classList.remove("hide");
@@ -86,6 +90,26 @@ export class LabelUi {
         if (this.visible) {
             this.labelManager.renderer.setColorForVertices(vertices, color);
         }
+    }
+
+    private clickHandler(intersect: THREE.Intersection): boolean {
+        if (intersect.face == null) return false;
+        const face = intersect.face;
+        for (const pos of this.labelManager.labels) {
+            pos.vertices.sort();
+            for (const v of [face.a, face.b, face.c]) {
+                const idx = binarySearch(pos.vertices, v);
+                if (idx != null) {
+                    this.blinkRowId(pos.id);
+                    this.activeLabel = pos.id;
+                    const e = document.getElementById("label-radio-" + String(pos.id));
+                    (e as HTMLInputElement).checked = true;
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public blinkRowId(id: number): void {
@@ -216,5 +240,13 @@ export class LabelUi {
 
             pos.name = element.value;
         });
+    }
+
+    public getSavedLabelUuid(): string | null {
+        return this.uuid;
+    }
+
+    public getModelName(): string {
+        return this.modelName;
     }
 }

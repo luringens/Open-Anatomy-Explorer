@@ -26,7 +26,7 @@ export class LabelStorage {
                 this.handleError(response);
                 const data = await response.json();
                 console.info("Data stored - UUID: " + data)
-                window.location.href = window.origin + "?id=" + data;
+                window.location.href = window.origin + location.pathname + "?id=" + data;
             });
     }
 
@@ -40,7 +40,7 @@ export class LabelStorage {
             .then((response) => {
                 this.handleError(response);
                 console.info("Data updated")
-                window.location.href = window.origin + "?id=" + uuid;
+                window.location.href = window.origin + location.pathname + "?id=" + uuid;
             });
     }
 
@@ -52,7 +52,7 @@ export class LabelStorage {
             .then((response) => {
                 this.handleError(response);
                 console.info("Data deleted")
-                window.location.href = window.origin;
+                window.location.href = window.origin + location.pathname;
             });
     }
 

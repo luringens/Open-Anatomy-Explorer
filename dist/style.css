@@ -63,6 +63,8 @@ button {
     padding: 0 15px;
     background: #282828;
     color: #E7E7E7;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .dg {
@@ -97,14 +99,6 @@ button {
 
 .hide {
     display: none;
-}
-
-#label-editor {
-    display: none;
-}
-
-#quiz-editor {
-    display: visible;
 }
 
 .question-editor {

@@ -35,7 +35,7 @@ export class ModelManager {
 
     public static load(name: string, callback: (_: GLTF) => void): void {
         new GLTFLoader().load(
-            "Box.glb",
+            this.url + name,
             callback,
             undefined,
             (error) => console.error(error)
