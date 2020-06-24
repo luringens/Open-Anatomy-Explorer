@@ -5,18 +5,11 @@ import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export class ModelManager {
     private static readonly url = "http://51.15.231.127:5000/models/";
     private readonly renderer: Renderer;
-    private onload: ((model: Mesh) => void) | null = null;
+    private onload: ((model: Mesh, name: string) => void) | null = null;
 
-    public constructor(callback: (_: Object3D) => void, renderer: Renderer, name: string) {
+    public constructor(renderer: Renderer) {
         this.renderer = renderer;
-
         this.getModelList(this.populateModelList.bind(this));
-        ModelManager.load(name, (GLTF: GLTF) => {
-            const mesh = ModelManager.findMesh(GLTF.scene.children);
-            if (mesh == null) throw "Could not find mesh";
-            callback(mesh);
-            this.loadModel(GLTF);
-        });
     }
 
     private static findMesh(objs: Object3D[]): Mesh | null {
@@ -29,25 +22,43 @@ export class ModelManager {
         return null;
     }
 
-    public setOnload(callback: (model: Mesh) => void): void {
+    public setOnload(callback: (model: Mesh, name: string) => void): void {
         this.onload = callback;
     }
 
-    public static load(name: string, callback: (_: GLTF) => void): void {
+    public static load(name: string, callback: (_: Mesh) => void): void {
         new GLTFLoader().load(
             this.url + name,
-            callback,
+            (gltf: GLTF) => {
+                const mesh = this.findMesh(gltf.scene.children);
+                if (mesh == null) throw "Could not find mesh";
+                callback(mesh);
+            },
             undefined,
             (error) => console.error(error)
         );
     }
 
-    private loadModel(GLTF: GLTF): void {
-        const mesh = ModelManager.findMesh(GLTF.scene.children);
-        if (mesh == null) throw "Could not find mesh";
+    public static async loadAsync(name: string): Promise<Mesh> {
+        const url = this.url;
+        return new Promise(function (resolve, reject) {
+            new GLTFLoader().load(
+                url + name,
+                (gltf: GLTF) => {
+                    const mesh = ModelManager.findMesh(gltf.scene.children);
+                    if (mesh == null) reject("Could not find mesh");
+                    else resolve(mesh);
+                },
+                undefined,
+                (error) => console.error(error)
+            );
+        });
+    }
+
+    private loadModel(name: string, mesh: Mesh): void {
         this.renderer.loadObject(mesh);
         if (this.onload != null && mesh != null)
-            this.onload(mesh);
+            this.onload(mesh, name);
     }
 
     private getModelList(callback: (names: string[]) => void): void {
@@ -78,7 +89,7 @@ export class ModelManager {
             div.appendChild(row);
 
             button.onclick = (): void =>
-                ModelManager.load(name, this.loadModel.bind(this));
+                ModelManager.load(name, this.loadModel.bind(this, name));
         });
     }
 }

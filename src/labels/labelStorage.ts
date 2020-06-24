@@ -15,6 +15,16 @@ export class LabelStorage {
             });
     }
 
+    public static async loadLabelsAsync(uuid: string): Promise<Label[]> {
+        const options = { method: "GET" };
+        return fetch(this.url + "/" + uuid, options)
+            .then(async (response) => {
+                LabelStorage.handleError(response);
+                const data = await response.json() as StoredLabel[];
+                return data.map(l => StoredLabel.toLabel(l));
+            });
+    }
+
     public static storeLabels(labels: Label[]): void {
         const options = {
             method: "POST",
@@ -26,7 +36,7 @@ export class LabelStorage {
                 this.handleError(response);
                 const data = await response.json();
                 console.info("Data stored - UUID: " + data)
-                window.location.href = window.origin + location.pathname + "?id=" + data;
+                window.location.href = window.origin + location.pathname + "?labels=" + data;
             });
     }
 
@@ -40,7 +50,7 @@ export class LabelStorage {
             .then((response) => {
                 this.handleError(response);
                 console.info("Data updated")
-                window.location.href = window.origin + location.pathname + "?id=" + uuid;
+                window.location.href = window.origin + location.pathname + "?labels=" + uuid;
             });
     }
 

@@ -4,6 +4,8 @@ import { LabelUi } from "./labelUi";
 import { binarySearch } from "../utils";
 import { Label } from "./Label";
 import { Mesh, BufferGeometry } from "three";
+import { ModelManager } from "../modelManager";
+import { LabelStorage } from "./labelStorage";
 
 export class LabelManager {
     public labels: Label[] = [];
@@ -12,26 +14,36 @@ export class LabelManager {
     private visible = true;
     private adjacency: number[][] = [];
 
-    constructor(renderer: Renderer, modelName: string) {
+    constructor(renderer: Renderer, modelName: string, showUi: boolean) {
         this.renderer = renderer;
-        this.userInterface = new LabelUi(modelName, this);
+        this.userInterface = new LabelUi(modelName, this, showUi);
     }
 
     public getLabel(labelId: number): Label | null {
         return this.labels.find(l => l.id == labelId) ?? null;
     }
 
-    public reset(modelName: string, mesh: Mesh): void {
+    /// Loads labels and orders renderer to load the related model.
+    public async loadWithModel(uuid: string, modelName: string | null = null): Promise<void> {
+        const labels = await LabelStorage.loadLabelsAsync(uuid);
+        if (modelName == null && labels.length < 1) throw "Zero labels in set!";
+        const model = modelName ?? labels[0].model;
+        const mesh = await ModelManager.loadAsync(model);
+        this.renderer.loadObject(mesh);
+        this.reset(model, mesh, labels, uuid);
+    }
+
+    public reset(modelName: string, mesh: Mesh, labels: Label[] | null = null, uuid: string | null = null): void {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
             const elem = document.getElementById(id) as HTMLElement;
             elem.remove();
         });
 
-        this.labels = [];
+        this.labels = labels ?? [];
 
         this.renderer.resetVertexColors();
-        this.userInterface.reload(this.renderer.gui, modelName);
+        this.userInterface.reload(this.renderer.gui, modelName, labels, uuid);
 
         const geo = mesh.geometry as BufferGeometry;
         const vertices = geo.attributes.position.count;
@@ -131,3 +143,4 @@ export class LabelManager {
         return this.userInterface.getModelName();
     }
 }
+

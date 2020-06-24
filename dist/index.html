@@ -11,6 +11,14 @@
     <div class="grid">
         <div id="canvas-container" class="canvas-container"></div>
         <div class="sidebar">
+            <div id="tool-container">
+                <h3>Tools</h3>
+                <input type="radio" id="tool-camera" name="tool" value="camera" checked>
+                <label for="tool-camera">Camera</label><br>
+                <input type="radio" id="tool-labeler" name="tool" value="labeler">
+                <label for="tool-labeler">Labeler</label><br>
+            </div>
+            <br />
             <div id="label-editor" class="hide">
                 <div id="label-container">
                     <h3>Labels</h3>
@@ -28,14 +36,7 @@
                     <button id="labels-save">Save all labels to storage</button>
                     <button id="labels-update" class="hide">Update saved labels</button>
                     <button id="labels-delete" class="hide">Delete saved labels</button>
-                </div>
-                <br />
-                <div id="tool-container">
-                    <h3>Tools</h3>
-                    <input type="radio" id="tool-camera" name="tool" value="camera" checked>
-                    <label for="tool-camera">Camera</label><br>
-                    <input type="radio" id="tool-labeler" name="tool" value="labeler">
-                    <label for="tool-labeler">Labeler</label><br>
+                    <button id="labels-quiz" class="hide">Create quiz with labels</button>
                 </div>
                 <br />
                 <div id="models-container">

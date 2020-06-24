@@ -4,6 +4,7 @@ import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeNa
 import { LabelManager } from "../labels/labelManager";
 import { Quiz, QuizStorage } from "./quizStorage";
 import { Label } from "../labels/Label";
+import { ModelManager } from "../modelManager";
 
 
 export default class QuizMasterManager {
@@ -12,7 +13,16 @@ export default class QuizMasterManager {
     private labelManager: LabelManager;
     private nextQuestionId = 0;
 
-    public constructor(quizGuid: string | null, labelManager: LabelManager) {
+    /// Constructs a new QuizMasterManager
+    /// If quizGuid is not null, it will attempt to load the selected quiz and
+    /// call the provided callback function with the quiz information.
+    /// This callback must initialize the label manager to fully load the quiz.
+    public constructor(
+        labelManager: LabelManager,
+        quizGuid: string | null,
+        showEditor: boolean,
+        callback: ((_: Quiz) => Promise<void>) | null = null
+    ) {
         this.quizGuid = quizGuid;
         this.labelManager = labelManager;
 
@@ -28,12 +38,12 @@ export default class QuizMasterManager {
             .onclick = this.deleteQuestions.bind(this);
 
         // Show editor
-        if (labelManager.getSavedLabelUuid() != null) {
+        if (showEditor) {
             document.getElementById("quiz-editor")?.classList.remove("hide");
         }
 
-        if (quizGuid != null) {
-            this.loadQuestions(quizGuid);
+        if (quizGuid != null && callback != null) {
+            this.loadQuestions(quizGuid, callback);
         }
     }
 
@@ -126,23 +136,52 @@ export default class QuizMasterManager {
         return index;
     }
 
-    public loadQuestions(quizGuid: string) {
-        // const quiz = QuizStorage.load(quizGuid);
-        throw "Unimplemented";
+    public async loadQuestions(quizGuid: string, callback: ((_: Quiz) => Promise<void>)) {
+        const quiz = await QuizStorage.loadQuizAsync(quizGuid);
+        this.questions = quiz.questions;
+        // Before populating the UI, we need the name of the labels
+        // Before getting the labels, we need the model...
+
+        await callback(quiz);
+
+        quiz.questions.forEach(q => {
+            const label = this.labelManager.getLabel(q.labelId);
+            if (label != null) {
+                this.createRow(q, label);
+            } else {
+                console.error("Label " + q.labelId + " not found!");
+            }
+        });
     }
 
     public saveQuestions(): void {
+        this.updateDataFromUi();
         QuizStorage.storeQuiz(this.serialize());
     }
 
     public updateQuestions(): void {
+        this.updateDataFromUi();
         if (this.quizGuid == null) throw "No stored quiz!";
         QuizStorage.updateQuiz(this.quizGuid, this.serialize());
     }
 
     public deleteQuestions(): void {
         if (this.quizGuid == null) throw "No stored quiz!";
-        QuizStorage.deleteQuiz(this.quizGuid);
+        QuizStorage.deleteQuiz(this.quizGuid, this.labelManager.getSavedLabelUuid());
+    }
+
+    private updateDataFromUi(): void {
+        for (const question of this.questions) {
+            const id = "question-" + question.id;
+            const textPrompt = document.getElementById(id + "-textPrompt");
+            question.textPrompt = (textPrompt as HTMLTextAreaElement).value;
+
+            if (question.questionType == QuestionType.Locate) {
+                const q = question as QuestionLocate;
+                const showRegions = document.getElementById(id + "-showRegions");
+                q.showRegions = (showRegions as HTMLInputElement).checked;
+            }
+        }
     }
 
     private serialize(): Quiz {

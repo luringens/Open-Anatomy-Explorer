@@ -9,7 +9,7 @@ export class LabelUi {
     private visible = true;
     private listContainer: HTMLElement;
     private labelManager: LabelManager
-    private uuid: string | null;
+    private uuid: string | null = null;
     private regionColor = "#FF00FF";
     private regionTransparency = 255;
     private nextLabelId = 1;
@@ -18,38 +18,27 @@ export class LabelUi {
     public activeLabel: null | number = null;
     public brushSize = 2;
 
-    public constructor(modelName: string, labelManager: LabelManager) {
+    public constructor(modelName: string, labelManager: LabelManager, showUi: boolean) {
         this.listContainer = document.getElementById("labels") as HTMLElement;
         this.labelManager = labelManager;
         this.modelName = modelName;
 
-        // Show editor
-        document.getElementById("label-editor")?.classList.remove("hide");
+        if (showUi) {
+            document.getElementById("label-editor")?.classList.remove("hide");
+        }
 
         labelManager.renderer.addClickEventListener(this.clickHandler.bind(this));
 
         const saveRegionButton = document.getElementById("save-region") as HTMLElement;
         saveRegionButton.addEventListener("click", this.savenewLabel.bind(this));
 
-        // Store/update/delete label initialization
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-        this.uuid = urlParams.get("id");
-
         const saveAllLabelsButton = document.getElementById("labels-save") as HTMLElement;
-        const updateAllLabelsButton = document.getElementById("labels-update") as HTMLElement;
-        const deleteAllLabelsButton = document.getElementById("labels-delete") as HTMLElement;
         saveAllLabelsButton.addEventListener("click", this.storeLabels.bind(this));
-        if (this.uuid == null) {
-            updateAllLabelsButton.remove();
-            deleteAllLabelsButton.remove();
-        } else {
-            updateAllLabelsButton.addEventListener("click", this.updateLabels.bind(this));
-            deleteAllLabelsButton.addEventListener("click", this.deleteLabels.bind(this));
-            updateAllLabelsButton.classList.remove("hide");
-            deleteAllLabelsButton.classList.remove("hide");
-        }
 
+        const createQuizButton = document.getElementById("labels-quiz") as HTMLElement;
+        createQuizButton.addEventListener("click", this.createQuiz.bind(this));
+
+        // TODO: Move to renderer
         (document.getElementById("tool-camera") as HTMLInputElement)
             .onchange = this.onToolChange.bind(this);
         (document.getElementById("tool-labeler") as HTMLInputElement)
@@ -122,7 +111,19 @@ export class LabelUi {
         }, 2900);
     }
 
-    public reload(gui: GUI, newModelName: string): void {
+    public reload(gui: GUI, newModelName: string, labels: Label[] | null = null, uuid: string | null = null): void {
+        this.uuid = uuid;
+        const updateAllLabelsButton = document.getElementById("labels-update") as HTMLElement;
+        const deleteAllLabelsButton = document.getElementById("labels-delete") as HTMLElement;
+        const createQuizButton = document.getElementById("labels-quiz") as HTMLElement;
+        if (this.uuid != null) {
+            updateAllLabelsButton.addEventListener("click", this.updateLabels.bind(this));
+            deleteAllLabelsButton.addEventListener("click", this.deleteLabels.bind(this));
+            updateAllLabelsButton.classList.remove("hide");
+            deleteAllLabelsButton.classList.remove("hide");
+            createQuizButton.classList.remove("hide");
+        }
+
         const f = gui.addFolder("Labelling settings");
         f.addColor(this, "regionColor").name("Region color");
         f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
@@ -132,8 +133,12 @@ export class LabelUi {
         f.open();
 
         this.modelName = newModelName;
-        if (this.uuid != null)
+
+        if (labels != null) {
+            this.loadGivenLabels(labels);
+        } else if (this.uuid != null) {
             this.loadLabels();
+        }
     }
 
     private loadLabels(): void {
@@ -142,17 +147,19 @@ export class LabelUi {
             return;
         }
 
-        LabelStorage.loadLabels(this.uuid, (labels: Label[]) => {
-            this.labelManager.labels = [];
-            labels.forEach(label => {
-                if (label.model !== this.modelName) return;
-                this.labelManager.labels.push(label);
-                const element = this.createRow(label);
-                this.listContainer.append(element);
-                if (this.visible)
-                    this.labelManager.renderer.setColorForVertices(label.vertices, label.color);
-                this.nextLabelId = Math.max(this.nextLabelId, label.id + 1);
-            });
+        LabelStorage.loadLabels(this.uuid, this.loadGivenLabels.bind(this));
+    }
+
+    public loadGivenLabels(labels: Label[]) {
+        this.labelManager.labels = [];
+        labels.forEach(label => {
+            if (label.model !== this.modelName) return;
+            this.labelManager.labels.push(label);
+            const element = this.createRow(label);
+            this.listContainer.append(element);
+            if (this.visible)
+                this.labelManager.renderer.setColorForVertices(label.vertices, label.color);
+            this.nextLabelId = Math.max(this.nextLabelId, label.id + 1);
         });
     }
 
@@ -248,5 +255,11 @@ export class LabelUi {
 
     public getModelName(): string {
         return this.modelName;
+    }
+
+    private createQuiz(): void {
+        window.location.href = window.origin + location.pathname
+            + "?labels=" + this.uuid
+            + "&quiz=create";
     }
 }

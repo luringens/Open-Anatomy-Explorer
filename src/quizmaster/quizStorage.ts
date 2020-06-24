@@ -1,8 +1,7 @@
 import { Question } from "./Question";
 
 export class QuizStorage {
-    //private static readonly url = "http://51.15.231.127:5000/Quiz";
-    private static readonly url = "http://127.0.0.1:3000/Quiz";
+    private static readonly url = "http://51.15.231.127:5000/Quiz";
 
     public static loadQuiz(uuid: string, callback: ((_: Quiz) => void)): void {
         const options = { method: "GET" };
@@ -11,6 +10,15 @@ export class QuizStorage {
                 this.handleError(response);
                 const data = await response.json() as Quiz;
                 callback(data);
+            });
+    }
+
+    public static loadQuizAsync(uuid: string): Promise<Quiz> {
+        const options = { method: "GET" };
+        return fetch(this.url + "/" + uuid, options)
+            .then(async (response) => {
+                this.handleError(response);
+                return await response.json() as Quiz;
             });
     }
 
@@ -25,7 +33,7 @@ export class QuizStorage {
                 this.handleError(response);
                 const data = await response.json();
                 console.info("Data stored - UUID: " + data)
-                window.location.href = window.origin + location.pathname + "?id=" + data;
+                window.location.href = window.origin + location.pathname + "?quiz=" + data;
             });
     }
 
@@ -39,11 +47,12 @@ export class QuizStorage {
             .then((response) => {
                 this.handleError(response);
                 console.info("Data updated")
-                window.location.href = window.origin + location.pathname + "?id=" + uuid;
+                window.location.href = window.origin + location.pathname + "?quiz=" + uuid;
             });
     }
 
-    public static deleteQuiz(uuid: string): void {
+    public static deleteQuiz(uuid: string, labelId: string | null): void {
+        const labelQuery = labelId == null ? "" : "?labels=" + labelId;
         const options = {
             method: "DELETE",
         };
@@ -51,7 +60,7 @@ export class QuizStorage {
             .then((response) => {
                 this.handleError(response);
                 console.info("Data deleted")
-                window.location.href = window.origin + location.pathname;
+                window.location.href = window.origin + location.pathname + labelQuery;
             });
     }
 
