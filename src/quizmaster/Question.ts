@@ -27,6 +27,7 @@ export class QuestionName implements Question {
     public readonly questionType = QuestionType.Name;
     public readonly id: number;
     public textPrompt = "";
+    public textAnswer = "";
     public labelId: number;
 
     public constructor(id: number, labelId: number) {

@@ -1,5 +1,11 @@
 # INF319 Project
 
+## Ideas for future improvement:
+
+- Orientation questions
+- Free-text questions
+- Larger brush size
+
 ## Compiling
 
 ```sh

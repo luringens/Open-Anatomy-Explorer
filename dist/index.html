@@ -67,6 +67,32 @@
                     <button id="quiz-delete" class="hide">Delete this quiz</button>
                 </div>
             </div>
+            <div id="quizzer" class="hide">
+                <div id="quizzer-start" class="hide">
+                    <button id="quizzer-begin">Begin quiz</button>
+                </div>
+                <div id="quizzer-question" class="hide">
+                    <pre id="quizzer-questionText"></pre>
+                    <textarea id="quizzer-answerText"></textarea>
+                    <label id="quizzer-answerLabel"></label>
+                    <button id="quizzer-submit">Submit</button>
+                    <button id="quizzer-next" class="hide">Next</button>
+                    <label id="quizzer-correct" class="hide correct">Correct!</label>
+                    <label id="quizzer-wrong" class="hide wrong">Wrong!</label>
+                </div>
+                <div id="quizzer-result" class="hide">
+                    <table>
+                        <coldef>
+                            <col style="width: 20px;" />
+                            <col />
+                            <col />
+                            <col style="width: 20px;" />
+                        </coldef>
+                        <tbody id="quizzer-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
     <script type="text/javascript" src="bundle.js"></script>

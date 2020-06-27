@@ -260,6 +260,6 @@ export class LabelUi {
     private createQuiz(): void {
         window.location.href = window.origin + location.pathname
             + "?labels=" + this.uuid
-            + "&quiz=create";
+            + "&quizaction=create";
     }
 }

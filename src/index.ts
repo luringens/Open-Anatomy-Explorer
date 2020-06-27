@@ -3,6 +3,7 @@ import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import { Mesh } from "three";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
+import QuizTakerManager from "./quizTaker/quizTakerManager";
 
 const defaultModel = "Arm";
 
@@ -22,11 +23,22 @@ modelManager.setOnload((obj: Mesh, name: string): void => labelManager?.reset(na
 // Check if we are to load labels, models, quizzes...
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
+const quizAction = urlParams.get("quizaction");
 const quizId = urlParams.get("quiz");
 const labelId = urlParams.get("labels");
 
+// If a quiz ID is present and no action, we're doing a quiz.
+if (quizId != null && quizAction == null) {
+    labelManager = new LabelManager(renderer, defaultModel, false);
+    quizMasterManager = new QuizMasterManager(labelManager, quizId, false, async function (quiz) {
+        const lm = (labelManager as LabelManager);
+        await lm.loadWithModel(quiz.labelId, quiz.model);
+        new QuizTakerManager(quizMasterManager as QuizMasterManager, lm);
+    });
+}
+
 // If a quiz ID is present, load the quiz editor.
-if (quizId != null && quizId != "create") {
+else if (quizId != null && quizAction == "edit") {
     labelManager = new LabelManager(renderer, defaultModel, false);
     quizMasterManager = new QuizMasterManager(labelManager, quizId, true, async function (quiz) {
         const lm = (labelManager as LabelManager);
@@ -34,23 +46,22 @@ if (quizId != null && quizId != "create") {
     });
 }
 
-// If a label ID is present, load the label editor and related model.
-// If a quiz ID is present but blank, load the quiz editor instead
+// If a label ID is present, show the label editor.
+// If a quiz ID is present but blank, show the quiz editor instead
 else if (labelId != null) {
-    const showLabelEditor = quizId != "create";
-    const showQuizEditor = quizId == "create";
+    const showQuizEditor = quizAction == "create";
+    const showLabelEditor = !showQuizEditor;
 
     labelManager = new LabelManager(renderer, defaultModel, showLabelEditor);
     labelManager.loadWithModel(labelId);
     quizMasterManager = new QuizMasterManager(labelManager, null, showQuizEditor);
 }
 
-// If nothing is specified, load the label editor
+// If nothing is specified, load the label editor alone
 else {
     ModelManager.load(defaultModel, (mesh) => {
         renderer.loadObject(mesh);
         labelManager = new LabelManager(renderer, defaultModel, true);
         labelManager.reset(defaultModel, mesh)
-        //quizMasterManager = new QuizMasterManager(labelManager, null);
     });
 }

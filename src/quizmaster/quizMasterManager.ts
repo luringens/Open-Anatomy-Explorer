@@ -47,6 +47,14 @@ export default class QuizMasterManager {
         }
     }
 
+    public questionCount(): number {
+        return this.questions.length;
+    }
+
+    public getQuestion(index: number): Question {
+        return this.questions[index];
+    }
+
     public addQuestion(questionType: QuestionType) {
         let label = this.labelManager.lastClickedLabel();
         if (label == null) label = this.labelManager.labels[0];
@@ -85,17 +93,26 @@ export default class QuizMasterManager {
         regionPicker.onclick = this.setRegion.bind(this, question.id);
         element.append(regionPicker);
 
-        if (question.questionType == QuestionType.Locate) {
-            const q = question as QuestionLocate;
-            const showRegionsCheck = document.createElement("input");
-            showRegionsCheck.type = "checkbox";
-            showRegionsCheck.checked = q.showRegions;
-            showRegionsCheck.id = element.id + "-showRegions";
-            element.append(showRegionsCheck);
+        switch (question.questionType) {
+            case QuestionType.Locate: {
+                const q = question as QuestionLocate;
+                const showRegionsCheck = document.createElement("input");
+                showRegionsCheck.type = "checkbox";
+                showRegionsCheck.checked = q.showRegions;
+                showRegionsCheck.id = element.id + "-showRegions";
+                element.append(showRegionsCheck);
 
-            const showRegionsLabel = document.createElement("label");
-            showRegionsLabel.innerText = "Display regions";
-            element.append(showRegionsLabel);
+                const showRegionsLabel = document.createElement("label");
+                showRegionsLabel.innerText = "Display regions";
+                element.append(showRegionsLabel);
+            }
+            case QuestionType.Name: {
+                const q = question as QuestionName;
+                const textAnswer = document.createElement("input");
+                textAnswer.type = "text";
+                textAnswer.id = element.id + "-textAnswer";
+                element.append(textAnswer);
+            }
         }
 
         const deleteLink = document.createElement("a");
@@ -176,10 +193,17 @@ export default class QuizMasterManager {
             const textPrompt = document.getElementById(id + "-textPrompt");
             question.textPrompt = (textPrompt as HTMLTextAreaElement).value;
 
-            if (question.questionType == QuestionType.Locate) {
-                const q = question as QuestionLocate;
-                const showRegions = document.getElementById(id + "-showRegions");
-                q.showRegions = (showRegions as HTMLInputElement).checked;
+            switch (question.questionType) {
+                case QuestionType.Locate: {
+                    const q = question as QuestionLocate;
+                    const showRegions = document.getElementById(id + "-showRegions");
+                    q.showRegions = (showRegions as HTMLInputElement).checked;
+                }
+                case QuestionType.Name: {
+                    const q = question as QuestionName;
+                    const textAnswer = document.getElementById(id + "-textAnswer");
+                    q.textAnswer = (textAnswer as HTMLInputElement).value;
+                }
             }
         }
     }
