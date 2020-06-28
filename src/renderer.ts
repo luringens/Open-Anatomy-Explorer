@@ -79,8 +79,11 @@ export class Renderer {
     }
 
     public resetVertexColors(): void {
-        // this.colorBuffer = new Float32Array(this.colorBuffer.length);
-        // if (this.object != null) this.updateShader(this.object);
+        if (this.colorBufferAttribute == null) return;
+        for (let i = 0; i < this.colorBufferAttribute.array.length / 4; i++) {
+            this.colorBufferAttribute.setW(i, 0);
+        }
+        if (this.object != null) this.updateShader(this.object);
     }
 
     private setupCamera(): void {
@@ -346,7 +349,8 @@ export class Renderer {
     }
 
     public moveCamera(position: Vector3, lookat: Vector3): void {
-        this.controls.position0 = position;
+        this.camera.position.set(position.x, position.y, position.z);
+        this.camera.updateMatrix();
         this.controls.target = lookat;
         this.controls.update();
     }

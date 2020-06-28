@@ -14,8 +14,9 @@ export class LabelManager {
     private visible = true;
     private adjacency: number[][] = [];
 
-    constructor(renderer: Renderer, modelName: string, showUi: boolean) {
+    constructor(renderer: Renderer, modelName: string, showUi: boolean, showLabels: boolean) {
         this.renderer = renderer;
+        this.visible = showLabels;
         this.userInterface = new LabelUi(modelName, this, showUi);
     }
 
@@ -90,12 +91,17 @@ export class LabelManager {
         });
     }
 
-    public toggleVisibility(): void {
+    public setVisibility(visible: boolean): void {
+        this.visible = visible;
         if (this.visible) {
             this.revisualize();
         } else {
             this.renderer.resetVertexColors();
         }
+    }
+
+    public toggleVisibility(): void {
+        this.setVisibility(!this.visible);
     }
 
     public addVerticesToLabel(hit: THREE.Intersection): void {

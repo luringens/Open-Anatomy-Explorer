@@ -29,7 +29,7 @@ const labelId = urlParams.get("labels");
 
 // If a quiz ID is present and no action, we're doing a quiz.
 if (quizId != null && quizAction == null) {
-    labelManager = new LabelManager(renderer, defaultModel, false);
+    labelManager = new LabelManager(renderer, defaultModel, false, false);
     quizMasterManager = new QuizMasterManager(labelManager, quizId, false, async function (quiz) {
         const lm = (labelManager as LabelManager);
         await lm.loadWithModel(quiz.labelId, quiz.model);
@@ -39,7 +39,7 @@ if (quizId != null && quizAction == null) {
 
 // If a quiz ID is present, load the quiz editor.
 else if (quizId != null && quizAction == "edit") {
-    labelManager = new LabelManager(renderer, defaultModel, false);
+    labelManager = new LabelManager(renderer, defaultModel, false, true);
     quizMasterManager = new QuizMasterManager(labelManager, quizId, true, async function (quiz) {
         const lm = (labelManager as LabelManager);
         await lm.loadWithModel(quiz.labelId, quiz.model);
@@ -52,7 +52,7 @@ else if (labelId != null) {
     const showQuizEditor = quizAction == "create";
     const showLabelEditor = !showQuizEditor;
 
-    labelManager = new LabelManager(renderer, defaultModel, showLabelEditor);
+    labelManager = new LabelManager(renderer, defaultModel, showLabelEditor, true);
     labelManager.loadWithModel(labelId);
     quizMasterManager = new QuizMasterManager(labelManager, null, showQuizEditor);
 }
@@ -61,7 +61,7 @@ else if (labelId != null) {
 else {
     ModelManager.load(defaultModel, (mesh) => {
         renderer.loadObject(mesh);
-        labelManager = new LabelManager(renderer, defaultModel, true);
+        labelManager = new LabelManager(renderer, defaultModel, true, true);
         labelManager.reset(defaultModel, mesh)
     });
 }

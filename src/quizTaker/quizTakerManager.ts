@@ -52,16 +52,25 @@ export default class QuizTakerManager {
         ui.setText(ui.questionText, question.textPrompt);
 
         switch (question.questionType) {
-            case QuestionType.Name: ui.show(ui.answerText); break;
-            case QuestionType.Locate: ui.show(ui.answerLabel); break;
-        }
+            case QuestionType.Name: {
+                ui.show(ui.answerText);
 
-        if (question.questionType == QuestionType.Name) {
-            const q = question as QuestionName;
-            const label = this.labelManager.getLabel(q.labelId);
-            if (label == null) throw "Could not find label with id " + q.labelId;
-            this.labelManager.moveCameraToLabel(label);
-            this.labelManager.moveLightToLabel(label);
+                // Move camera and marker to the label in question.
+                const q = question as QuestionName;
+                const label = this.labelManager.getLabel(q.labelId);
+                if (label == null) throw "Could not find label with id " + q.labelId;
+                this.labelManager.moveCameraToLabel(label);
+                this.labelManager.moveLightToLabel(label);
+
+                this.labelManager.setVisibility(true);
+                break;
+            }
+            case QuestionType.Locate: {
+                ui.show(ui.answerLabel);
+                const q = question as QuestionLocate;
+                this.labelManager.setVisibility(q.showRegions);
+                break;
+            }
         }
     }
 
