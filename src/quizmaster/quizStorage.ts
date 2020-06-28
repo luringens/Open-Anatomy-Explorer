@@ -33,7 +33,9 @@ export class QuizStorage {
                 this.handleError(response);
                 const data = await response.json();
                 console.info("Data stored - UUID: " + data)
-                window.location.href = window.origin + location.pathname + "?quiz=" + data;
+                window.location.href = window.origin + location.pathname
+                    + "?quiz=" + data
+                    + "&quizaction=edit";
             });
     }
 
@@ -47,7 +49,9 @@ export class QuizStorage {
             .then((response) => {
                 this.handleError(response);
                 console.info("Data updated")
-                window.location.href = window.origin + location.pathname + "?quiz=" + uuid;
+                window.location.href = window.origin + location.pathname
+                    + "?quiz=" + uuid
+                    + "&quizaction=edit";
             });
     }
 

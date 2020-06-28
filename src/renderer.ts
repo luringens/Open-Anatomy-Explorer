@@ -1,8 +1,8 @@
 import * as THREE from "three"
 import * as dat from "dat.gui";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
 import { isNullOrUndefined } from "util";
-import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3, Matrix4 } from "three";
+import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3 } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 
@@ -20,7 +20,7 @@ export class Renderer {
     // as a result. The exclamation mark squashes this warning :/
     public gui!: dat.GUI;
     private camera!: THREE.PerspectiveCamera;
-    private controls!: OrbitControls;
+    private controls!: TrackballControls;
     private ambientLight!: THREE.AmbientLight;
     private directionalLight!: THREE.DirectionalLight;
     private directionalLightHelper!: THREE.DirectionalLightHelper;
@@ -87,11 +87,7 @@ export class Renderer {
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(-300, 0, 0);
 
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        // this.controls.maxPolarAngle = Math.PI * 0.5;
-        // this.controls.minDistance = 1000;
-        // this.controls.maxDistance = 5000;
-        this.controls.enableDamping = true;
+        this.controls = new TrackballControls(this.camera, this.renderer.domElement);
         this.controls.update();
     }
 
@@ -350,9 +346,9 @@ export class Renderer {
     }
 
     public moveCamera(position: Vector3, lookat: Vector3): void {
-        this.camera.position.set(position.x, position.y, position.z);
-        this.camera.lookAt(lookat);
-        this.camera.updateProjectionMatrix();
+        this.controls.position0 = position;
+        this.controls.target = lookat;
+        this.controls.update();
     }
 
     private getVertexPosAndNormal(vId: number): [Vector3, Vector3] {

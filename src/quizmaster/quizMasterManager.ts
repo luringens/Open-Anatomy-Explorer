@@ -36,15 +36,24 @@ export default class QuizMasterManager {
             .onclick = this.updateQuestions.bind(this);
         (document.getElementById("quiz-delete") as HTMLButtonElement)
             .onclick = this.deleteQuestions.bind(this);
+        (document.getElementById("quiz-take") as HTMLButtonElement)
+            .onclick = this.takeQuiz.bind(this);
 
         // Show editor
         if (showEditor) {
             document.getElementById("quiz-editor")?.classList.remove("hide");
         }
 
-        if (quizGuid != null && callback != null) {
-            this.loadQuestions(quizGuid, callback);
+        if (quizGuid != null) {
+            document.getElementById("quiz-update")?.classList.remove("hide");
+            document.getElementById("quiz-delete")?.classList.remove("hide");
+            document.getElementById("quiz-take")?.classList.remove("hide");
+
+            if (callback != null) {
+                this.loadQuestions(quizGuid, callback);
+            }
         }
+
     }
 
     public questionCount(): number {
@@ -89,7 +98,6 @@ export default class QuizMasterManager {
 
         const regionPicker = document.createElement("button");
         regionPicker.id = element.id + "-regionpicker"
-        regionPicker.innerText = "Selected: " + label.name;
         regionPicker.onclick = this.setRegion.bind(this, question.id);
         element.append(regionPicker);
 
@@ -105,13 +113,23 @@ export default class QuizMasterManager {
                 const showRegionsLabel = document.createElement("label");
                 showRegionsLabel.innerText = "Display regions";
                 element.append(showRegionsLabel);
+
+                regionPicker.innerText = "Answer: " + label.name;
+                break;
             }
             case QuestionType.Name: {
                 const q = question as QuestionName;
                 const textAnswer = document.createElement("input");
                 textAnswer.type = "text";
+                textAnswer.value = q.textAnswer;
+                textAnswer.placeholder = "Answer";
                 textAnswer.id = element.id + "-textAnswer";
                 element.append(textAnswer);
+
+                regionPicker.innerText = "Label: " + label.name;
+                if (question.textPrompt == "")
+                    textArea.innerText = "What is the name of this region?";
+                break;
             }
         }
 
@@ -131,7 +149,12 @@ export default class QuizMasterManager {
         const index = this.getIndexForQuestion(questionId);
         this.questions[index].labelId = label.id;
         const buttonId = "question-" + questionId + "-regionpicker";
-        (document.getElementById(buttonId) as HTMLButtonElement).innerText = label.name;
+        const button = (document.getElementById(buttonId) as HTMLButtonElement);
+
+        switch (this.questions[index].questionType) {
+            case QuestionType.Locate: button.innerText = "Answer: " + label.name; break;
+            case QuestionType.Name: button.innerText = "Label: " + label.name; break;
+        }
     }
 
     public deleteRow(questionId: number): void {
@@ -162,6 +185,7 @@ export default class QuizMasterManager {
         await callback(quiz);
 
         quiz.questions.forEach(q => {
+            this.nextQuestionId = Math.max(this.nextQuestionId, q.id + 1);
             const label = this.labelManager.getLabel(q.labelId);
             if (label != null) {
                 this.createRow(q, label);
@@ -198,11 +222,13 @@ export default class QuizMasterManager {
                     const q = question as QuestionLocate;
                     const showRegions = document.getElementById(id + "-showRegions");
                     q.showRegions = (showRegions as HTMLInputElement).checked;
+                    break;
                 }
                 case QuestionType.Name: {
                     const q = question as QuestionName;
                     const textAnswer = document.getElementById(id + "-textAnswer");
                     q.textAnswer = (textAnswer as HTMLInputElement).value;
+                    break;
                 }
             }
         }
@@ -216,5 +242,10 @@ export default class QuizMasterManager {
             this.labelManager.getModelName(),
             labelUuid
         );
+    }
+
+    private takeQuiz(): void {
+        window.location.href = window.origin + location.pathname
+            + "?quiz=" + this.quizGuid;
     }
 }
