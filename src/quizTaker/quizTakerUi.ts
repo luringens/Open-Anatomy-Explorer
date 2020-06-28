@@ -1,7 +1,5 @@
 import { Answer } from "./Answer";
 
-type HTMLTextElement = HTMLPreElement | HTMLTextAreaElement | HTMLLabelElement;
-
 export class QuizTakerUi {
 
     public readonly start: HTMLDivElement;
@@ -15,7 +13,6 @@ export class QuizTakerUi {
     public readonly answerLabel: HTMLLabelElement;
     public readonly correct: HTMLLabelElement;
     public readonly wrong: HTMLLabelElement;
-
 
     public constructor() {
         this.start = document.getElementById("quizzer-start") as HTMLDivElement;
@@ -34,44 +31,48 @@ export class QuizTakerUi {
         this.show(document.getElementById("quizzer") as HTMLDivElement);
     }
 
-
     public show(element: HTMLElement): void {
         element.classList.remove("hide");
     }
 
+    public showMany(...elements: HTMLElement[]): void {
+        elements.forEach(e => e.classList.remove("hide"));
+    }
 
     public hide(element: HTMLElement): void {
         element.classList.add("hide");
     }
 
+    public hideMany(...elements: HTMLElement[]): void {
+        elements.forEach(e => e.classList.add("hide"));
+    }
 
     public disable(element: HTMLTextAreaElement): void {
         element.disabled = true;
     }
 
-
     public enable(element: HTMLTextAreaElement): void {
         element.disabled = false;
     }
-
 
     public bind(button: HTMLButtonElement, handler: () => void): void {
         button.onclick = handler;
     }
 
-
     public unbind(button: HTMLButtonElement): void {
         button.onclick = null;
     }
 
-
-    public setText(element: HTMLTextElement, text: string): void {
+    public setText(element: HTMLPreElement | HTMLLabelElement, text: string): void {
         element.innerText = text;
     }
 
+    public getInput(element: HTMLTextAreaElement | HTMLInputElement): string {
+        return element.value;
+    }
 
-    public getText(element: HTMLTextElement): string {
-        return element.innerText;
+    public clearInput(element: HTMLTextAreaElement | HTMLInputElement): void {
+        element.value = "";
     }
 
     public renderAnswerTable(answers: Answer[]): void {
@@ -80,19 +81,25 @@ export class QuizTakerUi {
             const row = document.createElement("tr");
 
             const tdQuestionId = document.createElement("td");
-            tdQuestionId.innerText = answer.questionNumber.toString();
+            tdQuestionId.innerText = "#" + answer.questionNumber.toString();
             row.append(tdQuestionId);
 
             const tdAnswer = document.createElement("td");
-            tdAnswer.innerText = answer.answer;
+            const lblAnswer = document.createElement("label")
+            lblAnswer.innerText = answer.answer;
+            tdAnswer.append(lblAnswer);
             row.append(tdAnswer);
 
             const tdInput = document.createElement("td");
-            tdInput.innerText = answer.input;
+            const lblInput = document.createElement("label")
+            lblInput.innerText = answer.input;
+            tdInput.append(lblInput);
             row.append(tdInput);
 
             const tdCorrect = document.createElement("td");
-            tdCorrect.bgColor = answer.correct ? "green" : "red";
+            const lblCorrect = document.createElement("label")
+            lblCorrect.innerText = answer.correct ? "✔️" : "❌";
+            tdCorrect.append(lblCorrect);
             row.append(tdCorrect);
 
             table.append(row);

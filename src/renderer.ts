@@ -2,7 +2,7 @@ import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { isNullOrUndefined } from "util";
-import { Mesh, Vector4, BufferAttribute, BufferGeometry } from "three";
+import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3, Matrix4 } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 
@@ -221,15 +221,7 @@ export class Renderer {
             if (isNullOrUndefined(face)) return;
             const pUnit = face.normal;
             pUnit.multiplyScalar(25);
-            this.directionalLight.position.set(pUnit.x, pUnit.y, pUnit.z);
-
-            this.scene.remove(this.directionalLightHelper)
-            this.directionalLightHelper =
-                new THREE.DirectionalLightHelper(this.directionalLight, 10);
-            this.scene.add(this.directionalLightHelper);
-            this.directionalLight.position.add(p);
-
-            this.updateShader(this.object);
+            this.moveLight(p, pUnit);
 
             this.lastMouseClickPosition = p;
             if (intersects[0].face != null) {
@@ -332,5 +324,43 @@ export class Renderer {
             fragmentShader: FragmentShader,
             name: "custom-material",
         });
+    }
+
+    public moveLightToVertex(vId: number): void {
+        const [pos, norm] = this.getVertexPosAndNormal(vId);
+        const offset = new Vector3().copy(norm).normalize().multiplyScalar(25);
+        this.moveLight(pos, offset);
+    }
+
+    public moveLight(position: Vector3, normal: Vector3): void {
+        this.directionalLight.position.set(normal.x, normal.y, normal.z);
+
+        this.scene.remove(this.directionalLightHelper)
+        this.directionalLightHelper =
+            new THREE.DirectionalLightHelper(this.directionalLight, 10);
+        this.scene.add(this.directionalLightHelper);
+        this.directionalLight.position.add(position);
+        if (this.object != null) this.updateShader(this.object);
+    }
+
+    public moveCameraToVertex(vId: number): void {
+        const [pos, norm] = this.getVertexPosAndNormal(vId);
+        const offset = new Vector3().copy(norm).normalize().multiplyScalar(50);
+        this.moveCamera(offset.add(pos), pos);
+    }
+
+    public moveCamera(position: Vector3, lookat: Vector3): void {
+        this.camera.position.set(position.x, position.y, position.z);
+        this.camera.lookAt(lookat);
+        this.camera.updateProjectionMatrix();
+    }
+
+    private getVertexPosAndNormal(vId: number): [Vector3, Vector3] {
+        const geo = this.object?.geometry as BufferGeometry;
+        const posAttr = geo.attributes["position"] as THREE.BufferAttribute;
+        const pos = new Vector3(posAttr.getX(vId), posAttr.getY(vId), posAttr.getZ(vId));
+        const normAttr = geo.attributes["normal"] as THREE.BufferAttribute;
+        const norm = new Vector3(normAttr.getX(vId), normAttr.getY(vId), normAttr.getZ(vId));
+        return [pos, norm];
     }
 }

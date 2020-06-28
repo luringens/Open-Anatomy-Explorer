@@ -3,6 +3,7 @@ import { LabelManager } from "../labels/labelManager";
 import { QuestionType, QuestionName, QuestionLocate } from "../quizmaster/Question";
 import { QuizTakerUi } from "./QuizTakerUi";
 import { Answer } from "./Answer";
+import { Label } from "../labels/Label";
 
 export default class QuizTakerManager {
     private quizMasterManager: QuizMasterManager;
@@ -17,6 +18,8 @@ export default class QuizTakerManager {
 
         const quizUi = document.getElementById("quizzer") as HTMLDivElement;
         quizUi.classList.remove("hide");
+
+        labelManager.setOnActiveLabelChangeHandler(this.selectedLabelChanged.bind(this));
 
         this.ui = new QuizTakerUi();
         this.ui.bind(this.ui.begin, this.start.bind(this));
@@ -34,10 +37,10 @@ export default class QuizTakerManager {
 
     private nextQuestion(): void {
         const ui = this.ui;
+        ui.hideMany(ui.next, ui.correct, ui.wrong, ui.answerText, ui.answerLabel);
+        ui.enable(ui.answerText);
+        ui.clearInput(ui.answerText);
         ui.show(ui.submit);
-        ui.hide(ui.next);
-        ui.hide(ui.correct);
-        ui.hide(ui.wrong);
 
         this.questionIndex++;
         if (this.questionIndex >= this.quizMasterManager.questionCount()) {
@@ -47,6 +50,19 @@ export default class QuizTakerManager {
 
         const question = this.quizMasterManager.getQuestion(this.questionIndex);
         ui.setText(ui.questionText, question.textPrompt);
+
+        switch (question.questionType) {
+            case QuestionType.Name: ui.show(ui.answerText); break;
+            case QuestionType.Locate: ui.show(ui.answerLabel); break;
+        }
+
+        if (question.questionType == QuestionType.Name) {
+            const q = question as QuestionName;
+            const label = this.labelManager.getLabel(q.labelId);
+            if (label == null) throw "Could not find label with id " + q.labelId;
+            this.labelManager.moveCameraToLabel(label);
+            this.labelManager.moveLightToLabel(label);
+        }
     }
 
     private submitAnswer(): void {
@@ -57,7 +73,7 @@ export default class QuizTakerManager {
         switch (question.questionType) {
             case QuestionType.Name: {
                 const q = question as QuestionName;
-                const input = ui.getText(ui.answerText);
+                const input = ui.getInput(ui.answerText);
                 const answer = q.textAnswer;
                 correct = input.toLowerCase() == answer.toLowerCase();
                 this.answers.push(new Answer(this.questionIndex, input, answer, correct));
@@ -80,6 +96,7 @@ export default class QuizTakerManager {
         }
 
         ui.show(correct ? ui.correct : ui.wrong);
+        ui.disable(ui.answerText);
         ui.hide(ui.submit);
         ui.show(ui.next);
     }
@@ -92,5 +109,11 @@ export default class QuizTakerManager {
         ui.show(ui.result);
 
         ui.renderAnswerTable(this.answers);
+    }
+
+    private selectedLabelChanged(label: Label): void {
+        const ui = this.ui;
+        const text = "Selected: " + label.name;
+        ui.setText(ui.answerLabel, text);
     }
 }

@@ -15,6 +15,7 @@ export class LabelUi {
     private nextLabelId = 1;
     private modelName: string;
     private toolEnabled = false;
+    public onActiveLabelChangeHandler: ((label: Label) => void) | null = null;
     public activeLabel: null | number = null;
     public brushSize = 2;
 
@@ -93,6 +94,10 @@ export class LabelUi {
                     this.activeLabel = pos.id;
                     const e = document.getElementById("label-radio-" + String(pos.id));
                     (e as HTMLInputElement).checked = true;
+
+                    if (this.onActiveLabelChangeHandler != null)
+                        this.onActiveLabelChangeHandler(pos);
+
                     return true;
                 }
             }
@@ -150,7 +155,7 @@ export class LabelUi {
         LabelStorage.loadLabels(this.uuid, this.loadGivenLabels.bind(this));
     }
 
-    public loadGivenLabels(labels: Label[]) {
+    public loadGivenLabels(labels: Label[]): void {
         this.labelManager.labels = [];
         labels.forEach(label => {
             if (label.model !== this.modelName) return;
@@ -182,7 +187,14 @@ export class LabelUi {
 
     private setActiveLabel(event: Event): void {
         const target = event.target as HTMLInputElement;
-        if (target.checked) this.activeLabel = Number.parseInt(target.value);
+        const label = this.labelManager.getLabel(Number.parseInt(target.value));
+        if (label == null) throw "Could not find label with id " + this.activeLabel;
+
+        if (target.checked) {
+            this.activeLabel = label.id;
+            if (this.onActiveLabelChangeHandler != null)
+                this.onActiveLabelChangeHandler(label);
+        }
     }
 
     private createRow(label: Label): HTMLElement {

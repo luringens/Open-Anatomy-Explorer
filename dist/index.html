@@ -11,15 +11,15 @@
     <div class="grid">
         <div id="canvas-container" class="canvas-container"></div>
         <div class="sidebar">
-            <div id="tool-container">
-                <h3>Tools</h3>
-                <input type="radio" id="tool-camera" name="tool" value="camera" checked>
-                <label for="tool-camera">Camera</label><br>
-                <input type="radio" id="tool-labeler" name="tool" value="labeler">
-                <label for="tool-labeler">Labeler</label><br>
-            </div>
-            <br />
             <div id="label-editor" class="hide">
+                <div id="tool-container">
+                    <h3>Tools</h3>
+                    <input type="radio" id="tool-camera" name="tool" value="camera" checked>
+                    <label for="tool-camera">Camera</label><br>
+                    <input type="radio" id="tool-labeler" name="tool" value="labeler">
+                    <label for="tool-labeler">Labeler</label><br>
+                </div>
+                <br />
                 <div id="label-container">
                     <h3>Labels</h3>
                     <table>
@@ -73,21 +73,29 @@
                 </div>
                 <div id="quizzer-question" class="hide">
                     <pre id="quizzer-questionText"></pre>
-                    <textarea id="quizzer-answerText"></textarea>
-                    <label id="quizzer-answerLabel"></label>
+                    <textarea id="quizzer-answerText" class="hide"></textarea>
+                    <label id="quizzer-answerLabel" class="hide"></label>
                     <button id="quizzer-submit">Submit</button>
                     <button id="quizzer-next" class="hide">Next</button>
                     <label id="quizzer-correct" class="hide correct">Correct!</label>
                     <label id="quizzer-wrong" class="hide wrong">Wrong!</label>
                 </div>
                 <div id="quizzer-result" class="hide">
-                    <table>
+                    <table id="quizzer-result-table">
                         <coldef>
                             <col style="width: 20px;" />
                             <col />
                             <col />
                             <col style="width: 20px;" />
                         </coldef>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Correct answer</th>
+                                <th>Your input</th>
+                                <th></th>
+                            </tr>
+                        </thead>
                         <tbody id="quizzer-table">
                         </tbody>
                     </table>

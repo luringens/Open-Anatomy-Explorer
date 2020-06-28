@@ -130,9 +130,9 @@ export class LabelManager {
     }
 
     public lastClickedLabel(): Label | null {
-        const index = this.userInterface.activeLabel;
-        if (index == null) return null;
-        return this.labels[index];
+        const id = this.userInterface.activeLabel;
+        if (id == null) return null;
+        return this.getLabel(id);
     }
 
     public getSavedLabelUuid(): string | null {
@@ -141,6 +141,22 @@ export class LabelManager {
 
     public getModelName(): string {
         return this.userInterface.getModelName();
+    }
+
+    public setOnActiveLabelChangeHandler(handler: ((label: Label) => void) | null): void {
+        this.userInterface.onActiveLabelChangeHandler = handler;
+    }
+
+    public moveLightToLabel(label: Label): void {
+        const index = Math.floor(Math.random() * (label.vertices.length - 1));
+        const vertexId = label.vertices[index];
+        this.renderer.moveLightToVertex(vertexId);
+    }
+
+    public moveCameraToLabel(label: Label): void {
+        const index = Math.floor(Math.random() * (label.vertices.length - 1));
+        const vertexId = label.vertices[index];
+        this.renderer.moveCameraToVertex(vertexId);
     }
 }
 
