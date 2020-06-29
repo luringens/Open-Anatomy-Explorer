@@ -5,6 +5,11 @@
 - Orientation questions
 - Free-text questions
 - Larger brush size
+- Link labels to information sites
+- Name this region:
+  - Only display the label in question
+  - Disable moving light fixture
+- Read-only quizzes
 
 ## Compiling
 
