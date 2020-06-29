@@ -114,7 +114,7 @@ export default class QuizMasterManager {
                 showRegionsLabel.innerText = "Display regions";
                 element.append(showRegionsLabel);
 
-                regionPicker.innerText = "Answer: " + label.name;
+                regionPicker.innerText = "Label: " + label.name;
                 break;
             }
             case QuestionType.Name: {
@@ -126,7 +126,7 @@ export default class QuizMasterManager {
                 textAnswer.id = element.id + "-textAnswer";
                 element.append(textAnswer);
 
-                regionPicker.innerText = "Label: " + label.name;
+                regionPicker.innerText = "Answer: " + label.name;
                 if (question.textPrompt == "")
                     textArea.innerText = "What is the name of this region?";
                 break;
@@ -152,8 +152,8 @@ export default class QuizMasterManager {
         const button = (document.getElementById(buttonId) as HTMLButtonElement);
 
         switch (this.questions[index].questionType) {
-            case QuestionType.Locate: button.innerText = "Answer: " + label.name; break;
-            case QuestionType.Name: button.innerText = "Label: " + label.name; break;
+            case QuestionType.Locate: button.innerText = "Label: " + label.name; break;
+            case QuestionType.Name: button.innerText = "Answer: " + label.name; break;
         }
     }
 

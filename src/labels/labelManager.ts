@@ -11,13 +11,12 @@ export class LabelManager {
     public labels: Label[] = [];
     public renderer: Renderer;
     private userInterface: LabelUi;
-    private visible = true;
     private adjacency: number[][] = [];
 
     constructor(renderer: Renderer, modelName: string, showUi: boolean, showLabels: boolean) {
         this.renderer = renderer;
-        this.visible = showLabels;
         this.userInterface = new LabelUi(modelName, this, showUi);
+        this.userInterface.visible = showLabels;
     }
 
     public getLabel(labelId: number): Label | null {
@@ -77,7 +76,7 @@ export class LabelManager {
 
         this.labels.splice(index, 1);
 
-        if (this.visible) {
+        if (this.userInterface.visible) {
             for (const v of pos.vertices) {
                 this.renderer.resetColorForVertex(v);
             }
@@ -92,8 +91,8 @@ export class LabelManager {
     }
 
     public setVisibility(visible: boolean): void {
-        this.visible = visible;
-        if (this.visible) {
+        this.userInterface.visible = visible;
+        if (this.userInterface.visible) {
             this.revisualize();
         } else {
             this.renderer.resetVertexColors();
@@ -101,7 +100,7 @@ export class LabelManager {
     }
 
     public toggleVisibility(): void {
-        this.setVisibility(!this.visible);
+        this.setVisibility(!this.userInterface.visible);
     }
 
     public addVerticesToLabel(hit: THREE.Intersection): void {

@@ -6,7 +6,6 @@ import { toHex, binarySearch } from "../utils";
 import { LabelStorage } from "./labelStorage";
 
 export class LabelUi {
-    private visible = true;
     private listContainer: HTMLElement;
     private labelManager: LabelManager
     private uuid: string | null = null;
@@ -15,15 +14,17 @@ export class LabelUi {
     private nextLabelId = 1;
     private modelName: string;
     private toolEnabled = false;
+    private showUi: boolean;
     public onActiveLabelChangeHandler: ((label: Label) => void) | null = null;
     public activeLabel: null | number = null;
     public brushSize = 2;
+    public visible = true;
 
     public constructor(modelName: string, labelManager: LabelManager, showUi: boolean) {
         this.listContainer = document.getElementById("labels") as HTMLElement;
         this.labelManager = labelManager;
         this.modelName = modelName;
-
+        this.showUi = showUi;
         if (showUi) {
             document.getElementById("label-editor")?.classList.remove("hide");
         }
@@ -129,13 +130,15 @@ export class LabelUi {
             createQuizButton.classList.remove("hide");
         }
 
-        const f = gui.addFolder("Labelling settings");
-        f.addColor(this, "regionColor").name("Region color");
-        f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
-        f.add(this, "brushSize", 1, 5, 1).name("Brush size");
-        const planeVisibleHandler = f.add(this, "visible").name("Show tags");
-        planeVisibleHandler.onChange(this.labelManager.toggleVisibility.bind(this.labelManager));
-        f.open();
+        if (this.showUi) {
+            const f = gui.addFolder("Labelling settings");
+            f.addColor(this, "regionColor").name("Region color");
+            f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
+            f.add(this, "brushSize", 1, 5, 1).name("Brush size");
+            const planeVisibleHandler = f.add(this, "visible").name("Show tags");
+            planeVisibleHandler.onChange(this.labelManager.toggleVisibility.bind(this.labelManager));
+            f.open();
+        }
 
         this.modelName = newModelName;
 
