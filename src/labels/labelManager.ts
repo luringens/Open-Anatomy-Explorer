@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
-import { binarySearch } from "../utils";
+import { uniq } from "../utils";
 import { Label } from "./Label";
-import { Mesh, BufferGeometry } from "three";
+import { Mesh, BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";
 import { LabelStorage } from "./labelStorage";
 
@@ -44,24 +44,6 @@ export class LabelManager {
 
         this.renderer.resetVertexColors();
         this.userInterface.reload(this.renderer.gui, modelName, labels, uuid);
-
-        const geo = mesh.geometry as BufferGeometry;
-        const vertices = geo.attributes.position.count;
-        this.updateAdjacancy(vertices, geo.index?.array as number[]);
-    }
-
-    private updateAdjacancy(vertices: number, idx: number[]): void {
-        this.adjacency = Array(vertices);
-        for (let i = 0; i < vertices; i++) {
-            this.adjacency[i] = [];
-        }
-
-        for (let i = 0; i < idx.length; i += 3) {
-            const v1 = idx[i], v2 = idx[i + 1], v3 = idx[i + 2];
-            this.adjacency[v1].push(v2, v3);
-            this.adjacency[v2].push(v1, v3);
-            this.adjacency[v3].push(v1, v2);
-        }
     }
 
     public removeLabel(pos: Label): void {
@@ -106,32 +88,27 @@ export class LabelManager {
     public addVerticesToLabel(hit: THREE.Intersection): void {
         if (this.userInterface.activeLabel == null || hit.face == null) return;
 
-        const pos = this.labels
+        const label = this.labels
             .find(label => label.id == this.userInterface.activeLabel);
-        if (pos == null) return;
+        if (label == null) return;
 
-        let vertices = [hit.face.a, hit.face.b, hit.face.c];
-        for (const v of [hit.face.a, hit.face.b, hit.face.c]) {
-            for (const v2 of this.adjacency[v]) {
-                vertices.push(v2);
+        const pos = hit.point;
+        const radius = this.userInterface.brushSize;
+        const geo = this.renderer.getModelGeometry();
+        if (geo == null) throw "No model geometry!";
+
+        const posAttr = geo.attributes["position"] as BufferAttribute;
+        for (let i = 0; i < posAttr.array.length; i += 3) {
+            const vPos = new Vector3(posAttr.array[i], posAttr.array[i + 1], posAttr.array[i + 2]);
+            if (pos.distanceTo(vPos) < radius) {
+                label.vertices.push(i / 3);
             }
         }
 
-        pos.vertices.sort();
-        const vertices2 = [];
+        label.vertices.sort();
+        uniq(label.vertices);
 
-        for (let i = this.userInterface.brushSize; i > 1; i--) {
-            for (const vertex of vertices) {
-                if (binarySearch(pos.vertices, vertex) == null) {
-                    vertices2.push(vertex);
-                    pos.vertices.push(vertex);
-                    pos.vertices.sort();
-                }
-            }
-            vertices = vertices2;
-        }
-
-        this.renderer.setColorForVertices(vertices, pos.color);
+        this.renderer.setColorForVertices(label.vertices, label.color);
     }
 
     public lastClickedLabel(): Label | null {

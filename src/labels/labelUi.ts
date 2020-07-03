@@ -134,7 +134,7 @@ export class LabelUi {
             const f = gui.addFolder("Labelling settings");
             f.addColor(this, "regionColor").name("Region color");
             f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
-            f.add(this, "brushSize", 1, 5, 1).name("Brush size");
+            f.add(this, "brushSize", 1, 25, 1).name("Brush size");
             const planeVisibleHandler = f.add(this, "visible").name("Show tags");
             planeVisibleHandler.onChange(this.labelManager.toggleVisibility.bind(this.labelManager));
             f.open();

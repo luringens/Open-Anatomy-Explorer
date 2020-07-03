@@ -59,8 +59,9 @@ export class Renderer {
     }
 
 
-    public setColorForVertices(vertices: number[], color: Vector4): void {
-        for (const vertexId of vertices) {
+    public setColorForVertices(vertices: ArrayLike<number>, color: Vector4): void {
+        for (let i = 0; i < vertices.length; i++) {
+            const vertexId = vertices[i];
             const val = [
                 color.x / 255,
                 color.y / 255,
@@ -362,5 +363,10 @@ export class Renderer {
         const normAttr = geo.attributes["normal"] as THREE.BufferAttribute;
         const norm = new Vector3(normAttr.getX(vId), normAttr.getY(vId), normAttr.getZ(vId));
         return [pos, norm];
+    }
+
+    public getModelGeometry(): BufferGeometry | null {
+        if (this.object == null) return null;
+        return this.object?.geometry as BufferGeometry;
     }
 }

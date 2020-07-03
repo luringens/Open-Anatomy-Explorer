@@ -1,6 +1,6 @@
 import { Label } from "./Label";
 import { Vector4 } from "three";
-import { toHex } from "../utils";
+import { toHex, LZW } from "../utils";
 
 export class LabelStorage {
     private static readonly url = "http://51.15.231.127:5000/LabelPoints";
@@ -78,14 +78,13 @@ export class LabelStorage {
 /// Labels are stored with a string format color instead of a vec3.
 /// This class converts between them.
 class StoredLabel {
-    vertices: number[];
+    vertices: string;
     id: number;
     color: string;
     model: string;
     name: string;
 
     public constructor(label: Label) {
-        this.vertices = label.vertices;
         this.id = label.id;
         this.model = label.model;
         this.name = label.name;
@@ -94,10 +93,12 @@ class StoredLabel {
             + toHex(label.color.y)
             + toHex(label.color.z)
             + toHex(label.color.w);
-    }
 
-    public toLabel(): Label {
-        return StoredLabel.toLabel(this);
+        // First, compress to a hex string.
+        // Next, compress using LZW and convert to hex again, because
+        // we're transmitting utf8 not bytes.
+        const hex = label.vertices.map(toHex).join(",");
+        this.vertices = LZW.compress(hex).map(toHex).join(",");
     }
 
     public static toLabel(label: StoredLabel): Label {
@@ -107,6 +108,9 @@ class StoredLabel {
         color.z = parseInt(label.color.slice(5, 7), 16);
         color.w = parseInt(label.color.slice(7, 9), 16);
 
-        return new Label(label.vertices, color, label.id, label.model, label.name)
+        const lzw = label.vertices.split(",").map(n => parseInt(n, 16));
+        const vertices = LZW.decompress(lzw).split(",").map(n => parseInt(n, 16));
+
+        return new Label(vertices, color, label.id, label.model, label.name);
     }
 }

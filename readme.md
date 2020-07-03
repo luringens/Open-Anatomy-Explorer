@@ -1,10 +1,9 @@
 # INF319 Project
 
-## Ideas for future improvement:
+## Ideas for future improvement
 
 - Orientation questions
 - Free-text questions
-- Larger brush size
 - Link labels to information sites
 - Name this region:
   - Only display the label in question
