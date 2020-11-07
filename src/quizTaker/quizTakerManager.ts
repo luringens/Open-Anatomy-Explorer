@@ -58,7 +58,7 @@ export default class QuizTakerManager {
                 // Move camera and marker to the label in question.
                 const q = question as QuestionName;
                 const label = this.labelManager.getLabel(q.labelId);
-                if (label == null) throw "Could not find label with id " + q.labelId;
+                if (label == null) throw `Could not find label with id ${q.labelId}`;
                 this.labelManager.moveCameraToLabel(label);
                 this.labelManager.moveLightToLabel(label);
 
@@ -94,7 +94,7 @@ export default class QuizTakerManager {
                 const input = this.labelManager.lastClickedLabel();
                 if (input == undefined) return;
                 if (answer == null) {
-                    const err = "Label " + q.labelId + " not found.";
+                    const err = `Label ${q.labelId} not found.`;
                     alert(err);
                     throw err;
                 }

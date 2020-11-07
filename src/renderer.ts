@@ -142,10 +142,13 @@ export class Renderer {
         this.gui.destroy();
         this.setupGui();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // TODO: Find "correct" way to change THREE.js uniforms
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         const uniforms = (mesh.material as any).uniforms;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
             .name("Ambient light");
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         this.gui.add(uniforms.diffuseIntensity, "value", 0, 10, 0.1)
             .name("Directional light");
 

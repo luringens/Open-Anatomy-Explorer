@@ -52,9 +52,11 @@ else if (labelId != null) {
     const showQuizEditor = quizAction == "create";
     const showLabelEditor = !showQuizEditor;
 
-    labelManager = new LabelManager(renderer, defaultModel, showLabelEditor, true);
-    labelManager.loadWithModel(labelId);
-    quizMasterManager = new QuizMasterManager(labelManager, null, showQuizEditor);
+    const lm = new LabelManager(renderer, defaultModel, showLabelEditor, true);
+    labelManager = lm;
+    void labelManager.loadWithModel(labelId).then(() => {
+        quizMasterManager = new QuizMasterManager(lm, null, showQuizEditor);
+    });
 }
 
 // If nothing is specified, load the label editor alone

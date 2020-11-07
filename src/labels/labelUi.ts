@@ -191,7 +191,8 @@ export class LabelUi {
     private setActiveLabel(event: Event): void {
         const target = event.target as HTMLInputElement;
         const label = this.labelManager.getLabel(Number.parseInt(target.value));
-        if (label == null) throw "Could not find label with id " + this.activeLabel;
+        if (label == null)
+            throw `Could not find label with id ${this.activeLabel ?? 0}`;
 
         if (target.checked) {
             this.activeLabel = label.id;
@@ -273,8 +274,8 @@ export class LabelUi {
     }
 
     private createQuiz(): void {
-        window.location.href = window.origin + location.pathname
-            + "?labels=" + this.uuid
-            + "&quizaction=create";
+        const origin = window.origin;
+        const path = location.pathname;
+        window.location.href = `${origin}${path}?labels=${this.uuid ?? ""}&quizaction=create`;
     }
 }

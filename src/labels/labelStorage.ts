@@ -7,7 +7,7 @@ export class LabelStorage {
 
     public static loadLabels(uuid: string, callback: ((_: Label[]) => void)): void {
         const options = { method: "GET" };
-        fetch(this.url + "/" + uuid, options)
+        void fetch(this.url + "/" + uuid, options)
             .then(async (response) => {
                 LabelStorage.handleError(response);
                 const data = await response.json() as StoredLabel[];
@@ -31,10 +31,10 @@ export class LabelStorage {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(labels.map(l => new StoredLabel(l)))
         };
-        fetch(this.url, options)
+        void fetch(this.url, options)
             .then(async (response) => {
                 this.handleError(response);
-                const data = await response.json();
+                const data = await response.json() as string;
                 console.info("Data stored - UUID: " + data)
                 window.location.href = window.origin + location.pathname + "?labels=" + data;
             });
@@ -46,7 +46,7 @@ export class LabelStorage {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(labels.map(l => new StoredLabel(l)))
         };
-        fetch(this.url + "/" + uuid, options)
+        void fetch(this.url + "/" + uuid, options)
             .then((response) => {
                 this.handleError(response);
                 console.info("Data updated")
@@ -58,7 +58,7 @@ export class LabelStorage {
         const options = {
             method: "DELETE",
         };
-        fetch(this.url + "/" + uuid, options)
+        void fetch(this.url + "/" + uuid, options)
             .then((response) => {
                 this.handleError(response);
                 console.info("Data deleted")
@@ -69,7 +69,7 @@ export class LabelStorage {
     private static handleError(response: Response): void {
         if (!response.ok || response.body == null) {
             throw new Error(
-                "Server responded " + response.status + " " + response.statusText
+                `Server responded ${response.status} ${response.statusText}`
             );
         }
     }

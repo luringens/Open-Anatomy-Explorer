@@ -62,7 +62,7 @@ export class ModelManager {
     }
 
     private getModelList(callback: (names: string[]) => void): void {
-        fetch(ModelManager.url)
+        void fetch(ModelManager.url)
             .then(res => res.json())
             .then(callback);
     }

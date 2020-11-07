@@ -5,7 +5,7 @@ export class QuizStorage {
 
     public static loadQuiz(uuid: string, callback: ((_: Quiz) => void)): void {
         const options = { method: "GET" };
-        fetch(this.url + "/" + uuid, options)
+        void fetch(this.url + "/" + uuid, options)
             .then(async (response) => {
                 this.handleError(response);
                 const data = await response.json() as Quiz;
@@ -13,13 +13,11 @@ export class QuizStorage {
             });
     }
 
-    public static loadQuizAsync(uuid: string): Promise<Quiz> {
+    public static async loadQuizAsync(uuid: string): Promise<Quiz> {
         const options = { method: "GET" };
-        return fetch(this.url + "/" + uuid, options)
-            .then(async (response) => {
-                this.handleError(response);
-                return await response.json() as Quiz;
-            });
+        const response = await fetch(this.url + "/" + uuid, options);
+        this.handleError(response);
+        return await response.json() as Quiz;
     }
 
     public static storeQuiz(quiz: Quiz): void {
@@ -28,11 +26,11 @@ export class QuizStorage {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(quiz)
         };
-        fetch(this.url, options)
+        void fetch(this.url, options)
             .then(async (response) => {
                 this.handleError(response);
-                const data = await response.json();
-                console.info("Data stored - UUID: " + data)
+                const data = await response.json() as string;
+                console.info(`Data stored - UUID: ${data}`)
                 window.location.href = window.origin + location.pathname
                     + "?quiz=" + data
                     + "&quizaction=edit";
@@ -45,7 +43,7 @@ export class QuizStorage {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(quiz)
         };
-        fetch(this.url + "/" + uuid, options)
+        void fetch(this.url + "/" + uuid, options)
             .then((response) => {
                 this.handleError(response);
                 console.info("Data updated")
@@ -60,7 +58,7 @@ export class QuizStorage {
         const options = {
             method: "DELETE",
         };
-        fetch(this.url + "/" + uuid, options)
+        void fetch(this.url + "/" + uuid, options)
             .then((response) => {
                 this.handleError(response);
                 console.info("Data deleted")
@@ -71,7 +69,7 @@ export class QuizStorage {
     private static handleError(response: Response): void {
         if (!response.ok || response.body == null) {
             throw new Error(
-                "Server responded " + response.status + " " + response.statusText
+                `Server responded ${response.status} ${response.statusText}`
             );
         }
     }
