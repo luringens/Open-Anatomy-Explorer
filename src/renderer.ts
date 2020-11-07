@@ -1,7 +1,6 @@
 import * as THREE from "three"
 import * as dat from "dat.gui";
 import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
-import { isNullOrUndefined } from "util";
 import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3 } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
@@ -218,7 +217,7 @@ export class Renderer {
 
             const p = intersects[0].point;
             const face = intersects[0].face;
-            if (isNullOrUndefined(face)) return;
+            if (face === null || face === undefined) return;
             const pUnit = face.normal;
             pUnit.multiplyScalar(25);
             this.moveLight(p, pUnit);
@@ -317,7 +316,7 @@ export class Renderer {
                 ambientReflection: { value: 0.2 },
                 shininess: { value: 50.0 },
                 color: { value: this.colorBufferAttribute },
-                texture1: { type: "t", value: texture },
+                texture1: { value: texture },
                 useTexture: { value: useTexture }
             },
             vertexShader: VertexShader,
