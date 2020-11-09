@@ -1,9 +1,11 @@
 import * as THREE from "three"
 import * as dat from "dat.gui";
-import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3 } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
+import { Console } from "console";
+import { ActiveTool } from "./activeTool";
 
 export class Renderer {
     private object: THREE.Mesh | null = null;
@@ -19,7 +21,7 @@ export class Renderer {
     // as a result. The exclamation mark squashes this warning :/
     public gui!: dat.GUI;
     private camera!: THREE.PerspectiveCamera;
-    private controls!: TrackballControls;
+    private controls!: OrbitControls;
     private ambientLight!: THREE.AmbientLight;
     private directionalLight!: THREE.DirectionalLight;
     private directionalLightHelper!: THREE.DirectionalLightHelper;
@@ -52,11 +54,37 @@ export class Renderer {
         this.setupGui();
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
-        this.container.addEventListener('click', this.onMouseDown.bind(this), false);
+        this.container.addEventListener('mousedown', this.onMouseDown.bind(this), false);
         this.container.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         this.container.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+
+        (document.getElementById("tool-camera") as HTMLInputElement)
+            .onchange = this.onToolChange.bind(this);
+        (document.getElementById("tool-picker") as HTMLInputElement)
+            .onchange = this.onToolChange.bind(this);
     }
 
+    /// Manages the camera/picker tools.
+    private onToolChange(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        if (target.checked) {
+            switch (target.value) {
+                case ActiveTool.Camera:
+                    this.overrideMouseControls(null);
+                    this.toggleCameraControls(true);
+                    break;
+
+                case ActiveTool.Picker:
+                    this.overrideMouseControls(null);
+                    this.toggleCameraControls(false);
+                    break;
+            }
+        }
+    }
+
+    public toggleCameraControls(enabled: boolean): void {
+        this.controls.enabled = enabled;
+    }
 
     public setColorForVertices(vertices: ArrayLike<number>, color: Vector4): void {
         for (let i = 0; i < vertices.length; i++) {
@@ -90,7 +118,7 @@ export class Renderer {
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         this.camera.position.set(-300, 0, 0);
 
-        this.controls = new TrackballControls(this.camera, this.renderer.domElement);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
         this.controls.update();
     }
 

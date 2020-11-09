@@ -4,6 +4,7 @@ import { Label } from "./Label";
 import THREE = require("three");
 import { toHex, binarySearch } from "../utils";
 import { LabelStorage } from "./labelStorage";
+import { ActiveTool } from "../activeTool";
 
 export class LabelUi {
     private listContainer: HTMLElement;
@@ -13,7 +14,6 @@ export class LabelUi {
     private regionTransparency = 255;
     private nextLabelId = 1;
     private modelName: string;
-    private toolEnabled = false;
     private showUi: boolean;
     public onActiveLabelChangeHandler: ((label: Label) => void) | null = null;
     public activeLabel: null | number = null;
@@ -27,6 +27,10 @@ export class LabelUi {
         this.showUi = showUi;
         if (showUi) {
             document.getElementById("label-editor")?.classList.remove("hide");
+            document.getElementById("tool-labeler")?.classList.remove("hide");
+            document.getElementById("tool-labeler-label")?.classList.remove("hide");
+            (document.getElementById("tool-labeler") as HTMLInputElement)
+                .onchange = this.onToolChange.bind(this);
         }
 
         labelManager.renderer.addClickEventListener(this.clickHandler.bind(this));
@@ -39,25 +43,14 @@ export class LabelUi {
 
         const createQuizButton = document.getElementById("labels-quiz") as HTMLElement;
         createQuizButton.addEventListener("click", this.createQuiz.bind(this));
-
-        // TODO: Move to renderer
-        (document.getElementById("tool-camera") as HTMLInputElement)
-            .onchange = this.onToolChange.bind(this);
-        (document.getElementById("tool-labeler") as HTMLInputElement)
-            .onchange = this.onToolChange.bind(this);
     }
 
     private onToolChange(event: Event): void {
         const target = event.target as HTMLInputElement;
-        if (target.checked) {
-            this.toolEnabled = target.value == "labeler";
-        }
-
-        if (this.toolEnabled) {
+        if (target.checked && target.value === ActiveTool.LabelPainter) {
+            this.labelManager.renderer.toggleCameraControls(false);
             const handler = this.labelManager.addVerticesToLabel.bind(this.labelManager);
             this.labelManager.renderer.overrideMouseControls(handler);
-        } else {
-            this.labelManager.renderer.overrideMouseControls(null);
         }
     }
 

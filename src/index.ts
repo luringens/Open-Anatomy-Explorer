@@ -12,7 +12,6 @@ const wrapper = document.getElementById("canvas-container") as HTMLElement;
 const renderer = new Renderer(wrapper);
 renderer.startRendering();
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let quizMasterManager: QuizMasterManager | null = null;
 let labelManager: LabelManager | null = null;
 

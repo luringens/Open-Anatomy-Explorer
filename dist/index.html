@@ -11,14 +11,16 @@
     <div class="grid">
         <div id="canvas-container" class="canvas-container"></div>
         <div class="sidebar">
+            <div id="tool-container">
+                <h3>Tools</h3>
+                <input type="radio" id="tool-camera" name="tool" value="camera" checked>
+                <label for="tool-camera">Camera</label><br>
+                <input type="radio" id="tool-picker" name="tool" value="picker">
+                <label for="tool-labeler">Picker</label><br>
+                <input type="radio" id="tool-labeler" name="tool" value="labeler" class="hide">
+                <label for="tool-labeler" id="tool-labeler-label" class="hide">Label painter</label><br>
+            </div>
             <div id="label-editor" class="hide">
-                <div id="tool-container">
-                    <h3>Tools</h3>
-                    <input type="radio" id="tool-camera" name="tool" value="camera" checked>
-                    <label for="tool-camera">Camera</label><br>
-                    <input type="radio" id="tool-labeler" name="tool" value="labeler">
-                    <label for="tool-labeler">Labeler</label><br>
-                </div>
                 <br />
                 <div id="label-container">
                     <h3>Labels</h3>
