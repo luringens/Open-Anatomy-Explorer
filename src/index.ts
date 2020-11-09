@@ -7,6 +7,9 @@ import QuizTakerManager from "./quizTaker/quizTakerManager";
 
 const defaultModel = "Arm";
 
+// Reset default tool to work around browser persistence.
+(document.getElementById("tool-camera") as HTMLInputElement).checked = true;
+
 // Set up renderer.
 const wrapper = document.getElementById("canvas-container") as HTMLElement;
 const renderer = new Renderer(wrapper);
