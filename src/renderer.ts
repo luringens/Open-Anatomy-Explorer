@@ -52,7 +52,7 @@ export class Renderer {
         this.setupGui();
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
-        this.container.addEventListener('mousedown', this.onMouseDown.bind(this), false);
+        this.container.addEventListener('click', this.onMouseDown.bind(this), false);
         this.container.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         this.container.addEventListener('mousemove', this.onMouseMove.bind(this), false);
     }
