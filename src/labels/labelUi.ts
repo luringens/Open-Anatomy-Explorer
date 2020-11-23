@@ -54,15 +54,20 @@ export class LabelUi {
         }
     }
 
-    private savenewLabel(): void {
-        const vertices = this.labelManager.renderer.lastMouseClickVerticeIds;
-        if (vertices == null) return;
-
+    private getSelectedColor(): THREE.Vector4 {
         const color = new THREE.Vector4();
         color.x = parseInt(this.regionColor.slice(1, 3), 16);
         color.y = parseInt(this.regionColor.slice(3, 5), 16);
         color.z = parseInt(this.regionColor.slice(5, 7), 16);
         color.w = this.regionTransparency;
+        return color;
+    }
+
+    private savenewLabel(): void {
+        const vertices = this.labelManager.renderer.lastMouseClickVerticeIds;
+        if (vertices == null) return;
+
+        const color = this.getSelectedColor();
 
         const savedRegion = new Label(vertices, color, this.nextLabelId++, this.modelName);
         this.labelManager.labels.push(savedRegion);
@@ -195,11 +200,7 @@ export class LabelUi {
     }
 
     private createRow(label: Label): HTMLElement {
-        const str = "#"
-            + toHex(label.color.x)
-            + toHex(label.color.y)
-            + toHex(label.color.z);
-        return this.createRowColor(label, str);
+        return this.createRowColor(label, this.colorToHex(label.color));
     }
 
     private createRowColor(label: Label, colorstr: string): HTMLElement {
@@ -228,7 +229,8 @@ export class LabelUi {
         element.append(tdLabel);
 
         const tdColor = document.createElement("td");
-        tdColor.setAttribute("style", "background-color: " + colorstr + ";");
+        tdColor.setAttribute("style", `background-color: ${colorstr};`);
+        tdColor.addEventListener("click", this.updateColor.bind(this, tdColor, label));
         element.append(tdColor);
 
         const tdRemoveBtn = document.createElement("button");
@@ -242,6 +244,23 @@ export class LabelUi {
         element.append(tdRemove);
 
         return element;
+    }
+
+    private colorToHex(color: THREE.Vector4): string {
+        return "#"
+            + toHex(color.x)
+            + toHex(color.y)
+            + toHex(color.z);
+    }
+
+    private updateColor(element: HTMLTableCellElement, label: Label): void {
+        label.color = this.getSelectedColor();
+        const colorstr = this.colorToHex(label.color);
+        element.setAttribute("style", `background-color: ${colorstr};`);
+
+        if (this.visible) {
+            this.labelManager.renderer.setColorForVertices(label.vertices, label.color);
+        }
     }
 
     private remove(element: HTMLElement, pos: Label): void {
