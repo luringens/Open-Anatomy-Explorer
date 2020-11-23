@@ -61,8 +61,6 @@ button {
 }
 
 .sidebar {
-    grid-column: 2;
-    height: 100%;
     padding: 15px;
     background: #282828;
     color: #E7E7E7;
