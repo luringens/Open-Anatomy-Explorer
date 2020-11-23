@@ -82,7 +82,6 @@ export default class QuizTakerManager {
                 break;
             }
             case QuestionType.Locate: {
-                ui.show(ui.answerLabel);
                 const q = question as QuestionLocate;
                 this.labelManager.setVisibility(q.showRegions);
                 break;
@@ -107,15 +106,14 @@ export default class QuizTakerManager {
             case QuestionType.Locate: {
                 const q = question as QuestionLocate;
                 const answer = this.labelManager.getLabel(q.labelId);
-                const input = this.labelManager.lastClickedLabel();
-                if (input == undefined) return;
+                const input = this.labelManager.lastClicked();
                 if (answer == null) {
                     const err = `Label ${q.labelId} not found.`;
                     alert(err);
                     throw err;
                 }
-                correct = answer.id == input.id;
-                this.answers.push(new Answer(this.questionIndex, input.name, answer.name, correct));
+                correct = input != null && answer.id == input.id;
+                this.answers.push(new Answer(this.questionIndex, input?.name ?? "N/A", answer.name, correct));
                 break;
             }
         }

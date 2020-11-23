@@ -17,6 +17,7 @@ export class LabelUi {
     private showUi: boolean;
     public onActiveLabelChangeHandler: ((label: Label) => void) | null = null;
     public activeLabel: null | number = null;
+    public lastClickTarget: null | number = null;
     public brushSize = 2;
     public visible = true;
 
@@ -83,6 +84,7 @@ export class LabelUi {
 
     private clickHandler(intersect: THREE.Intersection): boolean {
         if (intersect.face == null) return false;
+        this.lastClickTarget = null;
         const face = intersect.face;
         for (const pos of this.labelManager.labels) {
             pos.vertices.sort();
@@ -91,6 +93,7 @@ export class LabelUi {
                 if (idx != null) {
                     this.blinkRowId(pos.id);
                     this.activeLabel = pos.id;
+                    this.lastClickTarget = pos.id;
                     const e = document.getElementById("label-radio-" + String(pos.id));
                     (e as HTMLInputElement).checked = true;
 
@@ -194,6 +197,7 @@ export class LabelUi {
 
         if (target.checked) {
             this.activeLabel = label.id;
+            this.lastClickTarget = label.id;
             if (this.onActiveLabelChangeHandler != null)
                 this.onActiveLabelChangeHandler(label);
         }

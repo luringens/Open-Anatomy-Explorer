@@ -67,7 +67,7 @@ export default class QuizMasterManager {
     }
 
     public addQuestion(questionType: QuestionType) {
-        let label = this.labelManager.lastClickedLabel();
+        let label = this.labelManager.mostRecentlyClickedLabel();
         if (label == null) label = this.labelManager.labels[0];
         let question: Question;
         switch (questionType) {
@@ -178,7 +178,7 @@ export default class QuizMasterManager {
     }
 
     public setRegion(questionId: number): void {
-        const label = this.labelManager.lastClickedLabel();
+        const label = this.labelManager.mostRecentlyClickedLabel();
         if (label == null) return;
         const index = this.getIndexForQuestion(questionId);
         this.questions[index].labelId = label.id;

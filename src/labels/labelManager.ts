@@ -111,8 +111,16 @@ export class LabelManager {
         this.renderer.setColorForVertices(label.vertices, label.color);
     }
 
-    public lastClickedLabel(): Label | null {
+    /// Returns the most recent label that was clicked.
+    public mostRecentlyClickedLabel(): Label | null {
         const id = this.userInterface.activeLabel;
+        if (id == null) return null;
+        return this.getLabel(id);
+    }
+
+    /// Returns the last click, which is `null` if it did not hit a label.
+    public lastClicked(): Label | null {
+        const id = this.userInterface.lastClickTarget;
         if (id == null) return null;
         return this.getLabel(id);
     }
