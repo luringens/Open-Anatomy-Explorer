@@ -79,10 +79,12 @@ export class Quiz {
     public questions: Question[];
     public model: string;
     public labelId: string;
+    public shuffle: boolean;
 
-    public constructor(questions: Question[], model: string, labelId: string) {
+    public constructor(questions: Question[], model: string, labelId: string, shuffle: boolean) {
         this.questions = questions;
         this.model = model;
         this.labelId = labelId;
+        this.shuffle = shuffle;
     }
 }

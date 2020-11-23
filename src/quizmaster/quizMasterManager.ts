@@ -11,6 +11,7 @@ export default class QuizMasterManager {
     private quizGuid: string | null = null;
     private labelManager: LabelManager;
     private nextQuestionId = 0;
+    private shuffle: boolean = false;
 
     /// Constructs a new QuizMasterManager
     /// If quizGuid is not null, it will attempt to load the selected quiz and
@@ -37,6 +38,8 @@ export default class QuizMasterManager {
             .onclick = this.deleteQuestions.bind(this);
         (document.getElementById("quiz-take") as HTMLButtonElement)
             .onclick = this.takeQuiz.bind(this);
+        (document.getElementById("quiz-shuffle") as HTMLInputElement)
+            .onchange = this.onShuffleChange.bind(this);
 
         // Show editor
         if (showEditor) {
@@ -55,12 +58,12 @@ export default class QuizMasterManager {
 
     }
 
-    public questionCount(): number {
-        return this.questions.length;
+    public Shuffle(): boolean {
+        return this.shuffle;
     }
 
-    public getQuestion(index: number): Question {
-        return this.questions[index];
+    public getQuestions(): Question[] {
+        return this.questions;
     }
 
     public addQuestion(questionType: QuestionType) {
@@ -215,6 +218,9 @@ export default class QuizMasterManager {
 
         await callback(quiz);
 
+        this.shuffle = quiz.shuffle;
+        (document.getElementById("quiz-shuffle") as HTMLInputElement).checked = this.shuffle;
+
         quiz.questions.forEach(q => {
             this.nextQuestionId = Math.max(this.nextQuestionId, q.id + 1);
             const label = this.labelManager.getLabel(q.labelId);
@@ -271,12 +277,17 @@ export default class QuizMasterManager {
         return new Quiz(
             this.questions,
             this.labelManager.getModelName(),
-            labelUuid
+            labelUuid,
+            this.shuffle
         );
     }
 
     private takeQuiz(): void {
         window.location.href = window.origin + location.pathname
             + "?quiz=" + this.quizGuid;
+    }
+
+    private onShuffleChange(event: Event): void {
+        this.shuffle = (event.target as HTMLInputElement).checked;
     }
 }

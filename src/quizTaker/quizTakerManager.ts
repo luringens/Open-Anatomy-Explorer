@@ -1,6 +1,6 @@
 import QuizMasterManager from "../quizmaster/quizMasterManager";
 import { LabelManager } from "../labels/labelManager";
-import { QuestionType, QuestionName, QuestionLocate } from "../quizmaster/Question";
+import { QuestionType, QuestionName, QuestionLocate, Question } from "../quizmaster/Question";
 import { QuizTakerUi } from "./QuizTakerUi";
 import { Answer } from "./Answer";
 import { Label } from "../labels/Label";
@@ -11,6 +11,7 @@ export default class QuizTakerManager {
     private ui: QuizTakerUi;
     private answers: Answer[] = [];
     private questionIndex = -1;
+    private questions: Question[] = [];
 
     public constructor(quizMasterManager: QuizMasterManager, labelManager: LabelManager) {
         this.quizMasterManager = quizMasterManager;
@@ -32,6 +33,12 @@ export default class QuizTakerManager {
         ui.unbind(ui.begin);
         ui.bind(ui.submit, this.submitAnswer.bind(this));
         ui.bind(ui.next, this.nextQuestion.bind(this));
+
+        this.questions = this.quizMasterManager.getQuestions();
+        if (this.quizMasterManager.Shuffle()) {
+            this.shuffle();
+        }
+
         this.nextQuestion();
     }
 
@@ -46,12 +53,12 @@ export default class QuizTakerManager {
         (document.getElementById("tool-picker-label") as HTMLInputElement).classList.remove("hide");
 
         this.questionIndex++;
-        if (this.questionIndex >= this.quizMasterManager.questionCount()) {
+        if (this.questionIndex >= this.questions.length) {
             this.finish();
             return;
         }
 
-        const question = this.quizMasterManager.getQuestion(this.questionIndex);
+        const question = this.questions[this.questionIndex];
         ui.setText(ui.questionText, question.textPrompt);
 
         switch (question.questionType) {
@@ -86,7 +93,7 @@ export default class QuizTakerManager {
     private submitAnswer(): void {
         const ui = this.ui;
 
-        const question = this.quizMasterManager.getQuestion(this.questionIndex);
+        const question = this.questions[this.questionIndex];
         let correct;
         switch (question.questionType) {
             case QuestionType.Name: {
@@ -133,5 +140,12 @@ export default class QuizTakerManager {
         const ui = this.ui;
         const text = "Selected: " + label.name;
         ui.setText(ui.answerLabel, text);
+    }
+
+    private shuffle(): void {
+        for (let i = this.questions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.questions[i], this.questions[j]] = [this.questions[j], this.questions[i]];
+        }
     }
 }
