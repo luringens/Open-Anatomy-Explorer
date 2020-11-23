@@ -73,9 +73,12 @@ export class ModelManager {
             if (name.endsWith(".ini") || name.endsWith(".dat")) return;
             const row = document.createElement("tr");
 
+            const friendlyName = name.replace(/\.[^/.]+$/, "")
+                .replace(/^\w/, function (c) { return c.toUpperCase(); });
+
             const nameCell = document.createElement("td");
             const nameLabel = document.createElement("label");
-            nameLabel.innerText = name;
+            nameLabel.innerText = friendlyName;
             nameLabel.classList.add("label-name");
             nameCell.appendChild(nameLabel);
             row.appendChild(nameCell);

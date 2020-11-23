@@ -4,7 +4,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3 } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
-import { Console } from "console";
 import { ActiveTool } from "./activeTool";
 
 export class Renderer {
