@@ -85,7 +85,8 @@ export class LabelManager {
         this.setVisibility(!this.userInterface.visible);
     }
 
-    public addVerticesToLabel(hit: THREE.Intersection): void {
+    /// Add or remove vertices from a label.
+    public editVerticesForLabel(add: boolean, hit: THREE.Intersection): void {
         if (this.userInterface.activeLabel == null || hit.face == null) return;
 
         const label = this.labels
@@ -98,15 +99,24 @@ export class LabelManager {
         if (geo == null) throw "No model geometry!";
 
         const posAttr = geo.attributes["position"] as BufferAttribute;
+        const vertices = [];
         for (let i = 0; i < posAttr.array.length; i += 3) {
             const vPos = new Vector3(posAttr.array[i], posAttr.array[i + 1], posAttr.array[i + 2]);
             if (pos.distanceTo(vPos) < radius) {
-                label.vertices.push(i / 3);
+                vertices.push(i / 3);
             }
         }
 
-        label.vertices.sort();
-        uniq(label.vertices);
+
+        if (add) {
+            label.vertices = label.vertices.concat(vertices);
+            label.vertices.sort();
+            uniq(label.vertices);
+        } else {
+            this.renderer.resetColorForVertices(label.vertices);
+            const setFilter = new Set(vertices);
+            label.vertices = label.vertices.filter(v => !setFilter.has(v));
+        }
 
         this.renderer.setColorForVertices(label.vertices, label.color);
     }

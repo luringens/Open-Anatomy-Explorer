@@ -17,8 +17,12 @@
                 <label for="tool-camera">Camera</label><br>
                 <input type="radio" id="tool-picker" name="tool" value="picker">
                 <label for="tool-labeler" id="tool-picker-label">Picker</label><br>
-                <input type="radio" id="tool-labeler" name="tool" value="labeler" class="hide">
-                <label for="tool-labeler" id="tool-labeler-label" class="hide">Label painter</label><br>
+                <div id="tool-group-labeller" class="hide">
+                    <input type="radio" id="tool-labeler" name="tool" value="labeler">
+                    <label for="tool-labeler">Label painter</label><br>
+                    <input type="radio" id="tool-unlabeler" name="tool" value="unlabeler">
+                    <label for="tool-unlabeler">Label remover</label><br>
+                </div>
             </div>
             <div id="label-editor" class="hide">
                 <br />

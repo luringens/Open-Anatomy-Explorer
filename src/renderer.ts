@@ -100,6 +100,14 @@ export class Renderer {
         if (this.object != null) this.updateShader(this.object);
     }
 
+    public resetColorForVertices(vertexIds: number[]): void {
+        for (const vertexId of vertexIds) {
+            this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
+        }
+
+        if (this.object != null) this.updateShader(this.object);
+    }
+
     public resetColorForVertex(vertexId: number): void {
         this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
         if (this.object != null) this.updateShader(this.object);

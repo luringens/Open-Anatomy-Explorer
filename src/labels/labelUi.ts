@@ -28,9 +28,10 @@ export class LabelUi {
         this.showUi = showUi;
         if (showUi) {
             document.getElementById("label-editor")?.classList.remove("hide");
-            document.getElementById("tool-labeler")?.classList.remove("hide");
-            document.getElementById("tool-labeler-label")?.classList.remove("hide");
+            document.getElementById("tool-group-labeller")?.classList.remove("hide");
             (document.getElementById("tool-labeler") as HTMLInputElement)
+                .onchange = this.onToolChange.bind(this);
+            (document.getElementById("tool-unlabeler") as HTMLInputElement)
                 .onchange = this.onToolChange.bind(this);
         }
 
@@ -48,10 +49,22 @@ export class LabelUi {
 
     private onToolChange(event: Event): void {
         const target = event.target as HTMLInputElement;
-        if (target.checked && target.value === ActiveTool.LabelPainter) {
-            this.labelManager.renderer.toggleCameraControls(false);
-            const handler = this.labelManager.addVerticesToLabel.bind(this.labelManager);
-            this.labelManager.renderer.overrideMouseControls(handler);
+        if (target.checked) {
+            switch (target.value) {
+                case ActiveTool.LabelPainter:
+                    this.labelManager.renderer.toggleCameraControls(false);
+                    this.labelManager.renderer.overrideMouseControls(
+                        this.labelManager.editVerticesForLabel.bind(this.labelManager, true)
+                    );
+                    break;
+
+                case ActiveTool.LabelUnpainter:
+                    this.labelManager.renderer.toggleCameraControls(false);
+                    this.labelManager.renderer.overrideMouseControls(
+                        this.labelManager.editVerticesForLabel.bind(this.labelManager, false)
+                    );
+                    break;
+            }
         }
     }
 
