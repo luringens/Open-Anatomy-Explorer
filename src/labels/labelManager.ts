@@ -130,9 +130,7 @@ export class LabelManager {
     }
 
     public moveLightToLabel(label: Label): void {
-        const index = Math.floor(Math.random() * (label.vertices.length - 1));
-        const vertexId = label.vertices[index];
-        this.renderer.moveLightToVertex(vertexId);
+        this.renderer.moveLightToVertexAverage(label.vertices);
     }
 
     public moveCameraToLabel(label: Label): void {

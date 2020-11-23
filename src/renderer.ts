@@ -362,6 +362,20 @@ export class Renderer {
         this.moveLight(pos, offset);
     }
 
+    public moveLightToVertexAverage(vIds: number[]): void {
+        const posTotal = new THREE.Vector3();
+        const normTotal = new THREE.Vector3();
+        for (const vId of vIds) {
+            const [pos, norm] = this.getVertexPosAndNormal(vId);
+            posTotal.add(pos);
+            normTotal.add(norm);
+        }
+        posTotal.divideScalar(vIds.length);
+        normTotal.normalize().multiplyScalar(25);
+
+        this.moveLight(posTotal, normTotal);
+    }
+
     public moveLight(position: Vector3, normal: Vector3): void {
         this.directionalLight.position.set(normal.x, normal.y, normal.z);
 

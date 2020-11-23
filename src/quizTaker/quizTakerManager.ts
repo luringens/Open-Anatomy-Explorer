@@ -42,6 +42,9 @@ export default class QuizTakerManager {
         ui.clearInput(ui.answerText);
         ui.show(ui.submit);
 
+        (document.getElementById("tool-picker") as HTMLInputElement).classList.remove("hide");
+        (document.getElementById("tool-picker-label") as HTMLInputElement).classList.remove("hide");
+
         this.questionIndex++;
         if (this.questionIndex >= this.quizMasterManager.questionCount()) {
             this.finish();
@@ -63,6 +66,12 @@ export default class QuizTakerManager {
                 this.labelManager.moveLightToLabel(label);
 
                 this.labelManager.setVisibility(true);
+
+                // Disable the picker to avoid moving the marker
+                (document.getElementById("tool-camera") as HTMLInputElement).click();
+                (document.getElementById("tool-picker") as HTMLInputElement).classList.add("hide");
+                (document.getElementById("tool-picker-label") as HTMLInputElement).classList.add("hide");
+
                 break;
             }
             case QuestionType.Locate: {
