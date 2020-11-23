@@ -4,7 +4,6 @@ import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeNa
 import { LabelManager } from "../labels/labelManager";
 import { Quiz, QuizStorage } from "./quizStorage";
 import { Label } from "../labels/Label";
-import { ModelManager } from "../modelManager";
 
 
 export default class QuizMasterManager {
@@ -87,8 +86,7 @@ export default class QuizMasterManager {
         element.id = "question-" + String(question.id);
 
         const header = document.createElement("h3");
-        header.innerText = "Question #" + String(question.id)
-            + ": " + GetQuestionTypeName(question.questionType);
+        header.innerText = GetQuestionTypeName(question.questionType);
         element.append(header);
 
         const textArea = document.createElement("textarea");
@@ -132,15 +130,48 @@ export default class QuizMasterManager {
                 break;
             }
         }
-
         const deleteLink = document.createElement("a");
         deleteLink.innerText = "❌";
         deleteLink.onclick = this.deleteRow.bind(this, question.id);
+        deleteLink.style.cursor = "pointer";
         element.append(deleteLink);
+
+        const moveUpLink = document.createElement("a");
+        moveUpLink.innerText = "⬆️";
+        moveUpLink.style.cursor = "pointer";
+        moveUpLink.onclick = this.moveQuestion.bind(this, question.id, true);
+        element.append(moveUpLink);
+
+        const moveDownLink = document.createElement("a");
+        moveDownLink.innerText = "⬇️";
+        moveDownLink.style.cursor = "pointer";
+        moveDownLink.onclick = this.moveQuestion.bind(this, question.id, false);
+        element.append(moveDownLink);
 
         document.getElementById("questions")?.append(element);
 
         return element;
+    }
+
+    private moveQuestion(questionId: number, up: boolean): void {
+        const first = document.getElementById(`question-${questionId}`);
+        const second = up ? first?.previousSibling : first?.nextSibling;
+        if (first == null || second == null || second == undefined || second.nodeName != "DIV")
+            return;
+
+        if (up) first.parentNode?.insertBefore(first, second);
+        else first.parentNode?.insertBefore(second, first);
+
+        const q1 = questionId;
+        const q2 = Number.parseInt((second as HTMLDivElement).id.split("-")[1]);
+
+        const i1 = this.questions.findIndex(e => e.id == q1);
+        const i2 = this.questions.findIndex(e => e.id == q2);
+
+        // Swap array positions.
+        const temp = this.questions[i1];
+        this.questions[i1] = this.questions[i2];
+        this.questions[i2] = temp;
     }
 
     public setRegion(questionId: number): void {
