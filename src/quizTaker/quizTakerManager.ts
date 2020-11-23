@@ -72,7 +72,8 @@ export default class QuizTakerManager {
                 this.labelManager.moveCameraToLabel(label);
                 this.labelManager.moveLightToLabel(label);
 
-                this.labelManager.setVisibility(true);
+                this.labelManager.setVisibility(false);
+                this.labelManager.renderer.setColorForVertices(label.vertices, label.color);
 
                 // Disable the picker to avoid moving the marker
                 (document.getElementById("tool-camera") as HTMLInputElement).click();
