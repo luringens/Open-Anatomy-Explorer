@@ -3,15 +3,6 @@ import { Question } from "./Question";
 export class QuizStorage {
     private static readonly url = "http://51.15.231.127:5000/Quiz";
 
-    public static loadQuiz(uuid: string, callback: ((_: Quiz) => void)): void {
-        const options = { method: "GET" };
-        void fetch(this.url + "/" + uuid, options)
-            .then(async (response) => {
-                this.handleError(response);
-                const data = await response.json() as Quiz;
-                callback(data);
-            });
-    }
 
     public static async loadQuizAsync(uuid: string): Promise<Quiz> {
         const options = { method: "GET" };
@@ -20,50 +11,47 @@ export class QuizStorage {
         return await response.json() as Quiz;
     }
 
-    public static storeQuiz(quiz: Quiz): void {
+    public static async storeQuiz(quiz: Quiz): Promise<void> {
         const options = {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(quiz)
         };
-        void fetch(this.url, options)
-            .then(async (response) => {
-                this.handleError(response);
-                const data = await response.json() as string;
-                console.info(`Data stored - UUID: ${data}`)
-                window.location.href = window.origin + location.pathname
-                    + "?quiz=" + data
-                    + "&quizaction=edit";
-            });
+        const response = await fetch(this.url, options);
+        this.handleError(response);
+
+        const data = await response.json() as string;
+        console.info(`Data stored - UUID: ${data}`)
+        window.location.href = window.origin + location.pathname
+            + "?quiz=" + data
+            + "&quizaction=edit";
     }
 
-    public static updateQuiz(uuid: string, quiz: Quiz): void {
+    public static async updateQuiz(uuid: string, quiz: Quiz): Promise<void> {
         const options = {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(quiz)
         };
-        void fetch(this.url + "/" + uuid, options)
-            .then((response) => {
-                this.handleError(response);
-                console.info("Data updated")
-                window.location.href = window.origin + location.pathname
-                    + "?quiz=" + uuid
-                    + "&quizaction=edit";
-            });
+        const response = await fetch(this.url + "/" + uuid, options);
+        this.handleError(response);
+
+        console.info("Data updated")
+        window.location.href = window.origin + location.pathname
+            + "?quiz=" + uuid
+            + "&quizaction=edit";
     }
 
-    public static deleteQuiz(uuid: string, labelId: string | null): void {
+    public static async deleteQuiz(uuid: string, labelId: string | null): Promise<void> {
         const labelQuery = labelId == null ? "" : "?labels=" + labelId;
         const options = {
             method: "DELETE",
         };
-        void fetch(this.url + "/" + uuid, options)
-            .then((response) => {
-                this.handleError(response);
-                console.info("Data deleted")
-                window.location.href = window.origin + location.pathname + labelQuery;
-            });
+        const response = await fetch(this.url + "/" + uuid, options);
+        this.handleError(response);
+
+        console.info("Data deleted")
+        window.location.href = window.origin + location.pathname + labelQuery;
     }
 
     private static handleError(response: Response): void {

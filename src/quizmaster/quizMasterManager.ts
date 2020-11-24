@@ -232,15 +232,15 @@ export default class QuizMasterManager {
         });
     }
 
-    public saveQuestions(): void {
+    public async saveQuestions(): Promise<void> {
         this.updateDataFromUi();
-        QuizStorage.storeQuiz(this.serialize());
+        await QuizStorage.storeQuiz(this.serialize());
     }
 
-    public updateQuestions(): void {
+    public async updateQuestions(): Promise<void> {
         this.updateDataFromUi();
         if (this.quizGuid == null) throw "No stored quiz!";
-        QuizStorage.updateQuiz(this.quizGuid, this.serialize());
+        await QuizStorage.updateQuiz(this.quizGuid, this.serialize());
     }
 
     public deleteQuestions(): void {
