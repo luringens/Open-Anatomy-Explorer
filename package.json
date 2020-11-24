@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "webpack",
-    "watch": "webpack-dev-server --open"
+    "build": "npx webpack",
+    "watch": "npx webpack --watch",
+    "start": "browser-sync start -s dist -f dist --no-notify --host 127.0.0.1 --port 8000"
   },
   "repository": {
     "type": "git",
@@ -19,7 +20,6 @@
   "devDependencies": {
     "@types/dat.gui": "^0.7.5",
     "@types/node": "^14.14",
-    "@types/three": "^0.103",
     "@typescript-eslint/eslint-plugin": "^4.6",
     "@typescript-eslint/parser": "^4.6",
     "eslint": "^7.13",
