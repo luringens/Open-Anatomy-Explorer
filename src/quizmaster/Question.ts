@@ -17,9 +17,9 @@ export class QuestionLocate implements Question {
     public labelId: number;
     public showRegions = true;
 
-    public constructor(id: number, labelId: number) {
-        this.id = id;
-        this.labelId = labelId;
+    public constructor (id: number, labelId: number) {
+      this.id = id;
+      this.labelId = labelId;
     }
 }
 
@@ -30,17 +30,17 @@ export class QuestionName implements Question {
     public textAnswer = "";
     public labelId: number;
 
-    public constructor(id: number, labelId: number) {
-        this.id = id;
-        this.labelId = labelId;
+    public constructor (id: number, labelId: number) {
+      this.id = id;
+      this.labelId = labelId;
     }
 }
 
-export function GetQuestionTypeName(questionType: QuestionType): string {
-    switch (questionType) {
-        case QuestionType.Locate:
-            return "Locate the region";
-        case QuestionType.Name:
-            return "Name the region";
-    }
+export function GetQuestionTypeName (questionType: QuestionType): string {
+  switch (questionType) {
+    case QuestionType.Locate:
+      return "Locate the region";
+    case QuestionType.Name:
+      return "Name the region";
+  }
 }

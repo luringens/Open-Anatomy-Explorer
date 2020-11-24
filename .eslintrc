@@ -1,31 +1,35 @@
 {
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "project": "./tsconfig.json"
-  },
-  "plugins": [
-    "@typescript-eslint"
-  ],
-  "rules": {
-    "no-use-before-define": [
-      "error",
-      {
-        "functions": false,
-        "classes": false
-      }
-    ],
-    "@typescript-eslint/no-use-before-define": [
-      "error",
-      {
-        "functions": false,
-        "classes": false
-      }
-    ]
+  "root": true,
+  "env": {
+    "node": true
   },
   "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking"
-  ]
+    "plugin:vue/vue3-essential",
+    "@vue/standard",
+    "@vue/typescript/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "rules": {
+    // "no-console": process.env.NODE_ENV === "production" ? "warn": "off",
+    // "no-debugger": process.env.NODE_ENV === "production" ? "warn": "off",
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": "off",
+    "comma-dangle": [
+      1,
+      "always-multiline"
+    ],
+    "quotes": [
+      1,
+      "double"
+    ],
+    "semi": 0,
+    "space-before-function-paren": [
+      1,
+      "never"
+    ],
+    "indent": 1,
+    "brace-style": 1
+  }
 }
