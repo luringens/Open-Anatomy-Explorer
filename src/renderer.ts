@@ -1,14 +1,15 @@
 import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3 } from "three";
+import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3, Scene, Object3D } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 import { ActiveTool } from "./activeTool";
 
 export class Renderer {
-    private object: THREE.Mesh | null = null;
-    private scene: THREE.Scene = new THREE.Scene();
+    private meshes: Mesh[] = [];
+    private model: Object3D | null = null;
+    private scene: Scene = new THREE.Scene();
     private renderer: THREE.WebGLRenderer;
     private wrapper: HTMLElement;
     private container: HTMLCanvasElement;
@@ -165,12 +166,13 @@ export class Renderer {
         this.wrapper.prepend(this.gui.domElement);
     }
 
-    public loadObject(mesh: Mesh): void {
+    public loadObject(object: Object3D): void {
         // Load shader and stuff
-        if (this.object != null) this.scene.remove(this.object);
-        this.setMaterial(mesh);
-        this.object = mesh;
-        this.scene.add(mesh);
+        if (this.model != null) this.scene.remove(this.model);
+        this.model = object;
+        this.meshes = this.findMeshes(object);
+        this.meshes.forEach(mesh => this.setMaterial(mesh));
+        this.scene.add(object);
 
         // Reload GUI
         this.gui.domElement.remove();
@@ -419,5 +421,16 @@ export class Renderer {
     public getModelGeometry(): BufferGeometry | null {
         if (this.object == null) return null;
         return this.object?.geometry as BufferGeometry;
+    }
+
+    private findMeshes(scene: Object3D): Mesh[] {
+        let meshes = [];
+        if (scene.type == "Mesh") meshes.push(scene as Mesh);
+
+        for (const child of scene.children) {
+            meshes = meshes.concat(this.findMeshes(child));
+        }
+
+        return meshes;
     }
 }
