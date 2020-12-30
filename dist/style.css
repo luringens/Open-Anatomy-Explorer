@@ -144,3 +144,9 @@ textarea {
 th {
     text-align: left;
 }
+
+td > svg {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}

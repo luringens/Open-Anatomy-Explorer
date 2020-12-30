@@ -14,7 +14,7 @@ module.exports = {
                 exclude: /node_modules/,
             },
             {
-                test: /\.(txt|vert|frag)$/i,
+                test: /\.(txt|vert|frag|svg)$/i,
                 use: 'raw-loader',
                 exclude: /node_modules/,
             },

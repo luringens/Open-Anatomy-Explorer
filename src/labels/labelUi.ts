@@ -5,6 +5,8 @@ import THREE = require("three");
 import { toHex, binarySearch } from "../utils";
 import { LabelStorage } from "./labelStorage";
 import { ActiveTool } from "../activeTool";
+import SVG_EYE from "../../static/eye.svg"
+import SVG_EYE_OFF from "../../static/eye-off.svg"
 
 export class LabelUi {
     private listContainer: HTMLElement;
@@ -149,8 +151,6 @@ export class LabelUi {
             f.addColor(this, "regionColor").name("Region color");
             f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
             f.add(this, "brushSize", 1, 25, 1).name("Brush size");
-            const planeVisibleHandler = f.add(this, "visible").name("Show tags");
-            planeVisibleHandler.onChange(this.labelManager.toggleVisibility.bind(this.labelManager));
             f.open();
         }
 
@@ -220,6 +220,27 @@ export class LabelUi {
         return this.createRowColor(label, this.colorToHex(label.color));
     }
 
+    public toggleLabelVisible(labelId: number): void {
+        const label = this.labelManager.getLabel(labelId);
+        if (label === null) return;
+        this.setLabelVisible(label, !label.visible);
+    }
+
+    public setLabelVisible(label: Label, visible: boolean): void {
+        const td = document.getElementById("label-visibility-" + String(label.id));
+        if (label === null || td === null) return;
+
+        label.visible = visible;
+        td.innerHTML = label.visible ? SVG_EYE : SVG_EYE_OFF;
+        this.labelManager.updateLabelVisibility(label);
+    }
+
+    public setAllLabelVisible(visible: boolean): void {
+        this.labelManager.labels.forEach(label => {
+            this.setLabelVisible(label, visible);
+        });
+    }
+
     private createRowColor(label: Label, colorstr: string): HTMLElement {
         const element = document.createElement("tr");
         element.className = "label-row";
@@ -235,6 +256,12 @@ export class LabelUi {
         const tdLabelRadio = document.createElement("td");
         tdLabelRadio.append(labelRadio);
         element.append(tdLabelRadio);
+
+        const tdlabelVisible = document.createElement("td");
+        tdlabelVisible.innerHTML = SVG_EYE;
+        tdlabelVisible.id = "label-visibility-" + String(label.id);
+        tdlabelVisible.onclick = this.toggleLabelVisible.bind(this, label.id);
+        element.append(tdlabelVisible);
 
         const tdLabelInput = document.createElement("input");
         tdLabelInput.id = "label-input-" + String(label.id);

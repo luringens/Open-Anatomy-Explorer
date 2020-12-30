@@ -81,8 +81,16 @@ export class LabelManager {
         }
     }
 
-    public toggleVisibility(): void {
-        this.setVisibility(!this.userInterface.visible);
+    /// Toggle visibility of all labels.
+    public toggleVisibilityAll(): void {
+        this.setVisibility(this.userInterface.visible);
+    }
+
+    /// Instruct renderer to render or not render a label as set in label.visibility.
+    public updateLabelVisibility(label: Label): void {
+        const vertices = label.vertices;
+        if (label.visible) this.renderer.setColorForVertices(vertices, label.color);
+        else this.renderer.resetColorForVertices(label.vertices);
     }
 
     /// Add or remove vertices from a label.
