@@ -133,7 +133,7 @@ export class LabelUi {
         }, 2900);
     }
 
-    public reload(gui: GUI, newModelName: string, labels: Label[] | null = null, uuid: string | null = null): void {
+    public async reload(gui: GUI, newModelName: string, labels: Label[] | null = null, uuid: string | null = null): Promise<void> {
         this.uuid = uuid;
         const updateAllLabelsButton = document.getElementById("labels-update") as HTMLElement;
         const deleteAllLabelsButton = document.getElementById("labels-delete") as HTMLElement;
@@ -159,17 +159,17 @@ export class LabelUi {
         if (labels != null) {
             this.loadGivenLabels(labels);
         } else if (this.uuid != null) {
-            this.loadLabels();
+            await this.loadLabels();
         }
     }
 
-    private loadLabels(): void {
+    private async loadLabels(): Promise<void> {
         if (this.uuid == null) {
             alert("No UUID to load!");
             return;
         }
 
-        LabelStorage.loadLabels(this.uuid, this.loadGivenLabels.bind(this));
+        await LabelStorage.loadLabelsAsync(this.uuid).then(this.loadGivenLabels.bind(this));
     }
 
     public loadGivenLabels(labels: Label[]): void {

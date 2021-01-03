@@ -30,10 +30,10 @@ export class LabelManager {
         const model = modelName ?? labels[0].model;
         const mesh = await ModelManager.loadAsync(model);
         this.renderer.loadObject(mesh);
-        this.reset(model, labels, uuid);
+        await this.reset(model, labels, uuid);
     }
 
-    public reset(modelName: string, labels: Label[] | null = null, uuid: string | null = null): void {
+    public async reset(modelName: string, labels: Label[] | null = null, uuid: string | null = null): Promise<void> {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
             const elem = document.getElementById(id) as HTMLElement;
@@ -43,7 +43,7 @@ export class LabelManager {
         this.labels = labels ?? [];
 
         this.renderer.resetVertexColors();
-        this.userInterface.reload(this.renderer.gui, modelName, labels, uuid);
+        await this.userInterface.reload(this.renderer.gui, modelName, labels, uuid);
     }
 
     public removeLabel(pos: Label): void {
