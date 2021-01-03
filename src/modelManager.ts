@@ -1,64 +1,37 @@
 import { Renderer } from "./renderer";
-import { Object3D, Mesh } from "three";
+import { Object3D } from "three";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
 
 export class ModelManager {
-    private static readonly url = "http://51.15.231.127:5000/models/";
+    private static readonly url = "http://localhost:8001/models/";
     private readonly renderer: Renderer;
-    private onload: ((model: Mesh, name: string) => void) | null = null;
+    private onload: ((model: Object3D, name: string) => void) | null = null;
 
     public constructor(renderer: Renderer) {
         this.renderer = renderer;
         this.getModelList(this.populateModelList.bind(this));
     }
 
-    private static findMesh(objs: Object3D[]): Mesh | null {
-        for (const obj of objs) {
-            if (obj.type == "Mesh") return obj as Mesh;
-
-            const childMesh = ModelManager.findMesh(obj.children);
-            if (childMesh != null) return childMesh;
-        }
-        return null;
-    }
-
-    public setOnload(callback: (model: Mesh, name: string) => void): void {
+    public setOnload(callback: (model: Object3D, name: string) => void): void {
         this.onload = callback;
     }
 
-    public static load(name: string, callback: (_: Mesh) => void): void {
-        new GLTFLoader().load(
-            this.url + name,
-            (gltf: GLTF) => {
-                const mesh = this.findMesh(gltf.scene.children);
-                if (mesh == null) throw "Could not find mesh";
-                callback(mesh);
-            },
-            undefined,
-            (error) => console.error(error)
-        );
+    public static async loadAsync(name: string): Promise<THREE.Group> {
+        if (name.endsWith(".obj")) {
+            // OBJ file loading
+            return await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
+        } else {
+            // Default to GLTF
+            const data = await new GLTFLoader().loadAsync(this.url + name) as GLTF;
+            return data.scene; // ?
+        }
     }
 
-    public static async loadAsync(name: string): Promise<Mesh> {
-        const url = this.url;
-        return new Promise(function (resolve, reject) {
-            new GLTFLoader().load(
-                url + name,
-                (gltf: GLTF) => {
-                    const mesh = ModelManager.findMesh(gltf.scene.children);
-                    if (mesh == null) reject("Could not find mesh");
-                    else resolve(mesh);
-                },
-                undefined,
-                (error) => console.error(error)
-            );
-        });
-    }
-
-    private loadModel(name: string, mesh: Mesh): void {
-        this.renderer.loadObject(mesh);
-        if (this.onload != null && mesh != null)
-            this.onload(mesh, name);
+    private loadModel(name: string, model: Object3D): void {
+        this.renderer.loadObject(model);
+        if (this.onload != null && model != null)
+            this.onload(model, name);
     }
 
     private getModelList(callback: (names: string[]) => void): void {
@@ -91,8 +64,8 @@ export class ModelManager {
 
             div.appendChild(row);
 
-            button.onclick = (): void =>
-                ModelManager.load(name, this.loadModel.bind(this, name));
+            button.onclick = async (): Promise<void> =>
+                this.loadModel(name, await ModelManager.loadAsync(name));
         });
     }
 }

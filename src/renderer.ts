@@ -1,14 +1,15 @@
 import * as THREE from "three"
 import * as dat from "dat.gui";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3 } from "three";
+import { Mesh, Vector4, BufferAttribute, BufferGeometry, Vector3, Scene, Object3D } from "three";
 import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 import { ActiveTool } from "./activeTool";
 
 export class Renderer {
-    private object: THREE.Mesh | null = null;
-    private scene: THREE.Scene = new THREE.Scene();
+    private meshes: Mesh[] = [];
+    private model: Object3D | null = null;
+    private scene: Scene = new THREE.Scene();
     private renderer: THREE.WebGLRenderer;
     private wrapper: HTMLElement;
     private container: HTMLCanvasElement;
@@ -97,7 +98,7 @@ export class Renderer {
             this.colorBufferAttribute?.set(val, vertexId * 4);
         }
 
-        if (this.object != null) this.updateShader(this.object);
+        if (this.meshes != null) this.updateShader(this.meshes);
     }
 
     public resetColorForVertices(vertexIds: number[]): void {
@@ -105,12 +106,12 @@ export class Renderer {
             this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
         }
 
-        if (this.object != null) this.updateShader(this.object);
+        if (this.meshes != null) this.updateShader(this.meshes);
     }
 
     public resetColorForVertex(vertexId: number): void {
         this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
-        if (this.object != null) this.updateShader(this.object);
+        if (this.meshes != null) this.updateShader(this.meshes);
     }
 
     public resetVertexColors(): void {
@@ -118,7 +119,7 @@ export class Renderer {
         for (let i = 0; i < this.colorBufferAttribute.array.length / 4; i++) {
             this.colorBufferAttribute.setW(i, 0);
         }
-        if (this.object != null) this.updateShader(this.object);
+        if (this.meshes != null) this.updateShader(this.meshes);
     }
 
     private setupCamera(): void {
@@ -165,12 +166,13 @@ export class Renderer {
         this.wrapper.prepend(this.gui.domElement);
     }
 
-    public loadObject(mesh: Mesh): void {
+    public loadObject(object: Object3D): void {
         // Load shader and stuff
-        if (this.object != null) this.scene.remove(this.object);
-        this.setMaterial(mesh);
-        this.object = mesh;
-        this.scene.add(mesh);
+        if (this.model != null) this.scene.remove(this.model);
+        this.model = object;
+        this.meshes = this.findMeshes(object);
+        this.meshes.forEach(mesh => this.setMaterial(mesh));
+        this.scene.add(object);
 
         // Reload GUI
         this.gui.domElement.remove();
@@ -179,7 +181,7 @@ export class Renderer {
 
         // TODO: Find "correct" way to change THREE.js uniforms
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const uniforms = (mesh.material as any).uniforms;
+        const uniforms = (this.meshes[0].material as any).uniforms;
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
             .name("Ambient light");
@@ -220,12 +222,12 @@ export class Renderer {
 
     private onMouseMove(evt: MouseEvent): void {
         evt.preventDefault();
-        if (this.object === null) return;
+        if (this.meshes === null) return;
         if (!this.mouseDown || this.mouseMoveHandler == null) return;
         const array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
         this.onClickPosition.fromArray(array);
         const intersects: THREE.Intersection[] =
-            this.getIntersects(this.onClickPosition, [this.object]);
+            this.getIntersects(this.onClickPosition, this.meshes);
         if (intersects.length > 0) this.mouseMoveHandler(intersects[0]);
     }
 
@@ -239,13 +241,13 @@ export class Renderer {
         }
 
         // Don't continue if object is not yet loaded.
-        if (this.object === null) return;
+        if (this.meshes === null) return;
 
         const array = Renderer.getMousePosition(this.container, evt.clientX, evt.clientY);
         this.onClickPosition.fromArray(array);
 
         const intersects: THREE.Intersection[] =
-            this.getIntersects(this.onClickPosition, [this.object]);
+            this.getIntersects(this.onClickPosition, this.meshes);
         if (intersects.length > 0) {
             // Check event handlers
             this.clickEventHandlers.forEach(func => {
@@ -271,17 +273,18 @@ export class Renderer {
         }
     }
 
-    private updateShader(mesh: THREE.Mesh): void {
+    private updateShader(meshes: THREE.Mesh[]): void {
         if (this.colorBufferAttribute != null) {
             this.colorBufferAttribute.needsUpdate = true;
         }
 
-
-        const material = mesh.material as THREE.ShaderMaterial;
-        material.uniforms.worldLightPosition = {
-            value: this.directionalLight.position
-        };
-        material.needsUpdate = true;
+        meshes.forEach(mesh => {
+            const material = mesh.material as THREE.ShaderMaterial;
+            material.uniforms.worldLightPosition = {
+                value: this.directionalLight.position
+            };
+            material.needsUpdate = true;
+        });
     }
 
     private static getMousePosition(dom: HTMLElement, x: number, y: number): number[] {
@@ -325,18 +328,26 @@ export class Renderer {
     private setMaterial(mesh: Mesh): void {
         let texture = null;
         let useTexture = false;
-        if (mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map != null) {
-            texture = mesh.material.map;
-            useTexture = true;
+        let useVertexColor = false;
+        const bufferGeometry = mesh.geometry as BufferGeometry;
+
+        // Note down existing texture or vertex color if present.
+        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+            if (mesh.material.map != null) {
+                texture = mesh.material.map;
+                useTexture = true;
+            } else if (mesh.material.vertexColors) {
+                useVertexColor = true;
+            }
         }
 
-        const bufferGeometry = mesh.geometry as BufferGeometry;
-        const verticeCount = bufferGeometry.index?.count ?? 0;
+        // const verticeCount = bufferGeometry.index?.count ?? 0;
+        const verticeCount = bufferGeometry.attributes.position?.count ?? 0;
         const colorBufferItemSize = 4;
         const colorBufferSize = verticeCount * colorBufferItemSize;
         const colorBuffer = new Float32Array(colorBufferSize);
         this.colorBufferAttribute = new BufferAttribute(colorBuffer, colorBufferItemSize);
-        bufferGeometry.setAttribute("color", this.colorBufferAttribute);
+        bufferGeometry.setAttribute("labelColorIn", this.colorBufferAttribute);
 
         mesh.material = new THREE.ShaderMaterial({
             uniforms: {
@@ -355,7 +366,8 @@ export class Renderer {
                 shininess: { value: 50.0 },
                 color: { value: this.colorBufferAttribute },
                 texture1: { value: texture },
-                useTexture: { value: useTexture }
+                useTexture: { value: useTexture },
+                useVertexColor: { value: useVertexColor },
             },
             vertexShader: VertexShader,
             fragmentShader: FragmentShader,
@@ -391,7 +403,7 @@ export class Renderer {
             new THREE.DirectionalLightHelper(this.directionalLight, 10);
         this.scene.add(this.directionalLightHelper);
         this.directionalLight.position.add(position);
-        if (this.object != null) this.updateShader(this.object);
+        if (this.meshes != null) this.updateShader(this.meshes);
     }
 
     public moveCameraToVertex(vId: number): void {
@@ -408,7 +420,7 @@ export class Renderer {
     }
 
     private getVertexPosAndNormal(vId: number): [Vector3, Vector3] {
-        const geo = this.object?.geometry as BufferGeometry;
+        const geo = this.meshes[0]?.geometry as BufferGeometry;
         const posAttr = geo.attributes["position"] as THREE.BufferAttribute;
         const pos = new Vector3(posAttr.getX(vId), posAttr.getY(vId), posAttr.getZ(vId));
         const normAttr = geo.attributes["normal"] as THREE.BufferAttribute;
@@ -417,7 +429,18 @@ export class Renderer {
     }
 
     public getModelGeometry(): BufferGeometry | null {
-        if (this.object == null) return null;
-        return this.object?.geometry as BufferGeometry;
+        if (this.meshes == null) return null;
+        return this.meshes[0]?.geometry as BufferGeometry;
+    }
+
+    private findMeshes(scene: Object3D): Mesh[] {
+        let meshes = [];
+        if (scene.type == "Mesh") meshes.push(scene as Mesh);
+
+        for (const child of scene.children) {
+            meshes = meshes.concat(this.findMeshes(child));
+        }
+
+        return meshes;
     }
 }

@@ -1,4 +1,6 @@
-attribute vec4 color;
+attribute vec3 color;
+attribute vec4 labelColorIn;
+varying vec3 vertexColor;
 varying vec4 labelColor;
 varying vec3 fragPosition;
 varying vec3 fragNormal;
@@ -10,7 +12,8 @@ void main() {
     fragPosition = position;
 	fragNormal = normal;
 	fragTexCoord = uv;
-    labelColor = color;
+    labelColor = labelColorIn;
+    vertexColor = color;
 
     gl_Position = pos;
 }

@@ -1,7 +1,6 @@
 import { Renderer } from "./renderer";
 import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
-import { Mesh } from "three";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
 
@@ -20,7 +19,7 @@ let labelManager: LabelManager | null = null;
 
 // Initialize model manager UI
 const modelManager = new ModelManager(renderer);
-modelManager.setOnload((obj: Mesh, name: string): void => labelManager?.reset(name, obj));
+modelManager.setOnload((_: THREE.Object3D, name: string): void => labelManager?.reset(name));
 
 // Check if we are to load labels, models, quizzes...
 const queryString = window.location.search;
@@ -63,9 +62,9 @@ else if (labelId != null) {
 
 // If nothing is specified, load the label editor alone
 else {
-    ModelManager.load(defaultModel, (mesh) => {
-        renderer.loadObject(mesh);
+    void ModelManager.loadAsync(defaultModel).then((group) => {
+        renderer.loadObject(group);
         labelManager = new LabelManager(renderer, defaultModel, true, true);
-        labelManager.reset(defaultModel, mesh)
+        labelManager.reset(defaultModel)
     });
 }
