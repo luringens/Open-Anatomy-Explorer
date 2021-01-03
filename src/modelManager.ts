@@ -1,30 +1,37 @@
 import { Renderer } from "./renderer";
-import { Mesh, Scene } from "three";
+import { Object3D } from "three";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 
 export class ModelManager {
     private static readonly url = "http://localhost:8001/models/";
     private readonly renderer: Renderer;
-    private onload: ((model: Scene, name: string) => void) | null = null;
+    private onload: ((model: Object3D, name: string) => void) | null = null;
 
     public constructor(renderer: Renderer) {
         this.renderer = renderer;
         this.getModelList(this.populateModelList.bind(this));
     }
 
-    public setOnload(callback: (model: Scene, name: string) => void): void {
+    public setOnload(callback: (model: Object3D, name: string) => void): void {
         this.onload = callback;
     }
 
-    public static async loadAsync(name: string): Promise<Scene> {
-        const data = await new GLTFLoader().loadAsync(this.url + name) as GLTF;
-        return data.scene as unknown as Scene; // ?
+    public static async loadAsync(name: string): Promise<THREE.Group> {
+        if (name.endsWith(".obj")) {
+            // OBJ file loading
+            return await new OBJLoader().loadAsync(this.url + name) as THREE.Group;
+        } else {
+            // Default to GLTF
+            const data = await new GLTFLoader().loadAsync(this.url + name) as GLTF;
+            return data.scene; // ?
+        }
     }
 
-    private loadModel(name: string, scene: Scene): void {
-        this.renderer.loadObject(scene);
-        if (this.onload != null && scene != null)
-            this.onload(scene, name);
+    private loadModel(name: string, model: Object3D): void {
+        this.renderer.loadObject(model);
+        if (this.onload != null && model != null)
+            this.onload(model, name);
     }
 
     private getModelList(callback: (names: string[]) => void): void {

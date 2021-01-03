@@ -3,7 +3,7 @@ import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
 import { uniq } from "../utils";
 import { Label } from "./Label";
-import { Mesh, BufferAttribute, Vector3 } from "three";
+import { BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";
 import { LabelStorage } from "./labelStorage";
 
@@ -30,10 +30,10 @@ export class LabelManager {
         const model = modelName ?? labels[0].model;
         const mesh = await ModelManager.loadAsync(model);
         this.renderer.loadObject(mesh);
-        this.reset(model, mesh, labels, uuid);
+        this.reset(model, labels, uuid);
     }
 
-    public reset(modelName: string, mesh: Mesh, labels: Label[] | null = null, uuid: string | null = null): void {
+    public reset(modelName: string, labels: Label[] | null = null, uuid: string | null = null): void {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
             const elem = document.getElementById(id) as HTMLElement;
