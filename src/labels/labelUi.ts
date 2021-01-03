@@ -273,6 +273,7 @@ export class LabelUi {
         element.append(tdLabel);
 
         const tdColor = document.createElement("td");
+        tdColor.className = "label-color";
         tdColor.setAttribute("style", `background-color: ${colorstr};`);
         tdColor.addEventListener("click", this.updateColor.bind(this, tdColor, label));
         element.append(tdColor);

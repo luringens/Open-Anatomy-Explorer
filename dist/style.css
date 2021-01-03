@@ -61,7 +61,7 @@ button {
 }
 
 .sidebar {
-    padding: 15px;
+    padding: 5px 10px;
     background: #282828;
     color: #E7E7E7;
     overflow-y: auto;
@@ -81,9 +81,7 @@ button {
 .label-name {
     background: #282828;
     color: #E7E7E7;
-    font-size: 15px;
     border: none;
-    height: 100%;
     padding: 5px 2px;
     margin: 0;
 }
@@ -149,4 +147,10 @@ td > svg {
     display: block;
     margin-left: auto;
     margin-right: auto;
+}
+
+.label-color {
+    max-width: 1em;
+    min-width: 1em;
+    width: 1em;
 }
