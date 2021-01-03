@@ -3,15 +3,16 @@ import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
 import { uniq } from "../utils";
 import { Label } from "./Label";
-import { Mesh, BufferAttribute, Vector3 } from "three";
+import { BufferAttribute, Mesh } from "three";
 import { ModelManager } from "../modelManager";
 import { LabelStorage } from "./labelStorage";
+import { Octree } from "./Octree";
 
 export class LabelManager {
     public labels: Label[] = [];
     public renderer: Renderer;
     private userInterface: LabelUi;
-    private adjacency: number[][] = [];
+    private octree: Octree | null = null;
 
     constructor(renderer: Renderer, modelName: string, showUi: boolean, showLabels: boolean) {
         this.renderer = renderer;
@@ -23,7 +24,7 @@ export class LabelManager {
         return this.labels.find(l => l.id == labelId) ?? null;
     }
 
-    /// Loads labels and orders renderer to load the related model.
+    /// Loads labels and ordeenderer to load the related model.
     public async loadWithModel(uuid: string, modelName: string | null = null): Promise<void> {
         const labels = await LabelStorage.loadLabelsAsync(uuid);
         if (modelName == null && labels.length < 1) throw "Zero labels in set!";
@@ -33,7 +34,7 @@ export class LabelManager {
         this.reset(model, mesh, labels, uuid);
     }
 
-    public reset(modelName: string, mesh: Mesh, labels: Label[] | null = null, uuid: string | null = null): void {
+    public reset(modelName: string, _mesh: Mesh, labels: Label[] | null = null, uuid: string | null = null): void {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
             const elem = document.getElementById(id) as HTMLElement;
@@ -41,6 +42,11 @@ export class LabelManager {
         });
 
         this.labels = labels ?? [];
+
+        const geo = this.renderer.getModelGeometry();
+        if (geo == null) throw "No model geometry!";
+        const posAttr = geo.attributes["position"] as BufferAttribute;
+        this.octree = new Octree(posAttr.array)
 
         this.renderer.resetVertexColors();
         this.userInterface.reload(this.renderer.gui, modelName, labels, uuid);
@@ -106,15 +112,16 @@ export class LabelManager {
         const geo = this.renderer.getModelGeometry();
         if (geo == null) throw "No model geometry!";
 
-        const posAttr = geo.attributes["position"] as BufferAttribute;
-        const vertices = [];
-        for (let i = 0; i < posAttr.array.length; i += 3) {
-            const vPos = new Vector3(posAttr.array[i], posAttr.array[i + 1], posAttr.array[i + 2]);
-            if (pos.distanceTo(vPos) < radius) {
-                vertices.push(i / 3);
-            }
-        }
-
+        if (this.octree === null) throw "Octree not initialized";
+        const vertices = this.octree.intersectSphere(pos, radius);
+        // const posAttr = geo.attributes["position"] as BufferAttribute;
+        // const vertices = [];
+        // for (let i = 0; i < posAttr.array.length; i += 3) {
+        //     const vPos = new Vector3(posAttr.array[i], posAttr.array[i + 1], posAttr.array[i + 2]);
+        //     if (pos.distanceTo(vPos) < radius) {
+        //         vertices.push(i / 3);
+        //     }
+        // }
 
         if (add) {
             label.vertices = label.vertices.concat(vertices);
