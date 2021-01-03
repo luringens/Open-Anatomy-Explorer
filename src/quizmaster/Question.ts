@@ -1,6 +1,7 @@
 export enum QuestionType {
     Locate = 0,
     Name = 1,
+    Freeform = 2,
 }
 
 export interface Question {
@@ -36,11 +37,26 @@ export class QuestionName implements Question {
     }
 }
 
+export class QuestionFreeform implements Question {
+    public readonly questionType = QuestionType.Freeform;
+    public readonly id: number;
+    public textPrompt = "";
+    public textAnswer = "";
+    public labelId: number;
+
+    public constructor(id: number, labelId: number) {
+        this.id = id;
+        this.labelId = labelId;
+    }
+}
+
 export function GetQuestionTypeName(questionType: QuestionType): string {
     switch (questionType) {
         case QuestionType.Locate:
             return "Locate the region";
         case QuestionType.Name:
             return "Name the region";
+        case QuestionType.Freeform:
+            return "Freeform question";
     }
 }

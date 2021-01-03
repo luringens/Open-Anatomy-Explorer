@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName } from "./Question";
+import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName, QuestionFreeform } from "./Question";
 import { LabelManager } from "../labels/labelManager";
 import { Quiz, QuizStorage } from "./quizStorage";
 import { Label } from "../labels/Label";
@@ -30,6 +30,8 @@ export default class QuizMasterManager {
             .onclick = this.addQuestion.bind(this, QuestionType.Locate);
         (document.getElementById("quiz-add-name") as HTMLButtonElement)
             .onclick = this.addQuestion.bind(this, QuestionType.Name);
+        (document.getElementById("quiz-add-freeform") as HTMLButtonElement)
+            .onclick = this.addQuestion.bind(this, QuestionType.Freeform);
         (document.getElementById("quiz-save") as HTMLButtonElement)
             .onclick = this.saveQuestions.bind(this);
         (document.getElementById("quiz-update") as HTMLButtonElement)
@@ -77,6 +79,9 @@ export default class QuizMasterManager {
             case QuestionType.Locate:
                 question = new QuestionLocate(this.nextQuestionId++, label.id);
                 break;
+            case QuestionType.Freeform:
+                question = new QuestionFreeform(this.nextQuestionId++, label.id);
+                break;
         }
 
         this.questions.push(question);
@@ -99,8 +104,8 @@ export default class QuizMasterManager {
 
         const regionPicker = document.createElement("button");
         regionPicker.id = element.id + "-regionpicker"
-        regionPicker.onclick = this.setRegion.bind(this, question.id);
         element.append(regionPicker);
+        let labelPrefix;
 
         switch (question.questionType) {
             case QuestionType.Locate: {
@@ -115,7 +120,9 @@ export default class QuizMasterManager {
                 showRegionsLabel.innerText = "Display regions";
                 element.append(showRegionsLabel);
 
-                regionPicker.innerText = "Label: " + label.name;
+                labelPrefix = "Label: ";
+                regionPicker.innerText = labelPrefix + label.name;
+                textArea.placeholder = "Describe or name the label the quiz-taker should select.";
                 break;
             }
             case QuestionType.Name: {
@@ -127,12 +134,30 @@ export default class QuizMasterManager {
                 textAnswer.id = element.id + "-textAnswer";
                 element.append(textAnswer);
 
-                regionPicker.innerText = "Answer: " + label.name;
+                labelPrefix = "Displayed label: ";
+                regionPicker.innerText = labelPrefix + label.name;
                 if (question.textPrompt == "")
                     textArea.innerText = "What is the name of this region?";
+                textArea.placeholder = "What is the name of this region?";
+                break;
+            }
+            case QuestionType.Freeform: {
+                const q = question as QuestionFreeform;
+                const textAnswer = document.createElement("input");
+                textAnswer.type = "text";
+                textAnswer.value = q.textAnswer;
+                textAnswer.placeholder = "Answer";
+                textAnswer.id = element.id + "-textAnswer";
+                element.append(textAnswer);
+
+                labelPrefix = "Displayed label: ";
+                regionPicker.innerText = labelPrefix + label.name;
+                textArea.placeholder = "Enter question here...";
                 break;
             }
         }
+        regionPicker.onclick = this.setRegion.bind(this, question.id, labelPrefix);
+
         const deleteLink = document.createElement("a");
         deleteLink.innerText = "❌";
         deleteLink.onclick = this.deleteRow.bind(this, question.id);
@@ -177,7 +202,7 @@ export default class QuizMasterManager {
         this.questions[i2] = temp;
     }
 
-    public setRegion(questionId: number): void {
+    public setRegion(questionId: number, labelPrefix: string): void {
         const label = this.labelManager.mostRecentlyClickedLabel();
         if (label == null) return;
         const index = this.getIndexForQuestion(questionId);
@@ -185,10 +210,7 @@ export default class QuizMasterManager {
         const buttonId = "question-" + questionId + "-regionpicker";
         const button = (document.getElementById(buttonId) as HTMLButtonElement);
 
-        switch (this.questions[index].questionType) {
-            case QuestionType.Locate: button.innerText = "Label: " + label.name; break;
-            case QuestionType.Name: button.innerText = "Answer: " + label.name; break;
-        }
+        button.innerText = labelPrefix + label.name;
     }
 
     public deleteRow(questionId: number): void {
@@ -261,8 +283,8 @@ export default class QuizMasterManager {
                     q.showRegions = (showRegions as HTMLInputElement).checked;
                     break;
                 }
-                case QuestionType.Name: {
-                    const q = question as QuestionName;
+                case QuestionType.Name | QuestionType.Freeform: {
+                    const q = question as (QuestionName | QuestionFreeform);
                     const textAnswer = document.getElementById(id + "-textAnswer");
                     q.textAnswer = (textAnswer as HTMLInputElement).value;
                     break;

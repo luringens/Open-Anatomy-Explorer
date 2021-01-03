@@ -1,6 +1,6 @@
 import QuizMasterManager from "../quizmaster/quizMasterManager";
 import { LabelManager } from "../labels/labelManager";
-import { QuestionType, QuestionName, QuestionLocate, Question } from "../quizmaster/Question";
+import { QuestionType, QuestionName, QuestionLocate, Question, QuestionFreeform } from "../quizmaster/Question";
 import { QuizTakerUi } from "./QuizTakerUi";
 import { Answer } from "./Answer";
 import { Label } from "../labels/Label";
@@ -62,11 +62,12 @@ export default class QuizTakerManager {
         ui.setText(ui.questionText, question.textPrompt);
 
         switch (question.questionType) {
+            case QuestionType.Freeform:
             case QuestionType.Name: {
                 ui.show(ui.answerText);
 
                 // Move camera and marker to the label in question.
-                const q = question as QuestionName;
+                const q = question as (QuestionName | QuestionFreeform);
                 const label = this.labelManager.getLabel(q.labelId);
                 if (label == null) throw `Could not find label with id ${q.labelId}`;
                 this.labelManager.moveCameraToLabel(label);
@@ -96,8 +97,9 @@ export default class QuizTakerManager {
         const question = this.questions[this.questionIndex];
         let correct;
         switch (question.questionType) {
+            case QuestionType.Freeform:
             case QuestionType.Name: {
-                const q = question as QuestionName;
+                const q = question as (QuestionName | QuestionFreeform);
                 const input = ui.getInput(ui.answerText);
                 const answer = q.textAnswer;
                 correct = input.toLowerCase() == answer.toLowerCase();
@@ -105,7 +107,7 @@ export default class QuizTakerManager {
                 break;
             }
             case QuestionType.Locate: {
-                const q = question as QuestionLocate;
+                const q = question as (QuestionLocate);
                 const answer = this.labelManager.getLabel(q.labelId);
                 const input = this.labelManager.lastClicked();
                 if (answer == null) {
