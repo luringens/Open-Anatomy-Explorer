@@ -1,7 +1,7 @@
 import { Renderer } from "./renderer";
 import { Object3D } from "three";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
 
 export class ModelManager {
     private static readonly url = "http://localhost:8001/models/";
@@ -20,7 +20,7 @@ export class ModelManager {
     public static async loadAsync(name: string): Promise<THREE.Group> {
         if (name.endsWith(".obj")) {
             // OBJ file loading
-            return await new OBJLoader().loadAsync(this.url + name) as THREE.Group;
+            return await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
         } else {
             // Default to GLTF
             const data = await new GLTFLoader().loadAsync(this.url + name) as GLTF;

@@ -4,6 +4,7 @@ precision mediump sampler3D;
 uniform sampler2D texture1;
 uniform vec3 baseColor;
 
+uniform bool useVertexColor;
 uniform bool useTexture;
 uniform vec3 worldLightPosition;
 uniform float ambientIntensity;
@@ -14,19 +15,21 @@ uniform float diffuseReflection;
 uniform float ambientReflection;
 uniform float shininess;
 
+varying vec3 vertexColor;
 varying vec4 labelColor;
 varying vec3 fragPosition;
 varying vec3 fragNormal;
 varying vec2 fragTexCoord;
 
 void main() {
-    vec4 color;
+    vec3 color;
     if (useTexture) {
-        color = texture(texture1, fragTexCoord);
+        color = texture(texture1, fragTexCoord).rgb;
+    } else if (useVertexColor) {
+        color = vertexColor;
     } else {
-        color = vec4(baseColor, 1.0);
+        color = baseColor;
     }
-    color.a = 1.0;
 
     vec3 pos = fragPosition;
     vec3 normal = normalize(fragNormal);
@@ -47,7 +50,7 @@ void main() {
         specularReflection * specularIntensity * pow(max(0.0, min(1.0, dot(rm, v))), shininess)
     );
 
-    color = vec4(mix(color.rgb, labelColor.rgb, labelColor.a), 1.0);
+    color = mix(color.rgb, labelColor.rgb, labelColor.a);
     
-    gl_FragColor = vec4(ip * color.rgb, 1.0);
+    gl_FragColor = vec4(ip * color, 1.0);
 }

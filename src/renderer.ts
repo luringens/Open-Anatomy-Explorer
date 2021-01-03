@@ -328,19 +328,26 @@ export class Renderer {
     private setMaterial(mesh: Mesh): void {
         let texture = null;
         let useTexture = false;
-        if (mesh.material instanceof THREE.MeshStandardMaterial && mesh.material.map != null) {
-            texture = mesh.material.map;
-            useTexture = true;
+        let useVertexColor = false;
+        const bufferGeometry = mesh.geometry as BufferGeometry;
+
+        // Note down existing texture or vertex color if present.
+        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+            if (mesh.material.map != null) {
+                texture = mesh.material.map;
+                useTexture = true;
+            } else if (mesh.material.vertexColors) {
+                useVertexColor = true;
+            }
         }
 
-        const bufferGeometry = mesh.geometry as BufferGeometry;
         // const verticeCount = bufferGeometry.index?.count ?? 0;
         const verticeCount = bufferGeometry.attributes.position?.count ?? 0;
         const colorBufferItemSize = 4;
         const colorBufferSize = verticeCount * colorBufferItemSize;
         const colorBuffer = new Float32Array(colorBufferSize);
         this.colorBufferAttribute = new BufferAttribute(colorBuffer, colorBufferItemSize);
-        bufferGeometry.setAttribute("color", this.colorBufferAttribute);
+        bufferGeometry.setAttribute("labelColorIn", this.colorBufferAttribute);
 
         mesh.material = new THREE.ShaderMaterial({
             uniforms: {
@@ -359,7 +366,8 @@ export class Renderer {
                 shininess: { value: 50.0 },
                 color: { value: this.colorBufferAttribute },
                 texture1: { value: texture },
-                useTexture: { value: useTexture }
+                useTexture: { value: useTexture },
+                useVertexColor: { value: useVertexColor },
             },
             vertexShader: VertexShader,
             fragmentShader: FragmentShader,
