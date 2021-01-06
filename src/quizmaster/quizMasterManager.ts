@@ -19,11 +19,8 @@ export default class QuizMasterManager {
     /// This callback must initialize the label manager to fully load the quiz.
     public constructor(
         labelManager: LabelManager,
-        quizGuid: string | null,
-        showEditor: boolean,
-        callback: ((_: Quiz) => Promise<void>) | null = null
+        showEditor: boolean
     ) {
-        this.quizGuid = quizGuid;
         this.labelManager = labelManager;
 
         (document.getElementById("quiz-add-locate") as HTMLButtonElement)
@@ -47,17 +44,6 @@ export default class QuizMasterManager {
         if (showEditor) {
             document.getElementById("quiz-editor")?.classList.remove("hide");
         }
-
-        if (quizGuid != null) {
-            document.getElementById("quiz-update")?.classList.remove("hide");
-            document.getElementById("quiz-delete")?.classList.remove("hide");
-            document.getElementById("quiz-take")?.classList.remove("hide");
-
-            if (callback != null) {
-                this.loadQuestions(quizGuid, callback);
-            }
-        }
-
     }
 
     public Shuffle(): boolean {
@@ -232,13 +218,12 @@ export default class QuizMasterManager {
         return index;
     }
 
-    public async loadQuestions(quizGuid: string, callback: ((_: Quiz) => Promise<void>)) {
+    public async loadQuestions(quizGuid: string): Promise<void> {
         const quiz = await QuizStorage.loadQuizAsync(quizGuid);
         this.questions = quiz.questions;
-        // Before populating the UI, we need the name of the labels
-        // Before getting the labels, we need the model...
 
-        await callback(quiz);
+        // Before populating the UI, we need the name of the labels.
+        await this.labelManager.loadWithModel(labelGuid); // TODO: fix
 
         this.shuffle = quiz.shuffle;
         (document.getElementById("quiz-shuffle") as HTMLInputElement).checked = this.shuffle;
@@ -252,6 +237,10 @@ export default class QuizMasterManager {
                 console.error("Label " + q.labelId + " not found!");
             }
         });
+
+        document.getElementById("quiz-update")?.classList.remove("hide");
+        document.getElementById("quiz-delete")?.classList.remove("hide");
+        document.getElementById("quiz-take")?.classList.remove("hide");
     }
 
     public async saveQuestions(): Promise<void> {
@@ -298,7 +287,7 @@ export default class QuizMasterManager {
         if (labelUuid == null) throw "No labels loaded?";
         return new Quiz(
             this.questions,
-            this.labelManager.getModelName(),
+            "", // TODO: Fix
             labelUuid,
             this.shuffle
         );

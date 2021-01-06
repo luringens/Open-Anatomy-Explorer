@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { Renderer } from "./renderer";
 import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
+import Api from "./api";
+import { HashAddressType, HashAdress } from "./utils";
 
-const defaultModel = "Arm";
+const defaultModel = 1;
 
 // Reset default tool to work around browser persistence.
 (document.getElementById("tool-camera") as HTMLInputElement).checked = true;
@@ -19,53 +23,48 @@ let labelManager: LabelManager | null = null;
 
 // Initialize model manager UI
 const modelManager = new ModelManager(renderer);
-modelManager.setOnload((_: THREE.Object3D, name: string): void => void labelManager?.reset(name));
+modelManager.setOnload((_: THREE.Object3D, __: string): void => void labelManager?.reset(null));
 
 // Check if we are to load labels, models, quizzes...
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-const quizAction = urlParams.get("quizaction");
-const quizId = urlParams.get("quiz");
-const labelId = urlParams.get("labels");
+const action = HashAdress.fromAddress();
 
-// If a quiz ID is present and no action, we're doing a quiz.
-if (quizId != null && quizAction == null) {
-    labelManager = new LabelManager(renderer, defaultModel, false, false);
-    quizMasterManager = new QuizMasterManager(labelManager, quizId, false, async function (quiz) {
-        const lm = (labelManager as LabelManager);
-        await lm.loadWithModel(quiz.labelId, quiz.model);
-        new QuizTakerManager(quizMasterManager as QuizMasterManager, lm);
-    });
-}
-
-// If a quiz ID is present, load the quiz editor.
-else if (quizId != null && quizAction == "edit") {
-    labelManager = new LabelManager(renderer, defaultModel, false, true);
-    quizMasterManager = new QuizMasterManager(labelManager, quizId, true, async function (quiz) {
-        const lm = (labelManager as LabelManager);
-        await lm.loadWithModel(quiz.labelId, quiz.model);
-    });
-}
-
-// If a label ID is present, show the label editor.
-// If a quiz ID is present but blank, show the quiz editor instead
-else if (labelId != null) {
-    const showQuizEditor = quizAction == "create";
-    const showLabelEditor = !showQuizEditor;
-
-    const lm = new LabelManager(renderer, defaultModel, showLabelEditor, true);
-    labelManager = lm;
-    void labelManager.loadWithModel(labelId).then(() => {
-        quizMasterManager = new QuizMasterManager(lm, null, showQuizEditor);
-    });
-}
-
-// If nothing is specified, load the label editor alone
-else {
-    void ModelManager.loadAsync(defaultModel)
+// If nothing else is specified in the address, just load the label editor from scratch.
+if (action == null) {
+    void Api.modelStorage.lookup(defaultModel)
+        .then(ModelManager.loadAsync.bind(ModelManager))
         .then(renderer.loadObject.bind(renderer))
-        .then(async () => {
-            labelManager = new LabelManager(renderer, defaultModel, true, true);
-            await labelManager.reset(defaultModel);
+        .then(() => {
+            labelManager = new LabelManager(renderer, true, defaultModel);
+            labelManager.reset();
         });
+}
+
+else switch (action.action) {
+    // Load label editor with stored labels.
+    case HashAddressType.Label:
+        labelManager = new LabelManager(renderer, true, 0);
+        void labelManager.loadWithModel(action.uuid);
+        break;
+
+    // Load quiz editor, instructed to create a new quiz from stored labels.
+    case HashAddressType.QuizCreate:
+        labelManager = new LabelManager(renderer, false, 0);
+        void labelManager.loadWithModel(action.uuid);
+        quizMasterManager = new QuizMasterManager(labelManager, true);
+        break;
+
+    // Load quiz editor on existing stored quiz.
+    case HashAddressType.QuizEdit:
+        labelManager = new LabelManager(renderer, false, 0);
+        quizMasterManager = new QuizMasterManager(labelManager, true);
+        void quizMasterManager.loadQuestions(action.uuid);
+        break;
+
+    // Load quiz taker from stored quiz.
+    case HashAddressType.QuizTake:
+        labelManager = new LabelManager(renderer, false, 0);
+        quizMasterManager = new QuizMasterManager(labelManager, false);
+        void quizMasterManager.loadQuestions(action.uuid);
+        void new QuizTakerManager(quizMasterManager, labelManager);
+        break;
 }

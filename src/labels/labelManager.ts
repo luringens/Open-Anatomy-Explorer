@@ -2,21 +2,21 @@ import * as THREE from "three";
 import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
 import { uniq } from "../utils";
-import { Label } from "./Label";
+import { Label, LabelSet } from "./Label";
 import { BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";
-import { LabelStorage } from "./labelStorage";
+import Api from "../api";
 
 export class LabelManager {
+    public labelSet: LabelSet;
     public labels: Label[] = [];
     public renderer: Renderer;
     private userInterface: LabelUi;
-    private adjacency: number[][] = [];
 
-    constructor(renderer: Renderer, modelName: string, showUi: boolean, showLabels: boolean) {
+    constructor(renderer: Renderer, showUi: boolean, modelId: number) {
         this.renderer = renderer;
-        this.userInterface = new LabelUi(modelName, this, showUi);
-        this.userInterface.visible = showLabels;
+        this.userInterface = new LabelUi(this, showUi);
+        this.labelSet = new LabelSet(null, modelId, []);
     }
 
     public getLabel(labelId: number): Label | null {
@@ -24,26 +24,32 @@ export class LabelManager {
     }
 
     /// Loads labels and orders renderer to load the related model.
-    public async loadWithModel(uuid: string, modelName: string | null = null): Promise<void> {
-        const labels = await LabelStorage.loadLabelsAsync(uuid);
-        if (modelName == null && labels.length < 1) throw "Zero labels in set!";
-        const model = modelName ?? labels[0].model;
-        const mesh = await ModelManager.loadAsync(model);
+    public async loadWithModel(uuid: string): Promise<void> {
+        this.labelSet = await Api.Labels.load(uuid);
+        const modelName = await Api.modelStorage.lookup(this.labelSet.modelId);
+        const mesh = await ModelManager.loadAsync(modelName);
         this.renderer.loadObject(mesh);
-        await this.reset(model, labels, uuid);
+        this.reset(this.labelSet);
     }
 
-    public async reset(modelName: string, labels: Label[] | null = null, uuid: string | null = null): Promise<void> {
+    public reset(set: LabelSet | null = null): void {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
             const elem = document.getElementById(id) as HTMLElement;
             elem.remove();
         });
 
-        this.labels = labels ?? [];
+        if (set != null) {
+            this.labelSet = set;
+        } else {
+            this.labelSet.name = "";
+            this.labelSet.labels = [];
+            this.labelSet.uuid = null;
+        }
 
+        this.labels = this.labelSet.labels;
         this.renderer.resetVertexColors();
-        await this.userInterface.reload(this.renderer.gui, modelName, labels, uuid);
+        this.userInterface.reload(this.renderer.gui);
     }
 
     public removeLabel(pos: Label): void {
@@ -144,11 +150,13 @@ export class LabelManager {
     }
 
     public getSavedLabelUuid(): string | null {
-        return this.userInterface.getSavedLabelUuid();
+        return this.labelSet?.uuid ?? null;
     }
 
-    public getModelName(): string {
-        return this.userInterface.getModelName();
+    public async getModelName(): Promise<string> {
+        const modelId = this.labelSet?.modelId ?? null;
+        if (modelId == null) return Promise.reject("No modelId!");
+        return await Api.modelStorage.lookup(modelId);
     }
 
     public setOnActiveLabelChangeHandler(handler: ((label: Label) => void) | null): void {

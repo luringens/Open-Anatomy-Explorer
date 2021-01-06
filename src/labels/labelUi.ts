@@ -1,21 +1,19 @@
 import { GUI } from "dat.gui";
 import { LabelManager } from "./labelManager";
-import { Label } from "./Label";
+import { Label, LabelSet } from "./Label";
 import THREE = require("three");
-import { toHex, binarySearch } from "../utils";
-import { LabelStorage } from "./labelStorage";
+import { toHex, binarySearch, HashAdress, HashAddressType } from "../utils";
 import { ActiveTool } from "../activeTool";
 import SVG_EYE from "../../static/eye.svg"
 import SVG_EYE_OFF from "../../static/eye-off.svg"
+import Api from "../api";
 
 export class LabelUi {
     private listContainer: HTMLElement;
     private labelManager: LabelManager
-    private uuid: string | null = null;
     private regionColor = "#FF00FF";
     private regionTransparency = 255;
     private nextLabelId = 1;
-    private modelName: string;
     private showUi: boolean;
     public onActiveLabelChangeHandler: ((label: Label) => void) | null = null;
     public activeLabel: null | number = null;
@@ -23,10 +21,9 @@ export class LabelUi {
     public brushSize = 2;
     public visible = true;
 
-    public constructor(modelName: string, labelManager: LabelManager, showUi: boolean) {
+    public constructor(labelManager: LabelManager, showUi: boolean) {
         this.listContainer = document.getElementById("labels") as HTMLElement;
         this.labelManager = labelManager;
-        this.modelName = modelName;
         this.showUi = showUi;
         if (showUi) {
             document.getElementById("label-editor")?.classList.remove("hide");
@@ -43,7 +40,7 @@ export class LabelUi {
         saveRegionButton.addEventListener("click", this.savenewLabel.bind(this));
 
         const saveAllLabelsButton = document.getElementById("labels-save") as HTMLElement;
-        saveAllLabelsButton.addEventListener("click", this.storeLabels.bind(this));
+        saveAllLabelsButton.addEventListener("click", () => void this.storeLabels.bind(this)());
 
         const createQuizButton = document.getElementById("labels-quiz") as HTMLElement;
         createQuizButton.addEventListener("click", this.createQuiz.bind(this));
@@ -85,7 +82,7 @@ export class LabelUi {
 
         const color = this.getSelectedColor();
 
-        const savedRegion = new Label(vertices, color, this.nextLabelId++, this.modelName);
+        const savedRegion = new Label(vertices, color, this.nextLabelId++);
         this.labelManager.labels.push(savedRegion);
         this.activeLabel = savedRegion.id;
 
@@ -133,50 +130,43 @@ export class LabelUi {
         }, 2900);
     }
 
-    public async reload(gui: GUI, newModelName: string, labels: Label[] | null = null, uuid: string | null = null): Promise<void> {
-        this.uuid = uuid;
+    public reload(gui: GUI | null = null, populateLabels = true): void {
         const updateAllLabelsButton = document.getElementById("labels-update") as HTMLElement;
         const deleteAllLabelsButton = document.getElementById("labels-delete") as HTMLElement;
         const createQuizButton = document.getElementById("labels-quiz") as HTMLElement;
-        if (this.uuid != null) {
-            updateAllLabelsButton.addEventListener("click", this.updateLabels.bind(this));
-            deleteAllLabelsButton.addEventListener("click", this.deleteLabels.bind(this));
-            updateAllLabelsButton.classList.remove("hide");
-            deleteAllLabelsButton.classList.remove("hide");
-            createQuizButton.classList.remove("hide");
-        }
 
         if (this.showUi) {
-            const f = gui.addFolder("Labelling settings");
-            f.addColor(this, "regionColor").name("Region color");
-            f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
-            f.add(this, "brushSize", 1, 25, 1).name("Brush size");
-            f.open();
+            if (gui != null) {
+                const f = gui.addFolder("Labelling settings");
+                f.addColor(this, "regionColor").name("Region color");
+                f.add(this, "regionTransparency", 1, 255, 1).name("Transparency");
+                f.add(this, "brushSize", 1, 25, 1).name("Brush size");
+                f.open();
+            }
+
+            // Show storage controls beyond just saving if it's already stored.
+            if (this.labelManager.labelSet?.uuid != null) {
+                updateAllLabelsButton.addEventListener("click", () => void this.updateLabels.bind(this)());
+                deleteAllLabelsButton.addEventListener("click", () => void this.deleteLabels.bind(this)());
+                updateAllLabelsButton.classList.remove("hide");
+                deleteAllLabelsButton.classList.remove("hide");
+                createQuizButton.classList.remove("hide");
+            } else {
+                updateAllLabelsButton.classList.add("hide");
+                deleteAllLabelsButton.classList.add("hide");
+                createQuizButton.classList.add("hide");
+            }
         }
 
-        this.modelName = newModelName;
-
-        if (labels != null) {
-            this.loadGivenLabels(labels);
-        } else if (this.uuid != null) {
-            await this.loadLabels();
+        if (populateLabels && this.labelManager.labelSet != null) {
+            this.loadGivenLabels(this.labelManager.labelSet);
         }
     }
 
-    private async loadLabels(): Promise<void> {
-        if (this.uuid == null) {
-            alert("No UUID to load!");
-            return;
-        }
-
-        await LabelStorage.loadLabelsAsync(this.uuid).then(this.loadGivenLabels.bind(this));
-    }
-
-    public loadGivenLabels(labels: Label[]): void {
-        this.labelManager.labels = [];
-        labels.forEach(label => {
-            if (label.model !== this.modelName) return;
-            this.labelManager.labels.push(label);
+    public loadGivenLabels(set: LabelSet): void {
+        this.labelManager.labelSet = set;
+        this.labelManager.labels = set.labels;
+        set.labels.forEach(label => {
             const element = this.createRow(label);
             this.listContainer.append(element);
             if (this.visible)
@@ -185,21 +175,29 @@ export class LabelUi {
         });
     }
 
-    private storeLabels(): void {
+    private async storeLabels(): Promise<void> {
+        if (this.labelManager.labelSet == null) return Promise.reject("No labels to store");
         this.updateNames();
-        LabelStorage.storeLabels(this.labelManager.labels);
+        const uuid = await Api.Labels.post(this.labelManager.labelSet);
+        this.labelManager.labelSet.uuid = uuid;
+        this.reload(null, false);
+
+        new HashAdress(uuid, HashAddressType.Label).set();
     }
 
-    private updateLabels(): void {
+    private async updateLabels(): Promise<void> {
+        if (this.labelManager.labelSet == null) return Promise.reject("No labels to store");
         this.updateNames();
-        if (this.uuid == null) alert("No labels have been stored yet.");
-        else LabelStorage.updateLabels(this.uuid, this.labelManager.labels);
-
+        await Api.Labels.put(this.labelManager.labelSet);
     }
 
-    private deleteLabels(): void {
-        if (this.uuid == null) alert("No labels have been stored yet.");
-        else LabelStorage.deleteLabels(this.uuid);
+    private async deleteLabels(): Promise<void> {
+        if (this.labelManager.labelSet?.uuid == null) return Promise.reject("No labels to store");
+        await Api.Labels.delete(this.labelManager.labelSet.uuid);
+        this.labelManager.labelSet.uuid = null;
+        this.reload(null, false);
+
+        HashAdress.unset();
     }
 
     private setActiveLabel(event: Event): void {
@@ -322,17 +320,9 @@ export class LabelUi {
         });
     }
 
-    public getSavedLabelUuid(): string | null {
-        return this.uuid;
-    }
-
-    public getModelName(): string {
-        return this.modelName;
-    }
-
     private createQuiz(): void {
         const origin = window.origin;
         const path = location.pathname;
-        window.location.href = `${origin}${path}?labels=${this.uuid ?? ""}&quizaction=create`;
+        window.location.href = `${origin}${path}?labels=${this.labelManager.labelSet?.uuid ?? ""}&quizaction=create`;
     }
 }

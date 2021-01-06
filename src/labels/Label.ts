@@ -8,20 +8,30 @@ export class Label {
     /// The color of the label when rendered.
     color: THREE.Vector4;
 
-    // The name of the model the label belongs to.
-    model: string;
-
     /// A user-specified name for the label.
     name: string;
 
     /// Not stored to database, local state only.
     visible = true;
 
-    constructor(vertices: number[], color: THREE.Vector4, id: number, modelName: string, name = "") {
+    constructor(vertices: number[], color: THREE.Vector4, id: number, name = "") {
         this.vertices = vertices;
         this.color = color;
         this.id = id;
         this.name = name;
-        this.model = modelName;
+    }
+}
+
+export class LabelSet {
+    name: string;
+    uuid: string | null;
+    modelId: number;
+    labels: Label[];
+
+    constructor(uuid: string | null, modelId: number, labels: Label[], name = "") {
+        this.uuid = uuid;
+        this.modelId = modelId;
+        this.labels = labels;
+        this.name = name;
     }
 }

@@ -7,20 +7,26 @@
     "@typescript-eslint"
   ],
   "rules": {
-    "no-use-before-define": [
-      "error",
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": [
+      "warn",
       {
         "functions": false,
-        "classes": false
+        "classes": false,
+        "typedefs": false,
+        "enums": false,
+        "ignoreTypeReferences": true
       }
     ],
-    "@typescript-eslint/no-use-before-define": [
-      "error",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
       {
-        "functions": false,
-        "classes": false
+        "varsIgnorePattern": "^_",
+        "argsIgnorePattern": "^_"
       }
-    ]
+    ],
+    "prefer-const": "warn"
   },
   "extends": [
     "eslint:recommended",
