@@ -1,22 +1,21 @@
 /* eslint-disable */
 
-import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName, QuestionFreeform } from "./Question";
+import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName, QuestionFreeform, Quiz } from "./Question";
 import { LabelManager } from "../labels/labelManager";
-import { Quiz, QuizStorage } from "./quizStorage";
 import { Label } from "../labels/Label";
+import Api from "../api";
+import { HashAddressType, HashAdress } from "../utils";
 
 
 export default class QuizMasterManager {
-    private questions: Question[] = [];
-    private quizGuid: string | null = null;
+    private quiz: Quiz;
+    private questions: Question[];
     private labelManager: LabelManager;
     private nextQuestionId = 0;
-    private shuffle: boolean = false;
 
-    /// Constructs a new QuizMasterManager
-    /// If quizGuid is not null, it will attempt to load the selected quiz and
-    /// call the provided callback function with the quiz information.
-    /// This callback must initialize the label manager to fully load the quiz.
+    /// Constructs a new QuizMasterManager.
+    /// If the LabelManager does not have labels loaded, loadQuiz should be called immediately after
+    /// construction, which will instruct the LabelManager of which labels to load.
     public constructor(
         labelManager: LabelManager,
         showEditor: boolean
@@ -44,10 +43,16 @@ export default class QuizMasterManager {
         if (showEditor) {
             document.getElementById("quiz-editor")?.classList.remove("hide");
         }
+
+        // Setting labelset ID to zero is *not actually valid*.  However, this should only happen
+        // when this.loadQuiz is getting called next to load the LabelManager with a labelId from
+        // a quiz. Unfortunate invariant to keep in mind.
+        this.quiz = new Quiz(null, labelManager.labelSet.id ?? 0, false, []);
+        this.questions = this.quiz.questions;
     }
 
     public Shuffle(): boolean {
-        return this.shuffle;
+        return this.quiz.shuffle;
     }
 
     public getQuestions(): Question[] {
@@ -219,14 +224,14 @@ export default class QuizMasterManager {
     }
 
     public async loadQuestions(quizGuid: string): Promise<void> {
-        const quiz = await QuizStorage.loadQuizAsync(quizGuid);
-        this.questions = quiz.questions;
+        const quiz = await Api.Quiz.load(quizGuid);
+        this.quiz = quiz;
+        this.questions = this.quiz.questions;
 
         // Before populating the UI, we need the name of the labels.
-        await this.labelManager.loadWithModel(labelGuid); // TODO: fix
+        await this.labelManager.loadWithModelById(this.quiz.labelSet);
 
-        this.shuffle = quiz.shuffle;
-        (document.getElementById("quiz-shuffle") as HTMLInputElement).checked = this.shuffle;
+        (document.getElementById("quiz-shuffle") as HTMLInputElement).checked = this.quiz.shuffle;
 
         quiz.questions.forEach(q => {
             this.nextQuestionId = Math.max(this.nextQuestionId, q.id + 1);
@@ -238,25 +243,43 @@ export default class QuizMasterManager {
             }
         });
 
-        document.getElementById("quiz-update")?.classList.remove("hide");
-        document.getElementById("quiz-delete")?.classList.remove("hide");
-        document.getElementById("quiz-take")?.classList.remove("hide");
+        this.setDisplayStoredQuizControls(true);
+    }
+
+    private setDisplayStoredQuizControls(visible: boolean): void {
+        if (visible) {
+            document.getElementById("quiz-update")?.classList.remove("hide");
+            document.getElementById("quiz-delete")?.classList.remove("hide");
+            document.getElementById("quiz-take")?.classList.remove("hide");
+        } else {
+            document.getElementById("quiz-update")?.classList.add("hide");
+            document.getElementById("quiz-delete")?.classList.add("hide");
+            document.getElementById("quiz-take")?.classList.add("hide");
+        }
     }
 
     public async saveQuestions(): Promise<void> {
         this.updateDataFromUi();
-        await QuizStorage.storeQuiz(this.serialize());
+        this.quiz.uuid = await Api.Quiz.post(this.quiz);
+        this.setDisplayStoredQuizControls(true);
+        new HashAdress(this.quiz.uuid, HashAddressType.QuizEdit).set();
     }
 
     public async updateQuestions(): Promise<void> {
         this.updateDataFromUi();
-        if (this.quizGuid == null) throw "No stored quiz!";
-        await QuizStorage.updateQuiz(this.quizGuid, this.serialize());
+        if (this.quiz.uuid == null) return Promise.reject("No stored quiz!");
+        await Api.Quiz.put(this.quiz);
     }
 
-    public deleteQuestions(): void {
-        if (this.quizGuid == null) throw "No stored quiz!";
-        QuizStorage.deleteQuiz(this.quizGuid, this.labelManager.getSavedLabelUuid());
+    public async deleteQuestions(): Promise<void> {
+        if (this.quiz.uuid == null) return Promise.reject("No stored quiz!");
+        await Api.Quiz.delete(this.quiz.uuid);
+        this.quiz.uuid = null;
+        this.setDisplayStoredQuizControls(false);
+
+        const labelUuid = this.labelManager.getSavedLabelUuid();
+        if (labelUuid == null) console.warn("Can not set hash address due to missing label UUID!");
+        else new HashAdress(labelUuid, HashAddressType.QuizCreate).set();
     }
 
     private updateDataFromUi(): void {
@@ -272,7 +295,8 @@ export default class QuizMasterManager {
                     q.showRegions = (showRegions as HTMLInputElement).checked;
                     break;
                 }
-                case QuestionType.Name | QuestionType.Freeform: {
+                case QuestionType.Name:
+                case QuestionType.Freeform: {
                     const q = question as (QuestionName | QuestionFreeform);
                     const textAnswer = document.getElementById(id + "-textAnswer");
                     q.textAnswer = (textAnswer as HTMLInputElement).value;
@@ -282,23 +306,13 @@ export default class QuizMasterManager {
         }
     }
 
-    private serialize(): Quiz {
-        const labelUuid = this.labelManager.getSavedLabelUuid();
-        if (labelUuid == null) throw "No labels loaded?";
-        return new Quiz(
-            this.questions,
-            "", // TODO: Fix
-            labelUuid,
-            this.shuffle
-        );
-    }
-
     private takeQuiz(): void {
-        window.location.href = window.origin + location.pathname
-            + "?quiz=" + this.quizGuid;
+        if (this.quiz.uuid == null) throw "No stored quiz to take!";
+        new HashAdress(this.quiz.uuid, HashAddressType.QuizTake).set();
+        location.reload();
     }
 
     private onShuffleChange(event: Event): void {
-        this.shuffle = (event.target as HTMLInputElement).checked;
+        this.quiz.shuffle = (event.target as HTMLInputElement).checked;
     }
 }

@@ -1,3 +1,17 @@
+export class Quiz {
+    uuid: string | null;
+    labelSet: number;
+    shuffle: boolean;
+    questions: Question[];
+
+    constructor(uuid: string | null, labelSet: number, shuffle: boolean, questions: Question[]) {
+        this.uuid = uuid;
+        this.labelSet = labelSet;
+        this.shuffle = shuffle;
+        this.questions = questions;
+    }
+}
+
 export enum QuestionType {
     Locate = 0,
     Name = 1,

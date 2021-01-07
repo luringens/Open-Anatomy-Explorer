@@ -27,7 +27,7 @@ export enum HashAddressType {
 function parseHashAddressType(input: string): HashAddressType | null {
     switch (input) {
         case "LABEL": return HashAddressType.Label;
-        case "QUIZCREATE": return HashAddressType.QuizEdit;
+        case "QUIZCREATE": return HashAddressType.QuizCreate;
         case "QUIZEDIT": return HashAddressType.QuizEdit;
         case "QUIZTAKE": return HashAddressType.QuizTake;
         default: return null;

@@ -1,5 +1,6 @@
 import { colorToHex, hexToColor, LZW, toHex } from "./utils";
 import { Label, LabelSet } from "./labels/Label";
+import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "./quizmaster/Question";
 
 export default class Api {
     private static readonly url = "http://localhost:8001/";
@@ -88,13 +89,22 @@ export default class Api {
             return await response.json() as string;
         },
 
-        async load(uuid: string): Promise<LabelSet> {
-            const url = this.url + uuid;
+        async loadByUuid(uuid: string): Promise<LabelSet> {
+            const url = `${this.url}uuid/${uuid}`;
             const options = { method: "GET" };
             const response = await sendRequest(url, options);
             const jsonSet = await response.json() as JsonLabelSet;
 
-            return JsonLabelSet.toLabelset(jsonSet, uuid);
+            return JsonLabelSet.toLabelset(jsonSet);
+        },
+
+        async load(id: number): Promise<LabelSet> {
+            const url = this.url + String(id);
+            const options = { method: "GET" };
+            const response = await sendRequest(url, options);
+            const jsonSet = await response.json() as JsonLabelSet;
+
+            return JsonLabelSet.toLabelset(jsonSet);
         },
 
         async delete(uuid: string): Promise<void> {
@@ -113,6 +123,53 @@ export default class Api {
             const response = await sendRequest(url, options);
             return await response.json() as string;
         }
+    }
+
+    public static Quiz = {
+        url: Api.url + "quiz/",
+
+        /// POSTs the set if it does not have a UUID, otherwise PUTs it.
+        async upload(quiz: Quiz): Promise<string> {
+            if (quiz.uuid == null) return this.post(quiz);
+            else return this.put(quiz);
+        },
+
+        async put(quiz: Quiz): Promise<string> {
+            if (quiz.uuid == null) return Promise.reject("Can not PUT without UUID.");
+            const url = this.url + quiz.uuid;
+            const options = {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(JsonQuiz.fromQuiz(quiz))
+            };
+
+            const response = await sendRequest(url, options);
+            return await response.json() as string;
+        },
+
+        async post(quiz: Quiz): Promise<string> {
+            const options = {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(JsonQuiz.fromQuiz(quiz))
+            };
+            const response = await sendRequest(this.url, options);
+            return await response.json() as string;
+        },
+
+        async load(uuid: string): Promise<Quiz> {
+            const url = this.url + uuid;
+            const options = { method: "GET" };
+            const response = await sendRequest(url, options);
+            const jsonQuiz = await response.json() as JsonQuiz;
+            return JsonQuiz.toQuiz(jsonQuiz, uuid);
+        },
+
+        async delete(uuid: string): Promise<void> {
+            const url = this.url + uuid;
+            const options = { method: "DELETE" };
+            await sendRequest(url, options);
+        },
     }
 }
 
@@ -135,12 +192,14 @@ export class JsonUserLabelSets {
 }
 
 export class JsonLabelSet {
+    id: number | null;
     name: string;
     uuid: string | null;
     model: number;
     labels: JsonLabel[];
 
-    constructor(name: string, model: number, labels: JsonLabel[], uuid: string | null = null) {
+    constructor(id: number | null, name: string, model: number, labels: JsonLabel[], uuid: string | null = null) {
+        this.id = id ?? 0;
         this.name = name;
         this.model = model;
         this.labels = labels;
@@ -149,15 +208,16 @@ export class JsonLabelSet {
 
     static fromLabelset(set: LabelSet): JsonLabelSet {
         const labels = set.labels.map((l) => JsonLabel.fromLabel(l));
-        return new JsonLabelSet(set.name, set.modelId, labels, set.uuid);
+        return new JsonLabelSet(set.id, set.name, set.modelId, labels, set.uuid);
     }
 
-    static toLabelset(self: JsonLabelSet, uuid: string): LabelSet {
+    static toLabelset(self: JsonLabelSet): LabelSet {
+        if (self.id == null) throw "Server returned null labelset id!";
         const labels = [];
         for (let i = 0; i < self.labels.length; i++) {
             labels.push(JsonLabel.toLabel(self.labels[i], i));
         }
-        return new LabelSet(uuid, self.model, labels);
+        return new LabelSet(self.id, self.uuid, self.model, labels);
     }
 }
 
@@ -186,5 +246,102 @@ export class JsonLabel {
         const lzw = self.vertices.split(",").map(n => parseInt(n, 16));
         const vertices = LZW.decompress(lzw).split(",").map(n => parseInt(n, 16));
         return new Label(vertices, hexToColor(self.colour), id, self.name);
+    }
+}
+
+export class JsonQuiz {
+    labelSet: number;
+    shuffle: boolean;
+    questions: JsonQuestion[];
+
+    constructor(labelSet: number, shuffle: boolean, questions: JsonQuestion[]) {
+        this.labelSet = labelSet;
+        this.shuffle = shuffle;
+        this.questions = questions;
+    }
+
+    static toQuiz(json: JsonQuiz, uuid: string): Quiz {
+        const questions = [];
+        for (let i = 0; i < json.questions.length; i++) {
+            questions.push(JsonQuestion.toQuestion(json.questions[i], i));
+        }
+        return new Quiz(uuid, json.labelSet, json.shuffle, questions);
+    }
+
+    static fromQuiz(quiz: Quiz): JsonQuiz {
+        const questions = quiz.questions.map((q) => JsonQuestion.fromQuestion(q));
+        return new JsonQuiz(quiz.labelSet, quiz.shuffle, questions);
+    }
+}
+
+export class JsonQuestion {
+    questionType: number;
+    textPrompt: string;
+    textAnswer: string | null;
+    labelId: number | null;
+    showRegions: boolean | null;
+
+    constructor(
+        question_type: number,
+        text_prompt: string,
+        text_answer: string | null,
+        label_id: number | null,
+        show_regions: boolean | null) {
+        this.questionType = question_type;
+        this.textPrompt = text_prompt;
+        this.textAnswer = text_answer;
+        this.labelId = label_id;
+        this.showRegions = show_regions;
+    }
+
+    static fromQuestion(question: Question): JsonQuestion {
+        let textAnswer = null;
+        let showRegions = null;
+        switch (question.questionType) {
+            case QuestionType.Freeform:
+                textAnswer = (question as QuestionFreeform).textAnswer;
+                break;
+            case QuestionType.Name:
+                textAnswer = (question as QuestionName).textAnswer;
+                break;
+            case QuestionType.Locate:
+                showRegions = (question as QuestionLocate).showRegions;
+                break;
+            default: break;
+        }
+        return new JsonQuestion(question.questionType, question.textPrompt,
+            textAnswer, question.labelId, showRegions);
+    }
+
+    static toQuestion(q: JsonQuestion, id: number): Question {
+        switch (q.questionType) {
+            case QuestionType.Freeform: return JsonQuestion.toQuestionFreeform(q, id);
+            case QuestionType.Locate: return JsonQuestion.toQuestionLocate(q, id);
+            case QuestionType.Name: return JsonQuestion.toQuestionName(q, id);
+            default: throw "Invalid question type!"
+        }
+    }
+
+    static toQuestionFreeform(q: JsonQuestion, id: number): QuestionFreeform {
+        const result = new QuestionFreeform(id, q.labelId ?? 0);
+        result.textPrompt = q.textPrompt;
+        result.textAnswer = q.textAnswer ?? "";
+        return result;
+    }
+
+    static toQuestionLocate(q: JsonQuestion, id: number): QuestionLocate {
+        if (q.showRegions == false) throw "No label ID on locate question!";
+        const result = new QuestionLocate(id, q.labelId ?? 0);
+        result.textPrompt = q.textPrompt;
+        result.showRegions = q.showRegions ?? false;
+        return result;
+    }
+
+    static toQuestionName(q: JsonQuestion, id: number): QuestionName {
+        if (q.labelId == null) throw "No label ID on name question!";
+        const result = new QuestionName(id, q.labelId);
+        result.textPrompt = q.textPrompt;
+        result.textAnswer = q.textAnswer ?? "";
+        return result;
     }
 }

@@ -24,11 +24,13 @@ export class Label {
 
 export class LabelSet {
     name: string;
+    id: number | null;
     uuid: string | null;
     modelId: number;
     labels: Label[];
 
-    constructor(uuid: string | null, modelId: number, labels: Label[], name = "") {
+    constructor(id: number | null, uuid: string | null, modelId: number, labels: Label[], name = "") {
+        this.id = id;
         this.uuid = uuid;
         this.modelId = modelId;
         this.labels = labels;

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { Renderer } from "./renderer";
 import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
@@ -23,7 +21,7 @@ let labelManager: LabelManager | null = null;
 
 // Initialize model manager UI
 const modelManager = new ModelManager(renderer);
-modelManager.setOnload((_: THREE.Object3D, __: string): void => void labelManager?.reset(null));
+modelManager.setOnload(() => void labelManager?.reset(null));
 
 // Check if we are to load labels, models, quizzes...
 const action = HashAdress.fromAddress();
@@ -43,14 +41,16 @@ else switch (action.action) {
     // Load label editor with stored labels.
     case HashAddressType.Label:
         labelManager = new LabelManager(renderer, true, 0);
-        void labelManager.loadWithModel(action.uuid);
+        void labelManager.loadWithModelByUuid(action.uuid);
         break;
 
     // Load quiz editor, instructed to create a new quiz from stored labels.
     case HashAddressType.QuizCreate:
         labelManager = new LabelManager(renderer, false, 0);
-        void labelManager.loadWithModel(action.uuid);
-        quizMasterManager = new QuizMasterManager(labelManager, true);
+        void labelManager.loadWithModelByUuid(action.uuid).then(() => {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            quizMasterManager = new QuizMasterManager(labelManager!, true);
+        });
         break;
 
     // Load quiz editor on existing stored quiz.
@@ -64,7 +64,9 @@ else switch (action.action) {
     case HashAddressType.QuizTake:
         labelManager = new LabelManager(renderer, false, 0);
         quizMasterManager = new QuizMasterManager(labelManager, false);
-        void quizMasterManager.loadQuestions(action.uuid);
-        void new QuizTakerManager(quizMasterManager, labelManager);
+        void quizMasterManager.loadQuestions(action.uuid).then(() =>
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            void new QuizTakerManager(quizMasterManager!, labelManager!)
+        );
         break;
 }

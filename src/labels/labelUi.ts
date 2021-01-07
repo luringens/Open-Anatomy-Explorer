@@ -321,8 +321,8 @@ export class LabelUi {
     }
 
     private createQuiz(): void {
-        const origin = window.origin;
-        const path = location.pathname;
-        window.location.href = `${origin}${path}?labels=${this.labelManager.labelSet?.uuid ?? ""}&quizaction=create`;
+        if (this.labelManager.labelSet.uuid == null) throw "No stored labels to make quiz of!";
+        new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.QuizCreate).set();
+        location.reload();
     }
 }

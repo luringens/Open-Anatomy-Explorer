@@ -9,14 +9,15 @@ import Api from "../api";
 
 export class LabelManager {
     public labelSet: LabelSet;
-    public labels: Label[] = [];
+    public labels: Label[];
     public renderer: Renderer;
     private userInterface: LabelUi;
 
     constructor(renderer: Renderer, showUi: boolean, modelId: number) {
         this.renderer = renderer;
         this.userInterface = new LabelUi(this, showUi);
-        this.labelSet = new LabelSet(null, modelId, []);
+        this.labelSet = new LabelSet(null, null, modelId, []);
+        this.labels = this.labelSet.labels;
     }
 
     public getLabel(labelId: number): Label | null {
@@ -24,8 +25,19 @@ export class LabelManager {
     }
 
     /// Loads labels and orders renderer to load the related model.
-    public async loadWithModel(uuid: string): Promise<void> {
-        this.labelSet = await Api.Labels.load(uuid);
+    public async loadWithModelByUuid(uuid: string): Promise<void> {
+        const labelSet = await Api.Labels.loadByUuid(uuid);
+        await this.loadWithModel(labelSet);
+    }
+
+    /// Loads labels and orders renderer to load the related model.
+    public async loadWithModelById(id: number): Promise<void> {
+        const labelSet = await Api.Labels.load(id);
+        await this.loadWithModel(labelSet);
+    }
+
+    private async loadWithModel(labelSet: LabelSet): Promise<void> {
+        this.labelSet = labelSet;
         const modelName = await Api.modelStorage.lookup(this.labelSet.modelId);
         const mesh = await ModelManager.loadAsync(modelName);
         this.renderer.loadObject(mesh);
