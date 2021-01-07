@@ -1,4 +1,5 @@
-import { colorToHex, hexToColor, LZW, toHex } from "./utils";
+import { colorToHex, hexToColor, toHex } from "./utils";
+import { LZW } from "./lzw";
 import { Label, LabelSet } from "./labels/Label";
 import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "./quizmaster/Question";
 
