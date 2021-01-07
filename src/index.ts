@@ -3,7 +3,6 @@ import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
-import Api from "./api";
 import { HashAddressType, HashAdress } from "./utils";
 
 const defaultModel = 1;
@@ -21,18 +20,18 @@ let labelManager: LabelManager | null = null;
 
 // Initialize model manager UI
 const modelManager = new ModelManager(renderer);
-modelManager.setOnload(() => void labelManager?.reset(null));
+modelManager.setOnload((id: number) => void labelManager?.newModel(id));
+void modelManager.loadModelList();
 
 // Check if we are to load labels, models, quizzes...
 const action = HashAdress.fromAddress();
 
 // If nothing else is specified in the address, just load the label editor from scratch.
 if (action == null) {
-    void Api.modelStorage.lookup(defaultModel)
-        .then(ModelManager.loadAsync.bind(ModelManager))
+    void ModelManager.loadAsync(defaultModel)
         .then(renderer.loadObject.bind(renderer))
         .then(() => {
-            labelManager = new LabelManager(renderer, true, defaultModel);
+            labelManager = new LabelManager(renderer, true, defaultModel, modelManager);
             labelManager.reset();
         });
 }
@@ -40,13 +39,13 @@ if (action == null) {
 else switch (action.action) {
     // Load label editor with stored labels.
     case HashAddressType.Label:
-        labelManager = new LabelManager(renderer, true, 0);
+        labelManager = new LabelManager(renderer, true, 0, modelManager);
         void labelManager.loadWithModelByUuid(action.uuid);
         break;
 
     // Load quiz editor, instructed to create a new quiz from stored labels.
     case HashAddressType.QuizCreate:
-        labelManager = new LabelManager(renderer, false, 0);
+        labelManager = new LabelManager(renderer, false, 0, modelManager);
         void labelManager.loadWithModelByUuid(action.uuid).then(() => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             quizMasterManager = new QuizMasterManager(labelManager!, true);
@@ -55,18 +54,17 @@ else switch (action.action) {
 
     // Load quiz editor on existing stored quiz.
     case HashAddressType.QuizEdit:
-        labelManager = new LabelManager(renderer, false, 0);
+        labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, true);
         void quizMasterManager.loadQuestions(action.uuid);
         break;
 
     // Load quiz taker from stored quiz.
     case HashAddressType.QuizTake:
-        labelManager = new LabelManager(renderer, false, 0);
+        labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, false);
         void quizMasterManager.loadQuestions(action.uuid).then(() =>
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            void new QuizTakerManager(quizMasterManager!, labelManager!)
+            void new QuizTakerManager(quizMasterManager as QuizMasterManager, labelManager as LabelManager)
         );
         break;
 }

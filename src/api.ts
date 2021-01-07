@@ -4,7 +4,7 @@ import { Label, LabelSet } from "./labels/Label";
 import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "./quizmaster/Question";
 
 export default class Api {
-    private static readonly url = "http://localhost:8001/";
+    public static readonly url = "http://localhost:8001/";
 
     public static Users = {
         url: Api.url + "users/",
@@ -123,7 +123,14 @@ export default class Api {
             const options = { method: "GET" };
             const response = await sendRequest(url, options);
             return await response.json() as string;
-        }
+        },
+
+        async list(): Promise<[number, string][]> {
+            const options = { method: "GET" };
+            const response = await sendRequest(this.url, options);
+            const models = await response.json() as JsonModel[];
+            return models.map(m => [m.id, m.filename])
+        },
     }
 
     public static Quiz = {
@@ -180,7 +187,7 @@ async function sendRequest(url: string, options: RequestInit): Promise<Response>
     return response;
 }
 
-export class JsonUserLabelSets {
+class JsonUserLabelSets {
     id: number;
     name: string;
     uuid: string;
@@ -192,7 +199,17 @@ export class JsonUserLabelSets {
     }
 }
 
-export class JsonLabelSet {
+class JsonModel {
+    id: number;
+    filename: string;
+
+    constructor(id: number, filename: string) {
+        this.id = id;
+        this.filename = filename;
+    }
+}
+
+class JsonLabelSet {
     id: number | null;
     name: string;
     uuid: string | null;
@@ -222,7 +239,7 @@ export class JsonLabelSet {
     }
 }
 
-export class JsonLabel {
+class JsonLabel {
     name: string;
     colour: string;
     vertices: string;
@@ -250,7 +267,7 @@ export class JsonLabel {
     }
 }
 
-export class JsonQuiz {
+class JsonQuiz {
     labelSet: number;
     shuffle: boolean;
     questions: JsonQuestion[];
@@ -275,7 +292,7 @@ export class JsonQuiz {
     }
 }
 
-export class JsonQuestion {
+class JsonQuestion {
     questionType: number;
     textPrompt: string;
     textAnswer: string | null;

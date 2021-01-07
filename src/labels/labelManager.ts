@@ -11,10 +11,12 @@ export class LabelManager {
     public labelSet: LabelSet;
     public labels: Label[];
     public renderer: Renderer;
+    public modelManager: ModelManager;
     private userInterface: LabelUi;
 
-    constructor(renderer: Renderer, showUi: boolean, modelId: number) {
+    constructor(renderer: Renderer, showUi: boolean, modelId: number, modelManager: ModelManager) {
         this.renderer = renderer;
+        this.modelManager = modelManager;
         this.userInterface = new LabelUi(this, showUi);
         this.labelSet = new LabelSet(null, null, modelId, []);
         this.labels = this.labelSet.labels;
@@ -38,10 +40,13 @@ export class LabelManager {
 
     private async loadWithModel(labelSet: LabelSet): Promise<void> {
         this.labelSet = labelSet;
-        const modelName = await Api.modelStorage.lookup(this.labelSet.modelId);
-        const mesh = await ModelManager.loadAsync(modelName);
+        const mesh = await ModelManager.loadAsync(this.labelSet.modelId);
         this.renderer.loadObject(mesh);
         this.reset(this.labelSet);
+    }
+
+    public newModel(id: number): void {
+        this.reset(new LabelSet(null, null, id, []))
     }
 
     public reset(set: LabelSet | null = null): void {

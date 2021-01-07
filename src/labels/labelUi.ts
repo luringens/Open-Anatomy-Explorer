@@ -92,6 +92,8 @@ export class LabelUi {
         if (this.visible) {
             this.labelManager.renderer.setColorForVertices(vertices, color);
         }
+
+        this.labelManager.modelManager.setInterfaceVisibility(false);
     }
 
     private clickHandler(intersect: THREE.Intersection): boolean {
@@ -151,6 +153,7 @@ export class LabelUi {
                 updateAllLabelsButton.classList.remove("hide");
                 deleteAllLabelsButton.classList.remove("hide");
                 createQuizButton.classList.remove("hide");
+
             } else {
                 updateAllLabelsButton.classList.add("hide");
                 deleteAllLabelsButton.classList.add("hide");
@@ -158,9 +161,14 @@ export class LabelUi {
             }
         }
 
+        if (this.labelManager.labels.length > 0) {
+            this.labelManager.modelManager.setInterfaceVisibility(false);
+        }
+
         if (populateLabels && this.labelManager.labelSet != null) {
             this.loadGivenLabels(this.labelManager.labelSet);
         }
+
     }
 
     public loadGivenLabels(set: LabelSet): void {
