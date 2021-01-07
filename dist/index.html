@@ -115,6 +115,44 @@
                     </table>
                 </div>
             </div>
+            <br />
+            <div id="user">
+                <table id="user-table">
+                    <coldef>
+                        <col style="width: 20px;" />
+                        <col style="width: 20px;" />
+                        <col style="margin: 50px 0px;" />
+                        <col style="width: 20px;" />
+                    </coldef>
+                    <thead>
+                        <tr>
+                            <td id="user-state-icon"></td>
+                            <td></td>
+                            <td id="user-status"></td>
+                            <td id="user-chevron"></td>
+                        </tr>
+                        <tr class="hide" id="row-login-padding">
+                            <td colspan="3">
+                                &nbsp;
+                            </td>
+                        </tr>
+                        <tr class="hide" id="row-login-id">
+                            <td id="user-login-id-icon"></td>
+                            <td> </td>
+                            <td><input id="user-id" type="text" placeholder="Username">
+                            </td>
+                            <td rowspan="2" id="user-login-submit"></td>
+                        </tr>
+                        <tr class="hide" id="row-login-pwd">
+                            <td id="user-login-pwd-icon"></td>
+                            <td> </td>
+                            <td><input id="user-pwd" type="password" placeholder="Password"></td>
+                        </tr>
+                    </thead>
+                    <tbody id="quizzer-table">
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     <script type="text/javascript" src="bundle.js"></script>

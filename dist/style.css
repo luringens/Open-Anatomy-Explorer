@@ -154,3 +154,19 @@ td > svg {
     min-width: 1em;
     width: 1em;
 }
+
+#user {
+    /* background: #282828; */
+    /* color: #E7E7E7; */
+    background: #444;
+    color: #E7E7E7;
+    border-color: #444;
+    margin: 10px;
+    font-style: italic;
+    font-size: small;
+    padding: 5px;
+}
+
+#user-table td {
+    border-color: #444;
+}

@@ -4,8 +4,10 @@ import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
 import { HashAddressType, HashAdress } from "./utils";
+import UserManager from "./userManager";
 
 const defaultModel = 1;
+
 
 // Reset default tool to work around browser persistence.
 (document.getElementById("tool-camera") as HTMLInputElement).checked = true;
@@ -22,6 +24,9 @@ let labelManager: LabelManager | null = null;
 const modelManager = new ModelManager(renderer);
 modelManager.setOnload((id: number) => void labelManager?.newModel(id));
 void modelManager.loadModelList();
+
+// Initialize user system.
+/* const _userManager = */ new UserManager();
 
 // Check if we are to load labels, models, quizzes...
 const action = HashAdress.fromAddress();
