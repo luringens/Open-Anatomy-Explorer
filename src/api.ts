@@ -11,8 +11,9 @@ export default class Api {
 
         async register(username: string, password: string): Promise<void> {
             const url = this.url + "create";
-            const options = {
+            const options: RequestInit = {
                 method: "PUT",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username: username, password: password })
             };
@@ -22,8 +23,9 @@ export default class Api {
 
         async login(username: string, password: string): Promise<void> {
             const url = this.url + "login";
-            const options = {
+            const options: RequestInit = {
                 method: "POST",
+                credentials: "include",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ username: username, password: password })
             };
@@ -32,25 +34,44 @@ export default class Api {
 
         async logout(): Promise<void> {
             const url = this.url + "logout";
-            const options = { method: "POST" };
+            const options: RequestInit = { method: "POST", credentials: "include" };
             await sendRequest(url, options);
+        },
+
+        /// Attempts to refresh the logged in session. Returns true if no longer logged in.
+        async refresh(): Promise<boolean> {
+            const url = this.url + "refresh";
+            const options: RequestInit = { method: "POST", credentials: "include" };
+            return await fetch(url, options)
+                .then(response => {
+                    // 401 UNAUTHORIZED indicates that we are not logged in.
+                    if (response.status == 401) return false;
+                    // Other codes are unhandled.
+                    if (!response.ok) return Promise.reject(`Server returned HTTP ${response.status}.`);
+                    else return response.ok;
+                })
+                .catch((response: Response) => {
+                    if (response.status == 401) return false;
+                    if (!response.ok) return Promise.reject(`Server returned HTTP ${response.status}.`);
+                    return true;
+                });
         },
 
         async addLabel(labelsetUuid: string): Promise<void> {
             const url = this.url + `labelsets/${labelsetUuid}`;
-            const options = { method: "PUT" };
+            const options: RequestInit = { method: "PUT", credentials: "include" };
             await sendRequest(url, options);
         },
 
         async removeLabel(labelsetUuid: string): Promise<void> {
             const url = this.url + `labelsets/${labelsetUuid}`;
-            const options = { method: "DELETE" };
+            const options: RequestInit = { method: "DELETE", credentials: "include" };
             await sendRequest(url, options);
         },
 
         async getLabels(): Promise<JsonUserLabelSets[]> {
             const url = this.url + "labelsets";
-            const options = { method: "GET" };
+            const options: RequestInit = { method: "GET", credentials: "include" };
             const response = await sendRequest(url, options);
 
             return await response.json() as JsonUserLabelSets[];

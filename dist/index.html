@@ -136,17 +136,35 @@
                                 &nbsp;
                             </td>
                         </tr>
-                        <tr class="hide" id="row-login-id">
+                        <tr class="hide row-login">
                             <td id="user-login-id-icon"></td>
-                            <td> </td>
-                            <td><input id="user-id" type="text" placeholder="Username">
-                            </td>
-                            <td rowspan="2" id="user-login-submit"></td>
+                            <td></td>
+                            <td><input id="user-id" type="text" placeholder="Username"></td>
+                            <td id="user-login-register"></td>
                         </tr>
-                        <tr class="hide" id="row-login-pwd">
+                        <tr class="hide row-login">
                             <td id="user-login-pwd-icon"></td>
-                            <td> </td>
+                            <td></td>
                             <td><input id="user-pwd" type="password" placeholder="Password"></td>
+                            <td id="user-login-submit"></td>
+                        </tr>
+                        <tr class="hide row-logged-in" id="logged-in-label-header">
+                            <td id="user-icon-logout"></td>
+                            <td></td>
+                            <td>Log out</td>
+                            <td></td>
+                        </tr>
+                        <tr class="hide row-logged-in" id="logged-in-label-header">
+                            <td id="user-icon-labels"></td>
+                            <td></td>
+                            <td>Labels:</td>
+                            <td></td>
+                        </tr>
+                        <tr class="hide" id="logged-in-status">
+                            <td id="logged-in-status-icon"></td>
+                            <td></td>
+                            <td id="logged-in-status-message"></td>
+                            <td></td>
                         </tr>
                     </thead>
                     <tbody id="quizzer-table">

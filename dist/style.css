@@ -170,3 +170,9 @@ td > svg {
 #user-table td {
     border-color: #444;
 }
+
+#logged-in-status,
+#logged-in-status td {
+    border-color: grey;
+    background-color: grey;
+}
