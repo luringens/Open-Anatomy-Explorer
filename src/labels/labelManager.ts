@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
-import { uniq } from "../utils";
+import { HashAddressType, HashAdress, uniq } from "../utils";
 import { Label, LabelSet } from "./Label";
 import { BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";

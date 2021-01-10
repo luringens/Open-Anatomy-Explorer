@@ -256,7 +256,7 @@ class JsonLabelSet {
         for (let i = 0; i < self.labels.length; i++) {
             labels.push(JsonLabel.toLabel(self.labels[i], i));
         }
-        return new LabelSet(self.id, self.uuid, self.model, labels);
+        return new LabelSet(self.id, self.uuid, self.model, labels, self.name);
     }
 }
 

@@ -12,6 +12,7 @@ import SVG_PLUS_CIRCLE from "../static/plus-circle.svg"
 import SVG_DELETE from "../static/delete.svg"
 import Api from "./api"
 import { LabelManager } from "./labels/labelManager"
+import { HashAddressType, HashAdress } from "./utils"
 
 export default class UserManager {
     private iconChevron: HTMLTableDataCellElement;
@@ -270,6 +271,9 @@ export default class UserManager {
     }
 
     private async goToLabel(uuid: string): Promise<void> {
-        await this.labelManager.loadWithModelByUuid(uuid);
+        await this.labelManager.loadWithModelByUuid(uuid).then(() => {
+            if (this.labelManager.labelSet.uuid != null)
+                new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.Label)
+        });
     }
 }

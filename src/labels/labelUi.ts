@@ -10,6 +10,7 @@ import Api from "../api";
 
 export class LabelUi {
     private listContainer: HTMLElement;
+    private labelSetNameElement: HTMLInputElement;
     private labelManager: LabelManager
     private regionColor = "#FF00FF";
     private regionTransparency = 255;
@@ -33,6 +34,8 @@ export class LabelUi {
             (document.getElementById("tool-unlabeler") as HTMLInputElement)
                 .onchange = this.onToolChange.bind(this);
         }
+
+        this.labelSetNameElement = document.getElementById("labels-set-name") as HTMLInputElement;
 
         labelManager.renderer.addClickEventListener(this.clickHandler.bind(this));
 
@@ -172,6 +175,7 @@ export class LabelUi {
     }
 
     public loadGivenLabels(set: LabelSet): void {
+        this.labelSetNameElement.value = set.name;
         this.labelManager.labelSet = set;
         this.labelManager.labels = set.labels;
         set.labels.forEach(label => {
@@ -320,6 +324,8 @@ export class LabelUi {
     }
 
     private updateNames(): void {
+        this.labelManager.labelSet.name = this.labelSetNameElement.value;
+
         this.labelManager.labels.forEach(pos => {
             const element = document.getElementById("label-input-" + String(pos.id)) as HTMLInputElement | null;
             if (element === null) throw "Could not find label row!";
