@@ -8,7 +8,10 @@ import SVG_USER_CHECK from "../static/user-check.svg"
 import SVG_CHEVRON_UP from "../static/chevron-up.svg"
 import SVG_CHEVRON_DOWN from "../static/chevron-down.svg"
 import SVG_CHEVRON_RIGHT from "../static/chevron-right.svg"
+import SVG_PLUS_CIRCLE from "../static/plus-circle.svg"
+import SVG_DELETE from "../static/delete.svg"
 import Api from "./api"
+import { LabelManager } from "./labels/labelManager"
 
 export default class UserManager {
     private iconChevron: HTMLTableDataCellElement;
@@ -20,6 +23,7 @@ export default class UserManager {
     private iconStatus: HTMLTableDataCellElement;
     private iconLogout: HTMLTableDataCellElement;
     private iconLabels: HTMLTableDataCellElement;
+    private iconLabelAdd: HTMLTableDataCellElement;
     private userStatus: HTMLTableDataCellElement;
     private expandPadding: HTMLTableRowElement;
     private labelHeader: HTMLTableRowElement;
@@ -31,11 +35,14 @@ export default class UserManager {
     private static readonly INFO_MESSAGE_TIMEOUT_SECONDS: number = 7;
     private static readonly SESSION_REFRESH_INTERVAL_MINUTES: number = 15;
 
+    private labelManager: LabelManager;
+
     private lastLoggedInCheck: Date = new Date(2000, 1);
     private expanded = false;
     private loggedInUsername: string | null = null;
 
-    public constructor() {
+    public constructor(labelManager: LabelManager) {
+        this.labelManager = labelManager;
         this.iconUser = document.getElementById("user-state-icon") as HTMLTableDataCellElement;
         this.userStatus = document.getElementById("user-status") as HTMLTableDataCellElement;
         this.iconStatus = document.getElementById("logged-in-status-icon") as HTMLTableDataCellElement;
@@ -50,6 +57,7 @@ export default class UserManager {
         this.statusMessage = document.getElementById("logged-in-status-message") as HTMLTableDataCellElement;
         this.iconLogout = document.getElementById("user-icon-logout") as HTMLTableDataCellElement;
         this.iconLabels = document.getElementById("user-icon-labels") as HTMLTableDataCellElement;
+        this.iconLabelAdd = document.getElementById("user-icon-labels-add") as HTMLTableDataCellElement;
 
         this.loginElements = document.getElementsByClassName("row-login");
         this.loggedinElements = document.getElementsByClassName("row-logged-in");
@@ -59,6 +67,7 @@ export default class UserManager {
 
         this.registerCell.onclick = this.submitRegister.bind(this);
         this.iconLogout.onclick = this.submitLogout.bind(this);
+        this.iconLabelAdd.onclick = this.addLabel.bind(this);
 
         this.submitCell.onclick = this.submitLogin.bind(this);
         (document.getElementById("user-pwd") as HTMLInputElement).addEventListener("keyup", event => {
@@ -76,7 +85,8 @@ export default class UserManager {
         this.iconStatus.innerHTML = SVG_INFO;
         this.iconLogout.innerHTML = SVG_USER_X;
         this.iconLabels.innerHTML = SVG_TAG;
-        void this.updateState();
+        this.iconLabelAdd.innerHTML = SVG_PLUS_CIRCLE;
+        void this.updateState().then(this.listLabels.bind(this));
     }
 
     private async updateState(): Promise<void> {
@@ -126,7 +136,7 @@ export default class UserManager {
 
     private async toggleInterfaceExpanded(): Promise<void> {
         this.expanded = !this.expanded;
-        await this.updateState()
+        await this.updateState();
     }
 
     private setLoggedInCookie(username: null | string): void {
@@ -177,6 +187,7 @@ export default class UserManager {
             .then(this.setLoggedInCookie.bind(this, id))
             .then(this.updateState.bind(this))
             .then(this.setInfoMessage.bind(this, "Logged in!"))
+            .then(this.listLabels.bind(this))
             .catch(() => {
                 this.setLoggedInCookie(null);
                 this.setInfoMessage("Failed to log in.");
@@ -198,6 +209,7 @@ export default class UserManager {
             });
 
     }
+
     private async submitLogout(): Promise<void> {
         this.lastLoggedInCheck = new Date();
         await Api.Users.logout()
@@ -205,5 +217,59 @@ export default class UserManager {
             .then(this.updateState.bind(this))
             .then(this.setInfoMessage.bind(this, "Logged out!"))
             .catch(this.setInfoMessage.bind(this, "Failed to log out?"));
+    }
+
+    private async addLabel(): Promise<void> {
+        const id = this.labelManager.labelSet.uuid;
+        if (id == null) return;
+        await Api.Users.addLabel(id)
+            .then(this.listLabels.bind(this));
+    }
+
+    private async removeLabel(uuid: string, element: HTMLTableRowElement): Promise<void> {
+        await Api.Users.removeLabel(uuid)
+            .then(() => element.remove());
+    }
+
+    private async listLabels(): Promise<void> {
+        if (!await this.isLoggedIn()) return;
+
+        const labels = await Api.Users.getLabels();
+
+        const previous = document.getElementsByClassName("row-userlabel-data");
+        for (let i = 0; i < previous.length; i++) {
+            previous[i].remove();
+        }
+
+        const classNames = ["row-logged-in", "row-userlabel-data"];
+        if (!this.expanded) classNames.push("hide");
+        labels.forEach(label => {
+            const row = document.createElement("tr");
+            const tdLabelDelete = document.createElement("td");
+            const tdLabelBlank = document.createElement("td");
+            const tdLabelName = document.createElement("td");
+            const tdLabelLoad = document.createElement("td");
+
+            tdLabelDelete.innerHTML = SVG_DELETE;
+            tdLabelDelete.onclick = this.removeLabel.bind(this, label.uuid, row);
+
+            tdLabelName.innerText = label.name;
+
+            tdLabelLoad.innerHTML = SVG_CHEVRON_RIGHT;
+            tdLabelLoad.onclick = this.goToLabel.bind(this, label.uuid);
+
+            classNames.forEach(className => row.classList.add(className));
+            row.appendChild(tdLabelDelete);
+            row.appendChild(tdLabelBlank);
+            row.appendChild(tdLabelName);
+            row.appendChild(tdLabelLoad);
+
+            const table = this.labelHeader.parentNode as HTMLTableSectionElement;
+            table.insertBefore(row, this.statusRow);
+        });
+    }
+
+    private async goToLabel(uuid: string): Promise<void> {
+        await this.labelManager.loadWithModelByUuid(uuid);
     }
 }

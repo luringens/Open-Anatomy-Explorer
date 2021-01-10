@@ -8,7 +8,6 @@ import UserManager from "./userManager";
 
 const defaultModel = 1;
 
-
 // Reset default tool to work around browser persistence.
 (document.getElementById("tool-camera") as HTMLInputElement).checked = true;
 
@@ -26,7 +25,6 @@ modelManager.setOnload((id: number) => void labelManager?.newModel(id));
 void modelManager.loadModelList();
 
 // Initialize user system.
-/* const _userManager = */ new UserManager();
 
 // Check if we are to load labels, models, quizzes...
 const action = HashAdress.fromAddress();
@@ -38,14 +36,16 @@ if (action == null) {
         .then(() => {
             labelManager = new LabelManager(renderer, true, defaultModel, modelManager);
             labelManager.reset();
-        });
+        })
+        .then(() => new UserManager(labelManager as LabelManager));
 }
 
 else switch (action.action) {
     // Load label editor with stored labels.
     case HashAddressType.Label:
         labelManager = new LabelManager(renderer, true, 0, modelManager);
-        void labelManager.loadWithModelByUuid(action.uuid);
+        void labelManager.loadWithModelByUuid(action.uuid)
+            .then(() => new UserManager(labelManager as LabelManager));
         break;
 
     // Load quiz editor, instructed to create a new quiz from stored labels.
@@ -54,6 +54,7 @@ else switch (action.action) {
         void labelManager.loadWithModelByUuid(action.uuid).then(() => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             quizMasterManager = new QuizMasterManager(labelManager!, true);
+            new UserManager(labelManager as LabelManager);
         });
         break;
 
@@ -61,15 +62,17 @@ else switch (action.action) {
     case HashAddressType.QuizEdit:
         labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, true);
-        void quizMasterManager.loadQuestions(action.uuid);
+        void quizMasterManager.loadQuestions(action.uuid)
+            .then(() => new UserManager(labelManager as LabelManager));
         break;
 
     // Load quiz taker from stored quiz.
     case HashAddressType.QuizTake:
         labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, false);
-        void quizMasterManager.loadQuestions(action.uuid).then(() =>
-            void new QuizTakerManager(quizMasterManager as QuizMasterManager, labelManager as LabelManager)
-        );
+        void quizMasterManager.loadQuestions(action.uuid).then(() => {
+            new QuizTakerManager(quizMasterManager as QuizMasterManager, labelManager as LabelManager);
+            new UserManager(labelManager as LabelManager);
+        });
         break;
 }
