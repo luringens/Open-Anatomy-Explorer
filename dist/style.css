@@ -68,6 +68,10 @@ button {
     overflow-x: hidden;
 }
 
+#labels-set-name {
+    margin-bottom: 10px;
+}
+
 .dg {
     float: right;
     z-index: 100;

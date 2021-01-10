@@ -28,6 +28,9 @@
                 <br />
                 <div id="label-container">
                     <h3>Labels</h3>
+                    <label for="labels-set-name">Name:</label>
+                    <input type="text" id="labels-set-name" placeholder="New label set">
+                    <hr>
                     <table>
                         <coldef>
                             <col style="width: 20px;" />
@@ -131,8 +134,9 @@
                             <td id="user-status"></td>
                             <td id="user-chevron"></td>
                         </tr>
+
                         <tr class="hide" id="row-login-padding">
-                            <td colspan="3">
+                            <td colspan="4">
                                 &nbsp;
                             </td>
                         </tr>
@@ -148,18 +152,44 @@
                             <td><input id="user-pwd" type="password" placeholder="Password"></td>
                             <td id="user-login-submit"></td>
                         </tr>
+
                         <tr class="hide row-logged-in" id="logged-in-label-header">
                             <td id="user-icon-logout"></td>
                             <td></td>
                             <td>Log out</td>
                             <td></td>
                         </tr>
+
+                        <tr class="hide row-logged-in">
+                            <td colspan="4">
+                                <hr />
+                            </td>
+                        </tr>
+
                         <tr class="hide row-logged-in" id="logged-in-label-header">
                             <td id="user-icon-labels"></td>
                             <td></td>
                             <td>Labels:</td>
                             <td id="user-icon-labels-add"></td>
                         </tr>
+
+                        <tr class="hide row-logged-in">
+                            <td colspan="4">
+                                <hr />
+                            </td>
+                        </tr>
+
+                        <tr class="hide row-logged-in" id="logged-in-quizzes-header">
+                            <td id="user-icon-quizzes"></td>
+                            <td></td>
+                            <td>Quizzes:</td>
+                            <td id="user-icon-quizzes-add"></td>
+                        </tr>
+
+                        <tr class="hide row-logged-in">
+                            <td colspan="3">&nbsp;</td>
+                        </tr>
+
                         <tr class="hide" id="logged-in-status">
                             <td id="logged-in-status-icon"></td>
                             <td></td>

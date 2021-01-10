@@ -1,6 +1,7 @@
 import SVG_TAG from "../static/tag.svg"
 import SVG_KEY from "../static/key.svg"
 import SVG_INFO from "../static/info.svg"
+import SVG_QUIZ from "../static/help-circle.svg"
 import SVG_USER from "../static/user.svg"
 import SVG_USER_X from "../static/user-x.svg"
 import SVG_USER_PLUS from "../static/user-plus.svg"
@@ -32,6 +33,9 @@ export default class UserManager {
     private loggedinElements: HTMLCollectionOf<Element>;
     private statusRow: HTMLTableRowElement;
     private statusMessage: HTMLTableDataCellElement;
+    private quizzesHeader: HTMLTableRowElement
+    private iconQuizzes: HTMLTableDataCellElement
+    private iconQuizzesAdd: HTMLTableDataCellElement
 
     private static readonly INFO_MESSAGE_TIMEOUT_SECONDS: number = 7;
     private static readonly SESSION_REFRESH_INTERVAL_MINUTES: number = 15;
@@ -58,6 +62,9 @@ export default class UserManager {
         this.statusMessage = document.getElementById("logged-in-status-message") as HTMLTableDataCellElement;
         this.iconLogout = document.getElementById("user-icon-logout") as HTMLTableDataCellElement;
         this.iconLabels = document.getElementById("user-icon-labels") as HTMLTableDataCellElement;
+        this.iconQuizzes = document.getElementById("user-icon-quizzes") as HTMLTableDataCellElement;
+        this.quizzesHeader = document.getElementById("logged-in-quizzes-header") as HTMLTableRowElement;
+        this.iconQuizzesAdd = document.getElementById("user-icon-quizzes-add") as HTMLTableDataCellElement;
         this.iconLabelAdd = document.getElementById("user-icon-labels-add") as HTMLTableDataCellElement;
 
         this.loginElements = document.getElementsByClassName("row-login");
@@ -69,6 +76,7 @@ export default class UserManager {
         this.registerCell.onclick = this.submitRegister.bind(this);
         this.iconLogout.onclick = this.submitLogout.bind(this);
         this.iconLabelAdd.onclick = this.addLabel.bind(this);
+        this.iconQuizzesAdd.onclick = this.addQuiz.bind(this);
 
         this.submitCell.onclick = this.submitLogin.bind(this);
         (document.getElementById("user-pwd") as HTMLInputElement).addEventListener("keyup", event => {
@@ -85,8 +93,10 @@ export default class UserManager {
         this.iconloginPwd.innerHTML = SVG_KEY;
         this.iconStatus.innerHTML = SVG_INFO;
         this.iconLogout.innerHTML = SVG_USER_X;
+        this.iconQuizzes.innerHTML = SVG_QUIZ;
         this.iconLabels.innerHTML = SVG_TAG;
         this.iconLabelAdd.innerHTML = SVG_PLUS_CIRCLE;
+        this.iconQuizzesAdd.innerHTML = SVG_PLUS_CIRCLE;
         void this.updateState().then(this.listLabels.bind(this));
     }
 
@@ -275,5 +285,66 @@ export default class UserManager {
             if (this.labelManager.labelSet.uuid != null)
                 new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.Label)
         });
+    }
+
+    private async addQuiz(): Promise<void> {
+        // const id = this.labelManager.labelSet.uuid;
+        // if (id == null) return;
+        // await Api.Users.addLabel(id)
+        //     .then(this.listLabels.bind(this));
+        return Promise.reject("Not implemented");
+    }
+
+    private async removeQuiz(uuid: string, element: HTMLTableRowElement): Promise<void> {
+        // await Api.Users.removeLabel(uuid)
+        //     .then(() => element.remove());
+        return Promise.reject("Not implemented - " + uuid + element.nodeName);
+    }
+
+    private async listQuizzes(): Promise<void> {
+        // if (!await this.isLoggedIn()) return;
+
+        // const labels = await Api.Users.getLabels();
+
+        // const previous = document.getElementsByClassName("row-userlabel-data");
+        // for (let i = 0; i < previous.length; i++) {
+        //     previous[i].remove();
+        // }
+
+        // const classNames = ["row-logged-in", "row-userlabel-data"];
+        // if (!this.expanded) classNames.push("hide");
+        // labels.forEach(label => {
+        //     const row = document.createElement("tr");
+        //     const tdLabelDelete = document.createElement("td");
+        //     const tdLabelBlank = document.createElement("td");
+        //     const tdLabelName = document.createElement("td");
+        //     const tdLabelLoad = document.createElement("td");
+
+        //     tdLabelDelete.innerHTML = SVG_DELETE;
+        //     tdLabelDelete.onclick = this.removeLabel.bind(this, label.uuid, row);
+
+        //     tdLabelName.innerText = label.name;
+
+        //     tdLabelLoad.innerHTML = SVG_CHEVRON_RIGHT;
+        //     tdLabelLoad.onclick = this.goToLabel.bind(this, label.uuid);
+
+        //     classNames.forEach(className => row.classList.add(className));
+        //     row.appendChild(tdLabelDelete);
+        //     row.appendChild(tdLabelBlank);
+        //     row.appendChild(tdLabelName);
+        //     row.appendChild(tdLabelLoad);
+
+        //     const table = this.labelHeader.parentNode as HTMLTableSectionElement;
+        //     table.insertBefore(row, this.statusRow);
+        // });
+        return Promise.reject("Not implemented");
+    }
+
+    private async goToQuiz(uuid: string): Promise<void> {
+        // await this.labelManager.loadWithModelByUuid(uuid).then(() => {
+        //     if (this.labelManager.labelSet.uuid != null)
+        //         new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.Label)
+        // });
+        return Promise.reject("Not implemented - " + uuid);
     }
 }
