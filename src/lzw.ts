@@ -1,9 +1,12 @@
-/// LZW Compression/Decompression for Strings
-/// https://rosettacode.org/wiki/LZW_compression#ES6_Version
-
+/**
+ * LZW Compression/Decompression for Strings
+ * https://rosettacode.org/wiki/LZW_compression#ES6_Version
+ */
 export class LZW {
-    /// Perform the LZW compression
-    /// uncompressed - String. The string on which to perform the compression.
+    /**
+     * Perform the LZW compression
+     * @param uncompressed The string on which to perform the compression.
+     */
     static compress(uncompressed: string): number[] {
         // Initialize dictionary
         const dictionary: { [id: string]: number; } = {};

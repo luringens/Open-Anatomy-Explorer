@@ -4,7 +4,7 @@ import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
 import { HashAddressType, HashAdress } from "./utils";
-import UserManager from "./userManager";
+import UserManager from "./user/userManager";
 
 const defaultModel = 1;
 

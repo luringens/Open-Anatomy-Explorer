@@ -2,18 +2,36 @@ import SVG_INFO from "../static/help-circle.svg";
 import SVG_WARNING from "../static/alert-circle.svg";
 import SVG_ERROR from "../static/x-octagon.svg";
 
+/**
+ * Manages the 
+ */
 export default class Notification {
     private static PARENT = document.getElementById("status-bar-list") as HTMLUListElement;
 
-    /// Adds a message to the status bar that can be removed with the returned callback.
-    /// Otherwise it is removed after the given time.
+    /**
+     * Adds a message to the status bar that can be removed with the returned callback. Otherwise it 
+     * is removed after the given time.
+     * @param message The message to display.
+     * @param status The kind of status message this is.
+     * @param seconds How many seconds to wait before automatically returning it.
+     * @returns A function that when called, immediately removes the message, regardless of timeout.
+     */
     public static message(message: string, status: StatusType, seconds = 15): () => void {
         const element = this.add(message, status);
         const callback = this.remove.bind(this, element);
         setTimeout(callback, seconds * 1000);
+
+        const statusbar = document.getElementById("status-bar") as HTMLDivElement;
+        statusbar.classList.remove("hide");
+
         return callback;
     }
 
+    /**
+     * Does the actual rendering of the user interface element.
+     * @param message The message to display.
+     * @param status The kind of status message this is.
+     */
     private static add(message: string, status: StatusType): HTMLElement {
         const element = document.createElement("li");
         element.classList.add("status-message");
@@ -40,12 +58,13 @@ export default class Notification {
         element.appendChild(textElement);
         Notification.PARENT.appendChild(element);
 
-        const statusbar = document.getElementById("status-bar") as HTMLDivElement;
-        statusbar.classList.remove("hide");
-
         return element;
     }
 
+    /**
+     * Removes the given element, hiding the status bar if it was the last message.
+     * @param element The element to remove.
+     */
     private static remove(element: HTMLElement | null): void {
         element?.remove();
 
@@ -57,6 +76,9 @@ export default class Notification {
     }
 }
 
+/**
+ * The kind of status a message is.
+ */
 export enum StatusType {
     Info,
     Warning,

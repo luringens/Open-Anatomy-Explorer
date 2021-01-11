@@ -253,7 +253,7 @@ async function sendRequest(url: string, options: RequestInit): Promise<Response>
     return response;
 }
 
-class JsonUserLabelSet {
+export class JsonUserLabelSet {
     id: number;
     name: string;
     uuid: string;
@@ -265,7 +265,7 @@ class JsonUserLabelSet {
     }
 }
 
-class JsonUserQuiz {
+export class JsonUserQuiz {
     id: number;
     name: string;
     uuid: string;
