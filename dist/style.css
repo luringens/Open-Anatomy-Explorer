@@ -19,6 +19,7 @@ p,
 pre,
 th,
 td,
+ul,
 label {
     font-family: Arial, Helvetica, sans-serif;
 }
@@ -183,4 +184,52 @@ td > svg {
 
 #file-upload {
     max-width: 15em;
+}
+
+.status-bar {
+    position: absolute;
+    background-color: #444;
+    bottom: 0;
+    z-index: 200;
+    right: 350px;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 0 10px 0 0;
+}
+
+.status-bar-list {
+    padding-left: 5px;
+    margin: 10px;
+}
+
+.status-message {
+    height: 24px;
+    vertical-align: center;
+    justify-content: center;
+    clear: both;
+    list-style-type: none;
+}
+
+.status-message-icon {
+    float: left;
+}
+
+.status-message-text {
+    float: left;
+    margin-left: 5px;
+    margin-top: 4px;
+}
+
+.status-info {
+    color: #EEE;
+    font-style: italic;
+}
+
+.status-warning {
+    color: rgb(255, 199, 96);
+}
+
+.status-error {
+    color: rgb(255, 104, 104);
+    font-weight: bold;
 }

@@ -24,8 +24,6 @@ const modelManager = new ModelManager(renderer);
 modelManager.setOnload((id: number) => void labelManager?.newModel(id));
 void modelManager.loadModelList();
 
-// Initialize user system.
-
 // Check if we are to load labels, models, quizzes...
 const action = HashAdress.fromAddress();
 

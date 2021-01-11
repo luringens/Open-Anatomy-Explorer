@@ -3,6 +3,7 @@ import { Object3D } from "three";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
 import Api from "./api";
+import Notification, { StatusType } from "./notification";
 
 export class ModelManager {
     private static readonly url = Api.url + "models/";
@@ -18,13 +19,17 @@ export class ModelManager {
     }
 
     public static async loadAsync(modelId: number): Promise<THREE.Group> {
+        const clearStatus = Notification.message("Loading model...", StatusType.Info);
         const name = await Api.modelStorage.lookup(modelId);
         if (name.endsWith(".obj")) {
             // OBJ file loading
-            return await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
+            const group = await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
+            clearStatus();
+            return group;
         } else {
             // Default to GLTF
             const data = await new GLTFLoader().loadAsync(this.url + name) as GLTF;
+            clearStatus();
             return data.scene; // ?
         }
     }

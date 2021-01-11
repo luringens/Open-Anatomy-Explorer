@@ -2,6 +2,7 @@ import { colorToHex, hexToColor, toHex } from "./utils";
 import { LZW } from "./lzw";
 import { Label, LabelSet } from "./labels/Label";
 import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "./quizmaster/Question";
+import Notification, { StatusType } from "./notification";
 
 export default class Api {
     public static readonly url = "http://localhost:8001/";
@@ -240,8 +241,15 @@ export default class Api {
 }
 
 async function sendRequest(url: string, options: RequestInit): Promise<Response> {
+    const clearStatus = Notification.message("Please wait...", StatusType.Info);
     const response = await fetch(url, options);
-    if (!response.ok) return Promise.reject(`Server returned HTTP ${response.status}.`);
+    clearStatus();
+
+    if (!response.ok) {
+        const msg = `Server returned HTTP ${response.status} '${response.statusText}'.`;
+        Notification.message(msg, StatusType.Warning, 10);
+        return Promise.reject(msg);
+    }
     return response;
 }
 
