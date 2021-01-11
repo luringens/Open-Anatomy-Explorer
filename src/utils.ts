@@ -65,6 +65,16 @@ export class HashAdress {
         const path = `${window.origin}${location.pathname}#`;
         window.location.href = path;
     }
+
+    static isOfType(actions: (HashAddressType | null)[]): boolean {
+        const address = HashAdress.fromAddress();
+        for (let i = 0; i < actions.length; i++) {
+            if (actions[i] == address?.action) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 /// Remember to sort first.

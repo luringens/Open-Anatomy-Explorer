@@ -61,6 +61,10 @@
                 </div>
             </div>
             <div id="quiz-editor" class="hide">
+                <h3>Quiz</h3>
+                <label for="quiz-name">Name:</label>
+                <input type="text" id="quiz-name" placeholder="New quiz">
+                <hr>
                 <div id="question-container">
                     <h3>Questions</h3>
                     <div id="questions">
@@ -173,7 +177,7 @@
                             <td id="user-icon-labels-add"></td>
                         </tr>
 
-                        <tr class="hide row-logged-in">
+                        <tr class="hide row-logged-in" id="row-userlabel-footer">
                             <td colspan="4">
                                 <hr />
                             </td>
@@ -186,7 +190,7 @@
                             <td id="user-icon-quizzes-add"></td>
                         </tr>
 
-                        <tr class="hide row-logged-in">
+                        <tr class="hide row-logged-in" id="row-userquiz-footer">
                             <td colspan="3">&nbsp;</td>
                         </tr>
 

@@ -14,6 +14,7 @@ import SVG_DELETE from "../static/delete.svg"
 import Api from "./api"
 import { LabelManager } from "./labels/labelManager"
 import { HashAddressType, HashAdress } from "./utils"
+import QuizMasterManager from "./quizmaster/quizMasterManager"
 
 export default class UserManager {
     private iconChevron: HTMLTableDataCellElement;
@@ -28,25 +29,27 @@ export default class UserManager {
     private iconLabelAdd: HTMLTableDataCellElement;
     private userStatus: HTMLTableDataCellElement;
     private expandPadding: HTMLTableRowElement;
-    private labelHeader: HTMLTableRowElement;
+    private labelFooter: HTMLTableRowElement;
     private loginElements: HTMLCollectionOf<Element>;
     private loggedinElements: HTMLCollectionOf<Element>;
     private statusRow: HTMLTableRowElement;
     private statusMessage: HTMLTableDataCellElement;
-    private quizzesHeader: HTMLTableRowElement
-    private iconQuizzes: HTMLTableDataCellElement
-    private iconQuizzesAdd: HTMLTableDataCellElement
+    private quizzesFooter: HTMLTableRowElement;
+    private iconQuizzes: HTMLTableDataCellElement;
+    private iconQuizzesAdd: HTMLTableDataCellElement;
 
     private static readonly INFO_MESSAGE_TIMEOUT_SECONDS: number = 7;
     private static readonly SESSION_REFRESH_INTERVAL_MINUTES: number = 15;
 
     private labelManager: LabelManager;
+    private quizManager: QuizMasterManager | null;
 
     private lastLoggedInCheck: Date = new Date(2000, 1);
     private expanded = false;
     private loggedInUsername: string | null = null;
 
-    public constructor(labelManager: LabelManager) {
+    public constructor(labelManager: LabelManager, quizManager: QuizMasterManager | null = null) {
+        this.quizManager = quizManager;
         this.labelManager = labelManager;
         this.iconUser = document.getElementById("user-state-icon") as HTMLTableDataCellElement;
         this.userStatus = document.getElementById("user-status") as HTMLTableDataCellElement;
@@ -57,15 +60,15 @@ export default class UserManager {
         this.iconloginUser = document.getElementById("user-login-id-icon") as HTMLTableDataCellElement;
         this.iconloginPwd = document.getElementById("user-login-pwd-icon") as HTMLTableDataCellElement;
         this.expandPadding = document.getElementById("row-login-padding") as HTMLTableRowElement;
-        this.labelHeader = document.getElementById("logged-in-label-header") as HTMLTableRowElement;
         this.statusRow = document.getElementById("logged-in-status") as HTMLTableRowElement;
         this.statusMessage = document.getElementById("logged-in-status-message") as HTMLTableDataCellElement;
         this.iconLogout = document.getElementById("user-icon-logout") as HTMLTableDataCellElement;
         this.iconLabels = document.getElementById("user-icon-labels") as HTMLTableDataCellElement;
         this.iconQuizzes = document.getElementById("user-icon-quizzes") as HTMLTableDataCellElement;
-        this.quizzesHeader = document.getElementById("logged-in-quizzes-header") as HTMLTableRowElement;
         this.iconQuizzesAdd = document.getElementById("user-icon-quizzes-add") as HTMLTableDataCellElement;
         this.iconLabelAdd = document.getElementById("user-icon-labels-add") as HTMLTableDataCellElement;
+        this.quizzesFooter = document.getElementById("row-userquiz-footer") as HTMLTableRowElement;
+        this.labelFooter = document.getElementById("row-userlabel-footer") as HTMLTableRowElement;
 
         this.loginElements = document.getElementsByClassName("row-login");
         this.loggedinElements = document.getElementsByClassName("row-logged-in");
@@ -97,7 +100,9 @@ export default class UserManager {
         this.iconLabels.innerHTML = SVG_TAG;
         this.iconLabelAdd.innerHTML = SVG_PLUS_CIRCLE;
         this.iconQuizzesAdd.innerHTML = SVG_PLUS_CIRCLE;
-        void this.updateState().then(this.listLabels.bind(this));
+        void this.updateState()
+            .then(this.listLabels.bind(this))
+            .then(this.listQuizzes.bind(this));
     }
 
     private async updateState(): Promise<void> {
@@ -199,6 +204,7 @@ export default class UserManager {
             .then(this.updateState.bind(this))
             .then(this.setInfoMessage.bind(this, "Logged in!"))
             .then(this.listLabels.bind(this))
+            .then(this.listQuizzes.bind(this))
             .catch(() => {
                 this.setLoggedInCookie(null);
                 this.setInfoMessage("Failed to log in.");
@@ -233,19 +239,19 @@ export default class UserManager {
     private async addLabel(): Promise<void> {
         const id = this.labelManager.labelSet.uuid;
         if (id == null) return;
-        await Api.Users.addLabel(id)
+        await Api.Users.Labels.add(id)
             .then(this.listLabels.bind(this));
     }
 
     private async removeLabel(uuid: string, element: HTMLTableRowElement): Promise<void> {
-        await Api.Users.removeLabel(uuid)
+        await Api.Users.Labels.remove(uuid)
             .then(() => element.remove());
     }
 
     private async listLabels(): Promise<void> {
         if (!await this.isLoggedIn()) return;
 
-        const labels = await Api.Users.getLabels();
+        const labels = await Api.Users.Labels.get();
 
         const previous = document.getElementsByClassName("row-userlabel-data");
         for (let i = 0; i < previous.length; i++) {
@@ -275,76 +281,83 @@ export default class UserManager {
             row.appendChild(tdLabelName);
             row.appendChild(tdLabelLoad);
 
-            const table = this.labelHeader.parentNode as HTMLTableSectionElement;
-            table.insertBefore(row, this.statusRow);
+            const table = this.labelFooter.parentNode as HTMLTableSectionElement;
+            table.insertBefore(row, this.labelFooter);
         });
     }
 
     private async goToLabel(uuid: string): Promise<void> {
-        await this.labelManager.loadWithModelByUuid(uuid).then(() => {
-            if (this.labelManager.labelSet.uuid != null)
-                new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.Label)
-        });
+        if (HashAdress.isOfType([null, HashAddressType.Label])) {
+            await this.labelManager.loadWithModelByUuid(uuid);
+            new HashAdress(uuid, HashAddressType.Label)
+        }
+        else {
+            new HashAdress(uuid, HashAddressType.Label).set();
+            location.reload();
+        }
     }
 
     private async addQuiz(): Promise<void> {
-        // const id = this.labelManager.labelSet.uuid;
-        // if (id == null) return;
-        // await Api.Users.addLabel(id)
-        //     .then(this.listLabels.bind(this));
-        return Promise.reject("Not implemented");
+        if (this.quizManager == null) return Promise.reject("No quizmanager");
+        const uuid = this.quizManager.getQuizUuid();
+        if (uuid == null) return Promise.reject("No saved quiz in quizmanager");
+
+        await Api.Users.Quizzes.add(uuid)
+            .then(this.listQuizzes.bind(this));
     }
 
     private async removeQuiz(uuid: string, element: HTMLTableRowElement): Promise<void> {
-        // await Api.Users.removeLabel(uuid)
-        //     .then(() => element.remove());
-        return Promise.reject("Not implemented - " + uuid + element.nodeName);
+        await Api.Users.Quizzes.remove(uuid)
+            .then(() => element.remove());
     }
 
     private async listQuizzes(): Promise<void> {
-        // if (!await this.isLoggedIn()) return;
+        if (!await this.isLoggedIn()) return;
 
-        // const labels = await Api.Users.getLabels();
+        const quizzes = await Api.Users.Quizzes.get();
 
-        // const previous = document.getElementsByClassName("row-userlabel-data");
-        // for (let i = 0; i < previous.length; i++) {
-        //     previous[i].remove();
-        // }
+        const previous = document.getElementsByClassName("row-userquiz-data");
+        for (let i = 0; i < previous.length; i++) {
+            previous[i].remove();
+        }
 
-        // const classNames = ["row-logged-in", "row-userlabel-data"];
-        // if (!this.expanded) classNames.push("hide");
-        // labels.forEach(label => {
-        //     const row = document.createElement("tr");
-        //     const tdLabelDelete = document.createElement("td");
-        //     const tdLabelBlank = document.createElement("td");
-        //     const tdLabelName = document.createElement("td");
-        //     const tdLabelLoad = document.createElement("td");
+        const classNames = ["row-logged-in", "row-userquiz-data"];
+        if (!this.expanded) classNames.push("hide");
+        quizzes.forEach(quiz => {
+            const row = document.createElement("tr");
+            const tdLabelDelete = document.createElement("td");
+            const tdLabelBlank = document.createElement("td");
+            const tdLabelName = document.createElement("td");
+            const tdLabelLoad = document.createElement("td");
 
-        //     tdLabelDelete.innerHTML = SVG_DELETE;
-        //     tdLabelDelete.onclick = this.removeLabel.bind(this, label.uuid, row);
+            tdLabelDelete.innerHTML = SVG_DELETE;
+            tdLabelDelete.onclick = this.removeQuiz.bind(this, quiz.uuid, row);
 
-        //     tdLabelName.innerText = label.name;
+            tdLabelName.innerText = quiz.name;
 
-        //     tdLabelLoad.innerHTML = SVG_CHEVRON_RIGHT;
-        //     tdLabelLoad.onclick = this.goToLabel.bind(this, label.uuid);
+            tdLabelLoad.innerHTML = SVG_CHEVRON_RIGHT;
+            tdLabelLoad.onclick = this.goToQuiz.bind(this, quiz.uuid);
 
-        //     classNames.forEach(className => row.classList.add(className));
-        //     row.appendChild(tdLabelDelete);
-        //     row.appendChild(tdLabelBlank);
-        //     row.appendChild(tdLabelName);
-        //     row.appendChild(tdLabelLoad);
+            classNames.forEach(className => row.classList.add(className));
+            row.appendChild(tdLabelDelete);
+            row.appendChild(tdLabelBlank);
+            row.appendChild(tdLabelName);
+            row.appendChild(tdLabelLoad);
 
-        //     const table = this.labelHeader.parentNode as HTMLTableSectionElement;
-        //     table.insertBefore(row, this.statusRow);
-        // });
-        return Promise.reject("Not implemented");
+            const table = this.quizzesFooter.parentNode as HTMLTableSectionElement;
+            table.insertBefore(row, this.quizzesFooter);
+        });
     }
 
     private async goToQuiz(uuid: string): Promise<void> {
-        // await this.labelManager.loadWithModelByUuid(uuid).then(() => {
-        //     if (this.labelManager.labelSet.uuid != null)
-        //         new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.Label)
-        // });
-        return Promise.reject("Not implemented - " + uuid);
+        const quizModes = [HashAddressType.QuizEdit, HashAddressType.QuizCreate];
+        if (this.quizManager != null && HashAdress.isOfType(quizModes)) {
+            await this.quizManager.loadQuestions(uuid);
+            new HashAdress(uuid, HashAddressType.QuizEdit).set();
+        }
+        else {
+            new HashAdress(uuid, HashAddressType.QuizEdit).set();
+            location.reload();
+        }
     }
 }

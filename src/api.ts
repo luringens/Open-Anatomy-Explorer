@@ -57,25 +57,49 @@ export default class Api {
                 });
         },
 
-        async addLabel(labelsetUuid: string): Promise<void> {
-            const url = this.url + `labelsets/${labelsetUuid}`;
-            const options: RequestInit = { method: "PUT", credentials: "include" };
-            await sendRequest(url, options);
+        Labels: {
+            url: Api.url + "users/labelsets/",
+
+            async add(labelsetUuid: string): Promise<void> {
+                const url = this.url + labelsetUuid;
+                const options: RequestInit = { method: "PUT", credentials: "include" };
+                await sendRequest(url, options);
+            },
+
+            async remove(labelsetUuid: string): Promise<void> {
+                const url = this.url + labelsetUuid;
+                const options: RequestInit = { method: "DELETE", credentials: "include" };
+                await sendRequest(url, options);
+            },
+
+            async get(): Promise<JsonUserLabelSet[]> {
+                const options: RequestInit = { method: "GET", credentials: "include" };
+                const response = await sendRequest(this.url, options);
+                return await response.json() as JsonUserLabelSet[];
+            },
         },
 
-        async removeLabel(labelsetUuid: string): Promise<void> {
-            const url = this.url + `labelsets/${labelsetUuid}`;
-            const options: RequestInit = { method: "DELETE", credentials: "include" };
-            await sendRequest(url, options);
-        },
+        Quizzes: {
+            url: Api.url + "users/quizzes/",
 
-        async getLabels(): Promise<JsonUserLabelSets[]> {
-            const url = this.url + "labelsets";
-            const options: RequestInit = { method: "GET", credentials: "include" };
-            const response = await sendRequest(url, options);
+            async add(quizUuid: string): Promise<void> {
+                const url = this.url + quizUuid;
+                const options: RequestInit = { method: "PUT", credentials: "include" };
+                await sendRequest(url, options);
+            },
 
-            return await response.json() as JsonUserLabelSets[];
-        },
+            async remove(quizUuid: string): Promise<void> {
+                const url = this.url + quizUuid;
+                const options: RequestInit = { method: "DELETE", credentials: "include" };
+                await sendRequest(url, options);
+            },
+
+            async get(): Promise<JsonUserLabelSet[]> {
+                const options: RequestInit = { method: "GET", credentials: "include" };
+                const response = await sendRequest(this.url, options);
+                return await response.json() as JsonUserQuiz[];
+            },
+        }
     }
 
     public static Labels = {
@@ -208,7 +232,19 @@ async function sendRequest(url: string, options: RequestInit): Promise<Response>
     return response;
 }
 
-class JsonUserLabelSets {
+class JsonUserLabelSet {
+    id: number;
+    name: string;
+    uuid: string;
+
+    constructor(id: number, name: string, uuid: string) {
+        this.id = id;
+        this.name = name;
+        this.uuid = uuid;
+    }
+}
+
+class JsonUserQuiz {
     id: number;
     name: string;
     uuid: string;
@@ -289,11 +325,13 @@ class JsonLabel {
 }
 
 class JsonQuiz {
+    name: string;
     labelSet: number;
     shuffle: boolean;
     questions: JsonQuestion[];
 
-    constructor(labelSet: number, shuffle: boolean, questions: JsonQuestion[]) {
+    constructor(name: string, labelSet: number, shuffle: boolean, questions: JsonQuestion[]) {
+        this.name = name;
         this.labelSet = labelSet;
         this.shuffle = shuffle;
         this.questions = questions;
@@ -304,12 +342,12 @@ class JsonQuiz {
         for (let i = 0; i < json.questions.length; i++) {
             questions.push(JsonQuestion.toQuestion(json.questions[i], i));
         }
-        return new Quiz(uuid, json.labelSet, json.shuffle, questions);
+        return new Quiz(json.name, uuid, json.labelSet, json.shuffle, questions);
     }
 
     static fromQuiz(quiz: Quiz): JsonQuiz {
         const questions = quiz.questions.map((q) => JsonQuestion.fromQuestion(q));
-        return new JsonQuiz(quiz.labelSet, quiz.shuffle, questions);
+        return new JsonQuiz(quiz.name, quiz.labelSet, quiz.shuffle, questions);
     }
 }
 

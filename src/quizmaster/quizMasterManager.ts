@@ -47,7 +47,7 @@ export default class QuizMasterManager {
         // Setting labelset ID to zero is *not actually valid*.  However, this should only happen
         // when this.loadQuiz is getting called next to load the LabelManager with a labelId from
         // a quiz. Unfortunate invariant to keep in mind.
-        this.quiz = new Quiz(null, labelManager.labelSet.id ?? 0, false, []);
+        this.quiz = new Quiz("", null, labelManager.labelSet.id ?? 0, false, []);
         this.questions = this.quiz.questions;
     }
 
@@ -57,6 +57,10 @@ export default class QuizMasterManager {
 
     public getQuestions(): Question[] {
         return this.questions;
+    }
+
+    public getQuizUuid(): null | string {
+        return this.quiz.uuid;
     }
 
     public addQuestion(questionType: QuestionType) {
@@ -227,11 +231,18 @@ export default class QuizMasterManager {
         const quiz = await Api.Quiz.load(quizGuid);
         this.quiz = quiz;
         this.questions = this.quiz.questions;
+        this.nextQuestionId = 0;
 
         // Before populating the UI, we need the name of the labels.
         await this.labelManager.loadWithModelById(this.quiz.labelSet);
 
+        (document.getElementById("quiz-name") as HTMLInputElement).value = quiz.name;
         (document.getElementById("quiz-shuffle") as HTMLInputElement).checked = this.quiz.shuffle;
+
+        const oldQuestions = document.getElementsByClassName("question-editor");
+        while (oldQuestions.length > 0) {
+            oldQuestions[oldQuestions.length - 1].remove();
+        }
 
         quiz.questions.forEach(q => {
             this.nextQuestionId = Math.max(this.nextQuestionId, q.id + 1);
@@ -283,6 +294,8 @@ export default class QuizMasterManager {
     }
 
     private updateDataFromUi(): void {
+        const nameElement = document.getElementById("quiz-name") as HTMLInputElement;
+        this.quiz.name = nameElement.value;
         for (const question of this.questions) {
             const id = "question-" + question.id;
             const textPrompt = document.getElementById(id + "-textPrompt");

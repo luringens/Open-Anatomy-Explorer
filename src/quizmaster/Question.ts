@@ -1,10 +1,12 @@
 export class Quiz {
+    name: string;
     uuid: string | null;
     labelSet: number;
     shuffle: boolean;
     questions: Question[];
 
-    constructor(uuid: string | null, labelSet: number, shuffle: boolean, questions: Question[]) {
+    constructor(name: string, uuid: string | null, labelSet: number, shuffle: boolean, questions: Question[]) {
+        this.name = name;
         this.uuid = uuid;
         this.labelSet = labelSet;
         this.shuffle = shuffle;

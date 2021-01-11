@@ -54,7 +54,7 @@ else switch (action.action) {
         void labelManager.loadWithModelByUuid(action.uuid).then(() => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             quizMasterManager = new QuizMasterManager(labelManager!, true);
-            new UserManager(labelManager as LabelManager);
+            new UserManager(labelManager as LabelManager, quizMasterManager);
         });
         break;
 
@@ -63,7 +63,7 @@ else switch (action.action) {
         labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, true);
         void quizMasterManager.loadQuestions(action.uuid)
-            .then(() => new UserManager(labelManager as LabelManager));
+            .then(() => new UserManager(labelManager as LabelManager, quizMasterManager));
         break;
 
     // Load quiz taker from stored quiz.
@@ -72,7 +72,7 @@ else switch (action.action) {
         quizMasterManager = new QuizMasterManager(labelManager, false);
         void quizMasterManager.loadQuestions(action.uuid).then(() => {
             new QuizTakerManager(quizMasterManager as QuizMasterManager, labelManager as LabelManager);
-            new UserManager(labelManager as LabelManager);
+            new UserManager(labelManager as LabelManager, quizMasterManager);
         });
         break;
 }
