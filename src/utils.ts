@@ -24,30 +24,20 @@ export enum HashAddressType {
     QuizTake = "QUIZTAKE",
 }
 
-function parseHashAddressType(input: string): HashAddressType | null {
-    switch (input) {
-        case "LABEL": return HashAddressType.Label;
-        case "QUIZCREATE": return HashAddressType.QuizCreate;
-        case "QUIZEDIT": return HashAddressType.QuizEdit;
-        case "QUIZTAKE": return HashAddressType.QuizTake;
-        default: return null;
-    }
-}
-
 export class HashAdress {
-    action: HashAddressType;
-    uuid: string;
+    public action: HashAddressType;
+    public uuid: string;
 
-    constructor(uuid: string, action: HashAddressType) {
+    public constructor(uuid: string, action: HashAddressType) {
         this.action = action;
         this.uuid = uuid;
     }
 
-    static fromAddress(): HashAdress | null {
+    public static fromAddress(): HashAdress | null {
         const parts = location.hash.slice(1).split(",");
         if (parts.length < 2) return null;
 
-        const action = parseHashAddressType(parts[0]);
+        const action = HashAdress.parseHashAddressType(parts[0]);
         const uuid: string = parts[1];
 
         if (action == undefined || uuid.length != 36) return null;
@@ -55,18 +45,18 @@ export class HashAdress {
         return new HashAdress(uuid, action);
     }
 
-    set(): void {
+    public set(): void {
         let path = `${window.origin}${location.pathname}#${this.action},`;
         if (this.uuid != null) path += this.uuid;
         window.location.href = path;
     }
 
-    static unset(): void {
+    public static unset(): void {
         const path = `${window.origin}${location.pathname}#`;
         window.location.href = path;
     }
 
-    static isOfType(actions: (HashAddressType | null)[]): boolean {
+    public static isOfType(actions: (HashAddressType | null)[]): boolean {
         const address = HashAdress.fromAddress();
         for (let i = 0; i < actions.length; i++) {
             if (actions[i] == address?.action) {
@@ -74,6 +64,16 @@ export class HashAdress {
             }
         }
         return false;
+    }
+
+    private static parseHashAddressType(input: string): HashAddressType | null {
+        switch (input) {
+            case "LABEL": return HashAddressType.Label;
+            case "QUIZCREATE": return HashAddressType.QuizCreate;
+            case "QUIZEDIT": return HashAddressType.QuizEdit;
+            case "QUIZTAKE": return HashAddressType.QuizTake;
+            default: return null;
+        }
     }
 }
 

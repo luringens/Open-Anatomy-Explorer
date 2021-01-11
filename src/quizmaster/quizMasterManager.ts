@@ -6,7 +6,6 @@ import { Label } from "../labels/Label";
 import Api from "../api";
 import { HashAddressType, HashAdress } from "../utils";
 
-
 export default class QuizMasterManager {
     private quiz: Quiz;
     private questions: Question[];

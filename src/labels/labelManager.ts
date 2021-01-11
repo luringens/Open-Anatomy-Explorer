@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Renderer } from "../renderer";
 import { LabelUi } from "./labelUi";
-import { HashAddressType, HashAdress, uniq } from "../utils";
+import { uniq } from "../utils";
 import { Label, LabelSet } from "./Label";
 import { BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";
@@ -137,7 +137,6 @@ export class LabelManager {
                 vertices.push(i / 3);
             }
         }
-
 
         if (add) {
             label.vertices = label.vertices.concat(vertices);

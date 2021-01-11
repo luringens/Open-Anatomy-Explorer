@@ -171,7 +171,6 @@ export class LabelUi {
         if (populateLabels && this.labelManager.labelSet != null) {
             this.loadGivenLabels(this.labelManager.labelSet);
         }
-
     }
 
     public loadGivenLabels(set: LabelSet): void {

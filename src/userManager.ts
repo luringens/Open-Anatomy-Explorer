@@ -240,7 +240,6 @@ export default class UserManager {
                 this.setLoggedInCookie(null);
                 this.setInfoMessage("Failed to register user.");
             });
-
     }
 
     private async submitLogout(): Promise<void> {
