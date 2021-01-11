@@ -50,12 +50,18 @@ export class ModelManager {
     }
 
     private populateModelList(list: [number, string][]): void {
+        const oldElements = document.getElementsByClassName("model-list-row");
+        while (oldElements.length > 0) {
+            oldElements[oldElements.length - 1].remove();
+        }
+
         const div = document.getElementById("models") as HTMLElement;
         list.forEach(entry => {
             const id = entry[0], name = entry[1];
 
             if (!name.endsWith(".ini") && !name.endsWith(".dat")) {
                 const row = document.createElement("tr");
+                row.classList.add("model-list-row");
 
                 const friendlyName = name.replace(/\.[^/.]+$/, "")
                     .replace(/^\w/, function (c) { return c.toUpperCase(); });

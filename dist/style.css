@@ -180,3 +180,7 @@ td > svg {
     border-color: grey;
     background-color: grey;
 }
+
+#file-upload {
+    max-width: 15em;
+}

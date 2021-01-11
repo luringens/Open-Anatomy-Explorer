@@ -38,6 +38,13 @@ export default class Api {
             await sendRequest(url, options);
         },
 
+        async isadmin(): Promise<boolean> {
+            const url = this.url + "isadmin";
+            const options: RequestInit = { method: "GET", credentials: "include" };
+            const response = await sendRequest(url, options);
+            return (await response.json()) as boolean;
+        },
+
         /// Attempts to refresh the logged in session. Returns true if no longer logged in.
         async refresh(): Promise<boolean> {
             const url = this.url + "refresh";
@@ -176,6 +183,12 @@ export default class Api {
             const models = await response.json() as JsonModel[];
             return models.map(m => [m.id, m.filename])
         },
+
+        async upload(name: string, data: Blob | BufferSource | ReadableStream): Promise<void> {
+            const url = `${this.url}upload/${name}`;
+            const options: RequestInit = { method: "PUT", credentials: "include", body: data };
+            await sendRequest(url, options);
+        }
     }
 
     public static Quiz = {

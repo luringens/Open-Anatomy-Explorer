@@ -11,10 +11,12 @@ import SVG_CHEVRON_DOWN from "../static/chevron-down.svg"
 import SVG_CHEVRON_RIGHT from "../static/chevron-right.svg"
 import SVG_PLUS_CIRCLE from "../static/plus-circle.svg"
 import SVG_DELETE from "../static/delete.svg"
+import SVG_UPLOAD from "../static/upload.svg"
 import Api from "./api"
 import { LabelManager } from "./labels/labelManager"
 import { HashAddressType, HashAdress } from "./utils"
 import QuizMasterManager from "./quizmaster/quizMasterManager"
+import { ModelManager } from "./modelManager"
 
 export default class UserManager {
     private iconChevron: HTMLTableDataCellElement;
@@ -25,6 +27,7 @@ export default class UserManager {
     private iconloginPwd: HTMLTableDataCellElement;
     private iconStatus: HTMLTableDataCellElement;
     private iconLogout: HTMLTableDataCellElement;
+    private iconUpload: HTMLTableDataCellElement;
     private iconLabels: HTMLTableDataCellElement;
     private iconLabelAdd: HTMLTableDataCellElement;
     private userStatus: HTMLTableDataCellElement;
@@ -32,6 +35,7 @@ export default class UserManager {
     private labelFooter: HTMLTableRowElement;
     private loginElements: HTMLCollectionOf<Element>;
     private loggedinElements: HTMLCollectionOf<Element>;
+    private loggedinAdminElements: HTMLCollectionOf<Element>;
     private statusRow: HTMLTableRowElement;
     private statusMessage: HTMLTableDataCellElement;
     private quizzesFooter: HTMLTableRowElement;
@@ -41,6 +45,7 @@ export default class UserManager {
     private static readonly INFO_MESSAGE_TIMEOUT_SECONDS: number = 7;
     private static readonly SESSION_REFRESH_INTERVAL_MINUTES: number = 15;
 
+    private modelManager: ModelManager;
     private labelManager: LabelManager;
     private quizManager: QuizMasterManager | null;
 
@@ -48,10 +53,12 @@ export default class UserManager {
     private expanded = false;
     private loggedInUsername: string | null = null;
 
-    public constructor(labelManager: LabelManager, quizManager: QuizMasterManager | null = null) {
-        this.quizManager = quizManager;
+    public constructor(modelManager: ModelManager, labelManager: LabelManager, quizManager: QuizMasterManager | null = null) {
+        this.modelManager = modelManager;
         this.labelManager = labelManager;
+        this.quizManager = quizManager;
         this.iconUser = document.getElementById("user-state-icon") as HTMLTableDataCellElement;
+        this.iconUpload = document.getElementById("user-icon-upload") as HTMLTableDataCellElement;
         this.userStatus = document.getElementById("user-status") as HTMLTableDataCellElement;
         this.iconStatus = document.getElementById("logged-in-status-icon") as HTMLTableDataCellElement;
         this.iconChevron = document.getElementById("user-chevron") as HTMLTableDataCellElement;
@@ -72,6 +79,7 @@ export default class UserManager {
 
         this.loginElements = document.getElementsByClassName("row-login");
         this.loggedinElements = document.getElementsByClassName("row-logged-in");
+        this.loggedinAdminElements = document.getElementsByClassName("row-logged-in-admin");
 
         const headerRow = this.iconChevron.parentElement as HTMLTableRowElement;
         headerRow.onclick = this.toggleInterfaceExpanded.bind(this);
@@ -80,6 +88,7 @@ export default class UserManager {
         this.iconLogout.onclick = this.submitLogout.bind(this);
         this.iconLabelAdd.onclick = this.addLabel.bind(this);
         this.iconQuizzesAdd.onclick = this.addQuiz.bind(this);
+        this.iconUpload.onclick = this.uploadModel.bind(this);
 
         this.submitCell.onclick = this.submitLogin.bind(this);
         (document.getElementById("user-pwd") as HTMLInputElement).addEventListener("keyup", event => {
@@ -89,6 +98,7 @@ export default class UserManager {
             }
         });
 
+        this.iconUpload.innerHTML = SVG_UPLOAD;
         this.iconChevron.innerHTML = SVG_CHEVRON_UP;
         this.registerCell.innerHTML = SVG_USER_PLUS;
         this.submitCell.innerHTML = SVG_CHEVRON_RIGHT;
@@ -107,6 +117,7 @@ export default class UserManager {
 
     private async updateState(): Promise<void> {
         const loggedIn = await this.isLoggedIn();
+        const isAdmin = loggedIn && await Api.Users.isadmin();
         this.setLoggedInCookie(loggedIn);
         if (this.expanded) {
             this.iconChevron.innerHTML = SVG_CHEVRON_DOWN;
@@ -114,15 +125,20 @@ export default class UserManager {
             if (loggedIn) {
                 this.setVisibilityForCollection(false, this.loginElements);
                 this.setVisibilityForCollection(true, this.loggedinElements);
+                if (isAdmin) {
+                    this.setVisibilityForCollection(true, this.loggedinAdminElements);
+                }
             } else {
                 this.setVisibilityForCollection(true, this.loginElements);
                 this.setVisibilityForCollection(false, this.loggedinElements);
+                this.setVisibilityForCollection(false, this.loggedinAdminElements);
             }
         } else {
             this.expandPadding.classList.add("hide");
             this.iconChevron.innerHTML = SVG_CHEVRON_UP;
             this.setVisibilityForCollection(false, this.loginElements);
             this.setVisibilityForCollection(false, this.loggedinElements);
+            this.setVisibilityForCollection(false, this.loggedinAdminElements);
         }
 
         if (loggedIn) {
@@ -234,6 +250,16 @@ export default class UserManager {
             .then(this.updateState.bind(this))
             .then(this.setInfoMessage.bind(this, "Logged out!"))
             .catch(this.setInfoMessage.bind(this, "Failed to log out?"));
+    }
+
+    private async uploadModel(): Promise<void> {
+        const filePicker = document.getElementById("file-upload") as HTMLInputElement;
+        if (filePicker.files == null) return;
+        const name = filePicker.files[0].name;
+        await Api.modelStorage.upload(name, filePicker.files[0])
+            .then(this.setInfoMessage.bind(this, "File uploaded!"))
+            .catch(this.setInfoMessage.bind(this, "Failed to upload file!"))
+            .then(this.modelManager.loadModelList.bind(this.modelManager));
     }
 
     private async addLabel(): Promise<void> {
