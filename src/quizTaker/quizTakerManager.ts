@@ -2,9 +2,17 @@ import QuizMasterManager from "../quizmaster/quizMasterManager";
 import { LabelManager } from "../labels/labelManager";
 import { QuestionType, QuestionName, QuestionLocate, Question, QuestionFreeform } from "../quizmaster/Question";
 import { QuizTakerUi } from "./QuizTakerUi";
-import { Answer } from "./Answer";
+import { Answer } from "./answer";
 import { Label } from "../labels/Label";
 
+/**
+ * Manages the quiz taking process.
+ * It is sort of built like a state machine:
+ * - `start` being called begins the process, and calls the first `nextQuestion`,
+ * - `nextQuestion` presents a question,
+ * - `submitAnswer` presents the answer,
+ * - `finish` presents the results.
+ */
 export default class QuizTakerManager {
     private quizMasterManager: QuizMasterManager;
     private labelManager: LabelManager;
@@ -26,6 +34,9 @@ export default class QuizTakerManager {
         this.ui.bind(this.ui.begin, this.start.bind(this));
     }
 
+    /**
+     * Begins the quiz process.
+     */
     private start(): void {
         const ui = this.ui;
         ui.hide(ui.start);
@@ -42,6 +53,9 @@ export default class QuizTakerManager {
         this.nextQuestion();
     }
 
+    /**
+     * Picks the next question, manipulates the viewpoint if required, etc.
+     */
     private nextQuestion(): void {
         const ui = this.ui;
         ui.hideMany(ui.next, ui.correct, ui.wrong, ui.answerText, ui.answerLabel);
@@ -91,6 +105,9 @@ export default class QuizTakerManager {
         }
     }
 
+    /**
+     * Checks if the answer was correct.
+     */
     private submitAnswer(): void {
         const ui = this.ui;
 
@@ -127,6 +144,9 @@ export default class QuizTakerManager {
         ui.show(ui.next);
     }
 
+    /**
+     * Concludes the quiz and displays the results.
+     */
     private finish(): void {
         const ui = this.ui;
         ui.unbind(ui.submit);
@@ -137,12 +157,19 @@ export default class QuizTakerManager {
         ui.renderAnswerTable(this.answers);
     }
 
+    /**
+     * Event handler called when the active label changes.
+     * @param label The new selected label.
+     */
     private selectedLabelChanged(label: Label): void {
         const ui = this.ui;
         const text = "Selected: " + label.name;
         ui.setText(ui.answerLabel, text);
     }
 
+    /**
+     * Shuffles the question order.
+     */
     private shuffle(): void {
         for (let i = this.questions.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));

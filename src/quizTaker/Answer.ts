@@ -1,3 +1,6 @@
+/**
+ * Data class holding a list of user-given answers to questions, as well as the true correct answer.
+ */
 export class Answer {
     public readonly questionNumber: number;
     public readonly input: string;

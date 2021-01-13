@@ -3,7 +3,7 @@ import { LabelManager } from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
-import { HashAddressType, HashAdress } from "./utils";
+import { HashAddress, HashAddressType } from "./HashAddress";
 import UserManager from "./user/userManager";
 
 const defaultModel = 1;
@@ -25,7 +25,7 @@ modelManager.setOnload((id: number) => void labelManager?.newModel(id));
 void modelManager.loadModelList();
 
 // Check if we are to load labels, models, quizzes...
-const action = HashAdress.fromAddress();
+const action = HashAddress.fromAddress();
 
 // If nothing else is specified in the address, just load the label editor from scratch.
 if (action == null) {

@@ -4,7 +4,7 @@ import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeNa
 import { LabelManager } from "../labels/labelManager";
 import { Label } from "../labels/Label";
 import Api from "../api";
-import { HashAddressType, HashAdress } from "../utils";
+import { HashAddress, HashAddressType } from "../HashAddress";
 
 export default class QuizMasterManager {
     private quiz: Quiz;
@@ -272,7 +272,7 @@ export default class QuizMasterManager {
         this.updateDataFromUi();
         this.quiz.uuid = await Api.Quiz.post(this.quiz);
         this.setDisplayStoredQuizControls(true);
-        new HashAdress(this.quiz.uuid, HashAddressType.QuizEdit).set();
+        new HashAddress(this.quiz.uuid, HashAddressType.QuizEdit).set();
     }
 
     public async updateQuestions(): Promise<void> {
@@ -289,7 +289,7 @@ export default class QuizMasterManager {
 
         const labelUuid = this.labelManager.getSavedLabelUuid();
         if (labelUuid == null) console.warn("Can not set hash address due to missing label UUID!");
-        else new HashAdress(labelUuid, HashAddressType.QuizCreate).set();
+        else new HashAddress(labelUuid, HashAddressType.QuizCreate).set();
     }
 
     private updateDataFromUi(): void {
@@ -320,7 +320,7 @@ export default class QuizMasterManager {
 
     private takeQuiz(): void {
         if (this.quiz.uuid == null) throw "No stored quiz to take!";
-        new HashAdress(this.quiz.uuid, HashAddressType.QuizTake).set();
+        new HashAddress(this.quiz.uuid, HashAddressType.QuizTake).set();
         location.reload();
     }
 

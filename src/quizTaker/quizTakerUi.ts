@@ -1,5 +1,8 @@
-import { Answer } from "./Answer";
+import { Answer } from "./answer";
 
+/**
+ * Class that manages the user interface for the quiz taking.
+ */
 export class QuizTakerUi {
 
     public readonly start: HTMLDivElement;
@@ -75,6 +78,10 @@ export class QuizTakerUi {
         element.value = "";
     }
 
+    /**
+     * Renders the list of answers, whether they were correct or wrong, etc.
+     * @param answers The list of answers to display.
+     */
     public renderAnswerTable(answers: Answer[]): void {
         const table = document.getElementById("quizzer-table") as HTMLElement;
         answers.forEach(answer => {

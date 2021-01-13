@@ -2,7 +2,8 @@ import { GUI } from "dat.gui";
 import { LabelManager } from "./labelManager";
 import { Label, LabelSet } from "./Label";
 import THREE = require("three");
-import { toHex, binarySearch, HashAdress, HashAddressType } from "../utils";
+import { toHex, binarySearch } from "../utils";
+import { HashAddress, HashAddressType } from "../HashAddress";
 import { ActiveTool } from "../activeTool";
 import SVG_EYE from "../../static/eye.svg"
 import SVG_EYE_OFF from "../../static/eye-off.svg"
@@ -193,7 +194,7 @@ export class LabelUi {
         this.labelManager.labelSet.uuid = uuid;
         this.reload(null, false);
 
-        new HashAdress(uuid, HashAddressType.Label).set();
+        new HashAddress(uuid, HashAddressType.Label).set();
     }
 
     private async updateLabels(): Promise<void> {
@@ -208,7 +209,7 @@ export class LabelUi {
         this.labelManager.labelSet.uuid = null;
         this.reload(null, false);
 
-        HashAdress.unset();
+        HashAddress.unset();
     }
 
     private setActiveLabel(event: Event): void {
@@ -335,7 +336,7 @@ export class LabelUi {
 
     private createQuiz(): void {
         if (this.labelManager.labelSet.uuid == null) throw "No stored labels to make quiz of!";
-        new HashAdress(this.labelManager.labelSet.uuid, HashAddressType.QuizCreate).set();
+        new HashAddress(this.labelManager.labelSet.uuid, HashAddressType.QuizCreate).set();
         location.reload();
     }
 }

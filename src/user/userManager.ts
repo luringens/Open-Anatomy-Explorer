@@ -1,6 +1,6 @@
 import Api from "../api"
 import { LabelManager } from "../labels/labelManager"
-import { HashAddressType, HashAdress } from "../utils"
+import { HashAddress, HashAddressType } from "../HashAddress"
 import QuizMasterManager from "../quizmaster/quizMasterManager"
 import { ModelManager } from "../modelManager"
 import UserManagerUi from "./userManagerUi"
@@ -217,12 +217,12 @@ export default class UserManager {
      * Go to a bookmarked labelset. May refresh the page.
      */
     public async goToLabel(uuid: string): Promise<void> {
-        if (HashAdress.isOfType([null, HashAddressType.Label])) {
+        if (HashAddress.isOfType([null, HashAddressType.Label])) {
             await this.labelManager.loadWithModelByUuid(uuid);
-            new HashAdress(uuid, HashAddressType.Label)
+            new HashAddress(uuid, HashAddressType.Label)
         }
         else {
-            new HashAdress(uuid, HashAddressType.Label).set();
+            new HashAddress(uuid, HashAddressType.Label).set();
             location.reload();
         }
     }
@@ -232,12 +232,12 @@ export default class UserManager {
      */
     public async goToQuiz(uuid: string): Promise<void> {
         const quizModes = [HashAddressType.QuizEdit, HashAddressType.QuizCreate];
-        if (this.quizManager != null && HashAdress.isOfType(quizModes)) {
+        if (this.quizManager != null && HashAddress.isOfType(quizModes)) {
             await this.quizManager.loadQuestions(uuid);
-            new HashAdress(uuid, HashAddressType.QuizEdit).set();
+            new HashAddress(uuid, HashAddressType.QuizEdit).set();
         }
         else {
-            new HashAdress(uuid, HashAddressType.QuizEdit).set();
+            new HashAddress(uuid, HashAddressType.QuizEdit).set();
             location.reload();
         }
     }
