@@ -1,15 +1,16 @@
 import { Renderer } from "./renderer";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
-import Api from "./api";
+import { URL } from "./Api/api";
 import Notification, { StatusType } from "./notification";
+import ModelApi from "./Api/models";
 
 /**
  * This class handles loading and parsing models and the list of models from a remote server.
  * Uses the API URL from the Api class as the source of the API.
  */
 export class ModelManager {
-    private static readonly url = Api.url + "models/";
+    private static readonly url = URL + "models/";
     private readonly renderer: Renderer;
     private onload: ((id: number) => void) | null = null;
 
@@ -40,7 +41,7 @@ export class ModelManager {
      */
     public static async loadAsync(modelId: number): Promise<THREE.Group> {
         const clearStatus = Notification.message("Loading model...", StatusType.Info);
-        const name = await Api.modelStorage.lookup(modelId);
+        const name = await ModelApi.lookup(modelId);
         if (name.endsWith(".obj")) {
             // OBJ file loading
             const group = await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
@@ -58,7 +59,7 @@ export class ModelManager {
      * Load the model list and render the user interface elements for it.
      */
     public async loadModelList(): Promise<void> {
-        const list = await Api.modelStorage.list();
+        const list = await ModelApi.list();
         this.populateModelList(list);
     }
 

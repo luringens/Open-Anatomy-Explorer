@@ -3,7 +3,7 @@
 import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName, QuestionFreeform, Quiz } from "./Question";
 import { LabelManager } from "../labels/labelManager";
 import { Label } from "../labels/Label";
-import Api from "../api";
+import QuizApi from "../Api/quiz";
 import { HashAddress, HashAddressType } from "../HashAddress";
 
 export default class QuizMasterManager {
@@ -227,7 +227,7 @@ export default class QuizMasterManager {
     }
 
     public async loadQuestions(quizGuid: string): Promise<void> {
-        const quiz = await Api.Quiz.load(quizGuid);
+        const quiz = await QuizApi.load(quizGuid);
         this.quiz = quiz;
         this.questions = this.quiz.questions;
         this.nextQuestionId = 0;
@@ -270,7 +270,7 @@ export default class QuizMasterManager {
 
     public async saveQuestions(): Promise<void> {
         this.updateDataFromUi();
-        this.quiz.uuid = await Api.Quiz.post(this.quiz);
+        this.quiz.uuid = await QuizApi.post(this.quiz);
         this.setDisplayStoredQuizControls(true);
         new HashAddress(this.quiz.uuid, HashAddressType.QuizEdit).set();
     }
@@ -278,12 +278,12 @@ export default class QuizMasterManager {
     public async updateQuestions(): Promise<void> {
         this.updateDataFromUi();
         if (this.quiz.uuid == null) return Promise.reject("No stored quiz!");
-        await Api.Quiz.put(this.quiz);
+        await QuizApi.put(this.quiz);
     }
 
     public async deleteQuestions(): Promise<void> {
         if (this.quiz.uuid == null) return Promise.reject("No stored quiz!");
-        await Api.Quiz.delete(this.quiz.uuid);
+        await QuizApi.delete(this.quiz.uuid);
         this.quiz.uuid = null;
         this.setDisplayStoredQuizControls(false);
 

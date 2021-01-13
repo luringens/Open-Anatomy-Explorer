@@ -11,7 +11,7 @@ import SVG_CHEVRON_RIGHT from "../../static/chevron-right.svg";
 import SVG_PLUS_CIRCLE from "../../static/plus-circle.svg";
 import SVG_DELETE from "../../static/delete.svg";
 import SVG_UPLOAD from "../../static/upload.svg";
-import { JsonUserLabelSet, JsonUserQuiz } from "../api";
+import { JsonUserLabelSet, JsonUserQuiz } from "../Api/user";
 import UserManager from "./userManager";
 
 export default class UserManagerUi {

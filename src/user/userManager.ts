@@ -1,10 +1,11 @@
-import Api from "../api"
+import UserApi from "../Api/user"
 import { LabelManager } from "../labels/labelManager"
 import { HashAddress, HashAddressType } from "../HashAddress"
 import QuizMasterManager from "../quizmaster/quizMasterManager"
 import { ModelManager } from "../modelManager"
 import UserManagerUi from "./userManagerUi"
 import Notification, { StatusType } from "../notification"
+import ModelApi from "../Api/models"
 
 /**
  * A class handling all things user-related.
@@ -37,7 +38,7 @@ export default class UserManager {
     public async updateState(): Promise<void> {
         const username = await this.isLoggedIn();
         const loggedIn = username != null;
-        const isAdmin = loggedIn && await Api.Users.isadmin();
+        const isAdmin = loggedIn && await UserApi.isadmin();
         this.setLoggedInCookie(username);
         this.ui.updateState(loggedIn, isAdmin, username);
     }
@@ -72,7 +73,7 @@ export default class UserManager {
         // confirmed, ask it to be sure since it has the final say.
         if (loggedIn != null && this.loginRequiresRefresh()) {
             this.lastLoggedInCheck = new Date();
-            const serverLoggedIn = await Api.Users.refresh();
+            const serverLoggedIn = await UserApi.refresh();
             if (!serverLoggedIn) {
                 loggedIn = null;
                 this.setLoggedInCookie(null);
@@ -98,7 +99,7 @@ export default class UserManager {
      */
     public async submitLogin(id: string, pwd: string): Promise<void> {
         this.lastLoggedInCheck = new Date();
-        await Api.Users.login(id, pwd)
+        await UserApi.login(id, pwd)
             .then(this.setLoggedInCookie.bind(this, id))
             .then(this.updateState.bind(this))
             .then(this.listLabels.bind(this))
@@ -113,7 +114,7 @@ export default class UserManager {
      */
     public async submitRegister(id: string, pwd: string): Promise<void> {
         this.lastLoggedInCheck = new Date();
-        await Api.Users.register(id, pwd)
+        await UserApi.register(id, pwd)
             .then(this.setLoggedInCookie.bind(this, id))
             .then(this.updateState.bind(this))
             .then(Notification.message("User registered!", StatusType.Info, 5))
@@ -128,7 +129,7 @@ export default class UserManager {
      */
     public async submitLogout(): Promise<void> {
         this.lastLoggedInCheck = new Date();
-        await Api.Users.logout()
+        await UserApi.logout()
             .then(this.setLoggedInCookie.bind(this, null))
             .then(this.updateState.bind(this))
             .then(Notification.message("Logged out!", StatusType.Info, 5))
@@ -144,7 +145,7 @@ export default class UserManager {
         const filePicker = document.getElementById("file-upload") as HTMLInputElement;
         if (filePicker.files == null) return;
         const name = filePicker.files[0].name;
-        await Api.modelStorage.upload(name, filePicker.files[0])
+        await ModelApi.upload(name, filePicker.files[0])
             .then(Notification.message("File uploaded!", StatusType.Info, 5))
             .catch(Notification.message("Failed to upload file!", StatusType.Error))
             .then(this.modelManager.loadModelList.bind(this.modelManager));
@@ -157,7 +158,7 @@ export default class UserManager {
         const id = this.labelManager.labelSet.uuid;
         if (id == null) return;
 
-        await Api.Users.Labels.add(id)
+        await UserApi.Labels.add(id)
             .then(this.listLabels.bind(this));
     }
 
@@ -169,7 +170,7 @@ export default class UserManager {
         const uuid = this.quizManager.getQuizUuid();
         if (uuid == null) return Promise.reject("No saved quiz in quizmanager");
 
-        await Api.Users.Quizzes.add(uuid)
+        await UserApi.Quizzes.add(uuid)
             .then(this.listQuizzes.bind(this));
     }
 
@@ -179,7 +180,7 @@ export default class UserManager {
      * @param element The related UI element to remove.
      */
     public async removeLabel(uuid: string, element: HTMLTableRowElement): Promise<void> {
-        await Api.Users.Labels.remove(uuid)
+        await UserApi.Labels.remove(uuid)
             .then(() => element.remove());
     }
 
@@ -189,7 +190,7 @@ export default class UserManager {
      * @param element The related UI element to remove.
      */
     public async removeQuiz(uuid: string, element: HTMLTableRowElement): Promise<void> {
-        await Api.Users.Quizzes.remove(uuid)
+        await UserApi.Quizzes.remove(uuid)
             .then(() => element.remove());
     }
 
@@ -199,7 +200,7 @@ export default class UserManager {
     public async listLabels(): Promise<void> {
         if (!await this.isLoggedIn()) return;
 
-        const labels = await Api.Users.Labels.get();
+        const labels = await UserApi.Labels.get();
         this.ui.renderLabelList(labels);
     }
 
@@ -209,7 +210,7 @@ export default class UserManager {
     public async listQuizzes(): Promise<void> {
         if (!await this.isLoggedIn()) return;
 
-        const quizzes = await Api.Users.Quizzes.get();
+        const quizzes = await UserApi.Quizzes.get();
         this.ui.renderQuizList(quizzes);
     }
 

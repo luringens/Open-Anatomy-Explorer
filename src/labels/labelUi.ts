@@ -7,7 +7,7 @@ import { HashAddress, HashAddressType } from "../HashAddress";
 import { ActiveTool } from "../activeTool";
 import SVG_EYE from "../../static/eye.svg"
 import SVG_EYE_OFF from "../../static/eye-off.svg"
-import Api from "../api";
+import LabelsetApi from "../Api/labelset";
 
 export class LabelUi {
     private listContainer: HTMLElement;
@@ -190,7 +190,7 @@ export class LabelUi {
     private async storeLabels(): Promise<void> {
         if (this.labelManager.labelSet == null) return Promise.reject("No labels to store");
         this.updateNames();
-        const uuid = await Api.Labels.post(this.labelManager.labelSet);
+        const uuid = await LabelsetApi.post(this.labelManager.labelSet);
         this.labelManager.labelSet.uuid = uuid;
         this.reload(null, false);
 
@@ -200,12 +200,12 @@ export class LabelUi {
     private async updateLabels(): Promise<void> {
         if (this.labelManager.labelSet == null) return Promise.reject("No labels to store");
         this.updateNames();
-        await Api.Labels.put(this.labelManager.labelSet);
+        await LabelsetApi.put(this.labelManager.labelSet);
     }
 
     private async deleteLabels(): Promise<void> {
         if (this.labelManager.labelSet?.uuid == null) return Promise.reject("No labels to store");
-        await Api.Labels.delete(this.labelManager.labelSet.uuid);
+        await LabelsetApi.delete(this.labelManager.labelSet.uuid);
         this.labelManager.labelSet.uuid = null;
         this.reload(null, false);
 

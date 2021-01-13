@@ -5,7 +5,8 @@ import { uniq } from "../utils";
 import { Label, LabelSet } from "./Label";
 import { BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";
-import Api from "../api";
+import LabelApi from "../Api/labelset";
+import ModelApi from "../Api/models";
 
 export class LabelManager {
     public labelSet: LabelSet;
@@ -28,13 +29,13 @@ export class LabelManager {
 
     /// Loads labels and orders renderer to load the related model.
     public async loadWithModelByUuid(uuid: string): Promise<void> {
-        const labelSet = await Api.Labels.loadByUuid(uuid);
+        const labelSet = await LabelApi.loadByUuid(uuid);
         await this.loadWithModel(labelSet);
     }
 
     /// Loads labels and orders renderer to load the related model.
     public async loadWithModelById(id: number): Promise<void> {
-        const labelSet = await Api.Labels.load(id);
+        const labelSet = await LabelApi.load(id);
         await this.loadWithModel(labelSet);
     }
 
@@ -172,7 +173,7 @@ export class LabelManager {
     public async getModelName(): Promise<string> {
         const modelId = this.labelSet?.modelId ?? null;
         if (modelId == null) return Promise.reject("No modelId!");
-        return await Api.modelStorage.lookup(modelId);
+        return await ModelApi.lookup(modelId);
     }
 
     public setOnActiveLabelChangeHandler(handler: ((label: Label) => void) | null): void {
