@@ -6,7 +6,10 @@ import FragmentShader from "./shader.frag";
 import VertexShader from "./shader.vert";
 import { ActiveTool } from "./activeTool";
 
-export class Renderer {
+/**
+ * Main renderer for the project.
+ */
+export default class Renderer {
     private meshes: Mesh[] = [];
     private model: Object3D | null = null;
     private scene: Scene = new THREE.Scene();
@@ -16,22 +19,23 @@ export class Renderer {
     private clickEventHandlers: ((object: THREE.Intersection) => boolean)[] = [];
     private colorBufferAttribute: THREE.BufferAttribute | null = null;
 
-    // For the sake of clean code, these are initiliazed in functions called by
-    // the contructor. Unfortunately, TS will not detect their initialization
-    // as a result. The exclamation mark squashes this warning :/
-    public gui!: dat.GUI;
-    private camera!: THREE.PerspectiveCamera;
-    private controls!: OrbitControls;
+    private camera: THREE.PerspectiveCamera;
+    private controls: OrbitControls;
+    public gui: dat.GUI;
+
     private ambientLight!: THREE.AmbientLight;
     private directionalLight!: THREE.DirectionalLight;
     private directionalLightHelper!: THREE.DirectionalLightHelper;
-    private plane!: THREE.PlaneHelper;
+
+    private plane: THREE.PlaneHelper;
     private planeVisible = true;
+
+    private mouse = new THREE.Vector2();
     private mouseDown = false;
     private mouseMoveHandler: ((_: THREE.Intersection) => void) | null = null;
 
-    private mouse = new THREE.Vector2();
     private raycaster = new THREE.Raycaster();
+
     public onClickPosition = new THREE.Vector2();
     public lastMouseClickPosition = new THREE.Vector3();
     public lastMouseClickVerticeIds: [number, number, number] | null = null;
@@ -39,105 +43,71 @@ export class Renderer {
     constructor(wrapper: HTMLElement) {
         this.wrapper = wrapper;
 
+        // Create the WebGL context.
         const canvas = document.createElement('canvas');
         wrapper.appendChild(canvas);
         const context = canvas.getContext('webgl2', { alpha: false });
         if (context == null) throw "Failed to get WebGL2 context";
-        this.renderer = new THREE.WebGLRenderer({ canvas: canvas, context: context });
 
+        // Initalize THREE.js' rendering engine.
+        this.renderer = new THREE.WebGLRenderer({ canvas: canvas, context: context });
         this.container = this.renderer.domElement;
         this.renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
         wrapper.appendChild(this.container);
-        this.setupCamera();
-        this.setupLighting();
-        this.addDefaultPlane();
-        this.setupGui();
 
+        // Set up the camera and camera controls.
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(-300, 0, 0);
+        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.update();
+
+        // Set up the lighting for the scene, as well as an indicator for where
+        // the light source is positioned.
+        this.ambientLight = new THREE.AmbientLight();
+        this.directionalLight = new THREE.DirectionalLight();
+        this.setupLighting();
+        this.directionalLightHelper = new THREE.DirectionalLightHelper(this.directionalLight, 10);
+        this.scene.add(this.directionalLightHelper);
+
+        // Add a viewable plane to the scene as a point of reference to keep
+        // track of the orientation of the model.
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
+        this.plane = new THREE.PlaneHelper(plane, 500, 0xFFFFFF);
+        this.scene.add(this.plane);
+
+        // Set up the in-renderer UI, which is *mostly* used for managing
+        // lighting settings and renderer attributes.
+        this.gui = new dat.GUI({ autoPlace: false });
+        this.wrapper.prepend(this.gui.domElement);
+
+        // Handle window resizing.
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
+
+        // Bind mouse input events so we can use it for various purposes later.
         this.container.addEventListener('mousedown', this.onMouseDown.bind(this), false);
         this.container.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         this.container.addEventListener('mousemove', this.onMouseMove.bind(this), false);
 
+        // Bind the camera tool radio-buttons to our handling function.
         (document.getElementById("tool-camera") as HTMLInputElement)
             .onchange = this.onToolChange.bind(this);
         (document.getElementById("tool-picker") as HTMLInputElement)
             .onchange = this.onToolChange.bind(this);
     }
 
-    /// Manages the camera/picker tools.
-    private onToolChange(event: Event): void {
-        const target = event.target as HTMLInputElement;
-        if (target.checked) {
-            switch (target.value) {
-                case ActiveTool.Camera:
-                    this.overrideMouseControls(null);
-                    this.toggleCameraControls(true);
-                    break;
-
-                case ActiveTool.Picker:
-                    this.overrideMouseControls(null);
-                    this.toggleCameraControls(false);
-                    break;
-            }
-        }
-    }
-
-    public toggleCameraControls(enabled: boolean): void {
-        this.controls.enabled = enabled;
-    }
-
-    public setColorForVertices(vertices: ArrayLike<number>, color: Vector4): void {
-        for (let i = 0; i < vertices.length; i++) {
-            const vertexId = vertices[i];
-            const val = [
-                color.x / 255,
-                color.y / 255,
-                color.z / 255,
-                color.w / 255
-            ];
-            this.colorBufferAttribute?.set(val, vertexId * 4);
-        }
-
-        if (this.meshes != null) this.updateShader(this.meshes);
-    }
-
-    public resetColorForVertices(vertexIds: number[]): void {
-        for (const vertexId of vertexIds) {
-            this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
-        }
-
-        if (this.meshes != null) this.updateShader(this.meshes);
-    }
-
-    public resetColorForVertex(vertexId: number): void {
-        this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
-        if (this.meshes != null) this.updateShader(this.meshes);
-    }
-
-    public resetVertexColors(): void {
-        if (this.colorBufferAttribute == null) return;
-        for (let i = 0; i < this.colorBufferAttribute.array.length / 4; i++) {
-            this.colorBufferAttribute.setW(i, 0);
-        }
-        if (this.meshes != null) this.updateShader(this.meshes);
-    }
-
-    private setupCamera(): void {
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(-300, 0, 0);
-
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.update();
-    }
-
+    /**
+     * Configures the lighting for the scene.
+     * Assumes this.directionalLighting and this.ambientLighting is initialized.
+     */
     private setupLighting(): void {
         // Ambient light.
-        this.ambientLight = new THREE.AmbientLight(0x404040);
+        this.ambientLight.color.setHSL(0, 0, 0.25);
         this.scene.add(this.ambientLight);
 
         // Directional light.
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.color.setHSL(0.5, 1, 1);
+        const dirLight = this.directionalLight;
+        dirLight.color.setHSL(0, 1, 1);
+        dirLight.intensity = 1.2;
         dirLight.position.set(-1, 3, 1);
         dirLight.position.multiplyScalar(30);
         this.scene.add(dirLight);
@@ -154,20 +124,90 @@ export class Renderer {
         dirLight.shadow.camera.far = 3500;
         dirLight.shadow.bias = - 0.0001;
         this.directionalLight = dirLight;
-
-        // Indicator for where the light is shining.
-        this.directionalLightHelper =
-            new THREE.DirectionalLightHelper(dirLight, 10);
-        this.scene.add(this.directionalLightHelper);
     }
 
-    private setupGui(): void {
-        this.gui = new dat.GUI({ autoPlace: false });
-        this.wrapper.prepend(this.gui.domElement);
+    /**
+     * Event handler for the radio buttons switching between active tools.
+     */
+    private onToolChange(event: Event): void {
+        const target = event.target as HTMLInputElement;
+        if (target.checked) {
+            switch (target.value) {
+                case ActiveTool.Camera:
+                    this.overrideMouseControls(null);
+                    this.setCameraControls(true);
+                    break;
+
+                case ActiveTool.Picker:
+                    this.overrideMouseControls(null);
+                    this.setCameraControls(false);
+                    break;
+            }
+        }
     }
 
+    /**
+     * Enable or disable the camera controls.
+     */
+    public setCameraControls(enabled: boolean): void {
+        this.controls.enabled = enabled;
+    }
+
+    /**
+     * Paints a colour to a set of vertices, using the alpha for blending.
+     * @param vertices The vertices to apply the colour to.
+     * @param color The RGBA colour to apply.
+     */
+    public setColorForVertices(vertices: ArrayLike<number>, color: Vector4): void {
+        for (let i = 0; i < vertices.length; i++) {
+            const vertexId = vertices[i];
+            const val = [
+                color.x / 255,
+                color.y / 255,
+                color.z / 255,
+                color.w / 255
+            ];
+            this.colorBufferAttribute?.set(val, vertexId * 4);
+        }
+
+        if (this.meshes != null) this.updateShader(this.meshes);
+    }
+
+    /**
+     * Remove the painted colour for a set of vertices.
+     */
+    public resetColorForVertices(vertexIds: number[]): void {
+        for (const vertexId of vertexIds) {
+            this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
+        }
+
+        if (this.meshes != null) this.updateShader(this.meshes);
+    }
+
+    /**
+     * Reset the painted colour for a specific vertex.
+     */
+    public resetColorForVertex(vertexId: number): void {
+        this.colorBufferAttribute?.set([0], vertexId * 4 + 3);
+        if (this.meshes != null) this.updateShader(this.meshes);
+    }
+
+    /**
+     * Resets the painted colour for all vertices.
+     */
+    public resetVertexColors(): void {
+        if (this.colorBufferAttribute == null) return;
+        for (let i = 0; i < this.colorBufferAttribute.array.length / 4; i++) {
+            this.colorBufferAttribute.setW(i, 0);
+        }
+        if (this.meshes != null) this.updateShader(this.meshes);
+    }
+
+    /**
+     * Load an object into the scene and apply shader magic, removing all previous models.
+     */
     public loadObject(object: Object3D): void {
-        // Load shader and stuff
+        // Override the material of all meshes with a custom shader.
         if (this.model != null) this.scene.remove(this.model);
         this.model = object;
         this.meshes = this.findMeshes(object);
@@ -177,17 +217,23 @@ export class Renderer {
         // Reload GUI
         this.gui.domElement.remove();
         this.gui.destroy();
-        this.setupGui();
+        this.gui = new dat.GUI({ autoPlace: false });
+        this.wrapper.prepend(this.gui.domElement);
 
-        // TODO: Find "correct" way to change THREE.js uniforms
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const uniforms = (this.meshes[0].material as any).uniforms;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
-            .name("Ambient light");
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        this.gui.add(uniforms.diffuseIntensity, "value", 0, 10, 0.1)
-            .name("Directional light");
+        // Set the shader uniforms.
+        // TODO: Find "correct" way to change THREE.js uniforms.
+        // This is an undocumented API and prevents me from upgrading to a newer
+        // version of THREE.js :(
+        {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+            const uniforms = (this.meshes[0].material as any).uniforms;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            this.gui.add(uniforms.ambientIntensity, "value", 0, 10, 0.1)
+                .name("Ambient light");
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            this.gui.add(uniforms.diffuseIntensity, "value", 0, 10, 0.1)
+                .name("Directional light");
+        }
 
         const planeVisible = { planeVisible: true };
         const planeVisibleHandler = this.gui.add(planeVisible, "planeVisible")
@@ -197,12 +243,10 @@ export class Renderer {
         this.planeVisible = true;
     }
 
-    private addDefaultPlane(): void {
-        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
-        this.plane = new THREE.PlaneHelper(plane, 500, 0xFFFFFF);
-        this.scene.add(this.plane);
-    }
-
+    /**
+     * Event handler for the window being resized.
+     * Adjusts the camera projection matrix to keep the aspect sensible.
+     */
     private onWindowResize(): void {
         this.camera.aspect = this.wrapper.clientWidth / this.wrapper.clientHeight;
         this.camera.updateProjectionMatrix();
@@ -210,16 +254,28 @@ export class Renderer {
         this.renderer.setSize(this.wrapper.clientWidth, this.wrapper.clientHeight);
     }
 
+    /**
+     * Sets or removes a mouse control override. When set, instead of the mouse
+     * moving the camera, selecting vertices, etc., it will call the provided
+     * callback function.
+     * @param override The function to call on mouse clicks.
+     */
     public overrideMouseControls(override: ((_: THREE.Intersection) => void) | null): void {
         this.mouseMoveHandler = override;
         this.controls.enabled = override == null;
     }
 
+    /**
+     * Event handler for releasing the mouse.
+     */
     private onMouseUp(evt: MouseEvent): void {
         evt.preventDefault();
         this.mouseDown = false;
     }
 
+    /**
+     * Event handler for moving the mouse.
+     */
     private onMouseMove(evt: MouseEvent): void {
         evt.preventDefault();
         if (this.meshes === null) return;
@@ -231,6 +287,9 @@ export class Renderer {
         if (intersects.length > 0) this.mouseMoveHandler(intersects[0]);
     }
 
+    /**
+     * Event handler for pressing the mouse button.
+     */
     private onMouseDown(evt: MouseEvent): void {
         evt.preventDefault();
         this.mouseDown = true;
@@ -273,6 +332,10 @@ export class Renderer {
         }
     }
 
+    /**
+     * Updates shader attributes for a list of meshes.
+     * @param meshes the meshes to update the shader for.
+     */
     private updateShader(meshes: THREE.Mesh[]): void {
         if (this.colorBufferAttribute != null) {
             this.colorBufferAttribute.needsUpdate = true;
@@ -287,17 +350,32 @@ export class Renderer {
         });
     }
 
-    private static getMousePosition(dom: HTMLElement, x: number, y: number): number[] {
+    /**
+     * Gets the mouse position 
+     * @param dom The DOM element to get the mouse position within
+     * @param x The screen-space mouse X position.
+     * @param y The screen-space mouse Y position.
+     * @returns The X and Y coordinates of the mouse within the DOM element.
+     */
+    private static getMousePosition(dom: HTMLElement, x: number, y: number): [number, number] {
         const rect = dom.getBoundingClientRect();
         return [(x - rect.left) / rect.width, (y - rect.top) / rect.height];
     }
 
+    /**
+     * Finds intersections between a mouse click and meshes in the scene.
+     * @param point The mouse click position within the canvas.
+     * @param objects A list of meshes to test for intersections on.
+     */
     private getIntersects(point: THREE.Vector2, objects: THREE.Mesh[]): THREE.Intersection[] {
         this.mouse.set((point.x * 2) - 1, - (point.y * 2) + 1);
         this.raycaster.setFromCamera(this.mouse, this.camera);
         return this.raycaster.intersectObjects(objects, true);
     }
 
+    /**
+     * Starts the main rendering loop.
+     */
     public startRendering(): void {
         // Sets up main rendering loop.
         const animate = (): void => {
@@ -309,6 +387,9 @@ export class Renderer {
         animate();
     }
 
+    /**
+     * Sets the visibility of the helper plane.
+     */
     public setPlaneVisibility(visible: boolean): void {
         if (visible && !this.planeVisible) {
             this.scene.add(this.plane);
@@ -319,12 +400,21 @@ export class Renderer {
         }
     }
 
-    // Register a click event handler.
-    // It should return "true" if the click has been handled.
-    public addClickEventListener(func: (object: THREE.Intersection) => boolean): void {
+    /**
+     * Registers a click event handler.
+     * @param func Click event handler to call when clicks are made. Should
+     * return a boolean indicating whether or not the click was handled. When a
+     * click is handled, no further camera movement etc. is done using that
+     * input.
+     */
+    public addClickEventListener(func: (_: THREE.Intersection) => boolean): void {
         this.clickEventHandlers.push(func);
     }
 
+    /**
+     * Sets the custom material and shader for a mesh.
+     * @param mesh The mesh to set the material for.
+     */
     private setMaterial(mesh: Mesh): void {
         let texture = null;
         let useTexture = false;
@@ -375,12 +465,9 @@ export class Renderer {
         });
     }
 
-    public moveLightToVertex(vId: number): void {
-        const [pos, norm] = this.getVertexPosAndNormal(vId);
-        const offset = new Vector3().copy(norm).normalize().multiplyScalar(25);
-        this.moveLight(pos, offset);
-    }
-
+    /**
+     * Moves the light to point at the rough center of a list of vertexes.
+     */
     public moveLightToVertexAverage(vIds: number[]): void {
         const posTotal = new THREE.Vector3();
         const normTotal = new THREE.Vector3();
@@ -395,6 +482,9 @@ export class Renderer {
         this.moveLight(posTotal, normTotal);
     }
 
+    /**
+     * Moves the camera to a specified position, looking in a specified direction.
+     */
     public moveLight(position: Vector3, normal: Vector3): void {
         this.directionalLight.position.set(normal.x, normal.y, normal.z);
 
@@ -406,12 +496,20 @@ export class Renderer {
         if (this.meshes != null) this.updateShader(this.meshes);
     }
 
-    public moveCameraToVertex(vId: number): void {
+    /**
+     * Moves the camera to look at a specific vertex.
+     */
+    public moveCameraToVertex(vId: number, distance = 50): void {
         const [pos, norm] = this.getVertexPosAndNormal(vId);
-        const offset = new Vector3().copy(norm).normalize().multiplyScalar(50);
+        const offset = new Vector3().copy(norm).normalize().multiplyScalar(distance);
         this.moveCamera(offset.add(pos), pos);
     }
 
+    /**
+     * Moves the camera to a specified position, pointing at another position.
+     * @param position The position the camera should be placed at.
+     * @param lookat The position the camera should point towards.
+     */
     public moveCamera(position: Vector3, lookat: Vector3): void {
         this.camera.position.set(position.x, position.y, position.z);
         this.camera.updateMatrix();
@@ -419,6 +517,9 @@ export class Renderer {
         this.controls.update();
     }
 
+    /**
+     * Gets the vertex coordinates and normal vector for the specified vertex index.
+     */
     private getVertexPosAndNormal(vId: number): [Vector3, Vector3] {
         const geo = this.meshes[0]?.geometry as BufferGeometry;
         const posAttr = geo.attributes["position"] as THREE.BufferAttribute;
@@ -428,11 +529,17 @@ export class Renderer {
         return [pos, norm];
     }
 
+    /**
+     * Gets the geometry of the currently loaded model, if there is one.
+     */
     public getModelGeometry(): BufferGeometry | null {
         if (this.meshes == null) return null;
         return this.meshes[0]?.geometry as BufferGeometry;
     }
 
+    /**
+     * Finds all meshes present in a scene.
+     */
     private findMeshes(scene: Object3D): Mesh[] {
         let meshes = [];
         if (scene.type == "Mesh") meshes.push(scene as Mesh);

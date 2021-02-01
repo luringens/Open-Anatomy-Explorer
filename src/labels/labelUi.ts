@@ -7,7 +7,7 @@ import { toHex, binarySearch, uniq } from "../utils";
 import { ActiveTool } from "../activeTool";
 import SVG_EYE from "../../static/eye.svg"
 import SVG_EYE_OFF from "../../static/eye-off.svg"
-import { Renderer } from "../renderer";
+import Renderer from "../renderer";
 
 /** 
  * Manages the UI state of the labelling system.
@@ -63,14 +63,14 @@ export default class LabelUi {
         if (target.checked) {
             switch (target.value) {
                 case ActiveTool.LabelPainter:
-                    this.renderer.toggleCameraControls(false);
+                    this.renderer.setCameraControls(false);
                     this.renderer.overrideMouseControls(
                         this.editVerticesForLabel.bind(this, true)
                     );
                     break;
 
                 case ActiveTool.LabelUnpainter:
-                    this.renderer.toggleCameraControls(false);
+                    this.renderer.setCameraControls(false);
                     this.renderer.overrideMouseControls(
                         this.editVerticesForLabel.bind(this, false)
                     );

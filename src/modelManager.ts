@@ -1,4 +1,4 @@
-import { Renderer } from "./renderer";
+import Renderer from "./renderer";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
 import { URL } from "./Api/api";

@@ -1,4 +1,4 @@
-import { Renderer } from "../renderer";
+import Renderer from "../renderer";
 import LabelUi from "./labelUi";
 import { Label, LabelSet } from "./Label";
 import { ModelManager } from "../modelManager";

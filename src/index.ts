@@ -1,4 +1,4 @@
-import { Renderer } from "./renderer";
+import Renderer from "./renderer";
 import LabelManager from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
