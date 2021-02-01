@@ -1,4 +1,4 @@
-import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "../quizmaster/Question";
+import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "../quizmaster/quiz";
 import { URL, sendRequest } from "./api";
 
 /**

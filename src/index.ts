@@ -60,7 +60,7 @@ else switch (action.action) {
     case HashAddressType.QuizEdit:
         labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, true);
-        void quizMasterManager.loadQuestions(action.uuid)
+        void quizMasterManager.loadQuiz(action.uuid)
             .then(() => new UserManager(modelManager, labelManager as LabelManager, quizMasterManager));
         break;
 
@@ -68,7 +68,7 @@ else switch (action.action) {
     case HashAddressType.QuizTake:
         labelManager = new LabelManager(renderer, false, 0, modelManager);
         quizMasterManager = new QuizMasterManager(labelManager, false);
-        void quizMasterManager.loadQuestions(action.uuid).then(() => {
+        void quizMasterManager.loadQuiz(action.uuid).then(() => {
             new QuizTakerManager(quizMasterManager as QuizMasterManager, labelManager as LabelManager);
             new UserManager(modelManager, labelManager as LabelManager, quizMasterManager);
         });

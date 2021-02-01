@@ -1,6 +1,6 @@
 import QuizMasterManager from "../quizmaster/quizMasterManager";
 import { LabelManager } from "../labels/labelManager";
-import { QuestionType, QuestionName, QuestionLocate, Question, QuestionFreeform } from "../quizmaster/Question";
+import { QuestionType, QuestionName, QuestionLocate, Question, QuestionFreeform } from "../quizmaster/quiz";
 import { QuizTakerUi } from "./QuizTakerUi";
 import { Answer } from "./answer";
 import { Label } from "../labels/Label";
@@ -46,7 +46,7 @@ export default class QuizTakerManager {
         ui.bind(ui.next, this.nextQuestion.bind(this));
 
         this.questions = this.quizMasterManager.getQuestions();
-        if (this.quizMasterManager.Shuffle()) {
+        if (this.quizMasterManager.shuffle()) {
             this.shuffle();
         }
 

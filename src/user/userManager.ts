@@ -234,7 +234,7 @@ export default class UserManager {
     public async goToQuiz(uuid: string): Promise<void> {
         const quizModes = [HashAddressType.QuizEdit, HashAddressType.QuizCreate];
         if (this.quizManager != null && HashAddress.isOfType(quizModes)) {
-            await this.quizManager.loadQuestions(uuid);
+            await this.quizManager.loadQuiz(uuid);
             new HashAddress(uuid, HashAddressType.QuizEdit).set();
         }
         else {

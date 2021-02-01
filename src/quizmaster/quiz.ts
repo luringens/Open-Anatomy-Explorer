@@ -1,9 +1,17 @@
+/**
+ * A class representing a Quiz.
+ */
 export class Quiz {
     name: string;
-    uuid: string | null;
     labelSet: number;
     shuffle: boolean;
     questions: Question[];
+
+    /**
+     * The UUID of the quiz as identified by the server.
+     * Null will usually mean that it has not been saved to the server yet.
+     */
+    uuid: string | null;
 
     constructor(name: string, uuid: string | null, labelSet: number, shuffle: boolean, questions: Question[]) {
         this.name = name;
@@ -14,12 +22,18 @@ export class Quiz {
     }
 }
 
+/**
+ * Enum used to differentiate between question types when the specific type is not yet known.
+ */
 export enum QuestionType {
     Locate = 0,
     Name = 1,
     Freeform = 2,
 }
 
+/**
+ * Common question interface.
+ */
 export interface Question {
     id: number;
     questionType: QuestionType;
@@ -27,6 +41,9 @@ export interface Question {
     labelId: number;
 }
 
+/**
+ * Represents a "locate this" question, asking the user to find a specific region.
+ */
 export class QuestionLocate implements Question {
     public readonly questionType = QuestionType.Locate;
     public readonly id: number;
@@ -40,6 +57,9 @@ export class QuestionLocate implements Question {
     }
 }
 
+/**
+ * Represents a "name this" question, asking the user to name what a displayed region is named.
+ */
 export class QuestionName implements Question {
     public readonly questionType = QuestionType.Name;
     public readonly id: number;
@@ -53,6 +73,9 @@ export class QuestionName implements Question {
     }
 }
 
+/**
+ * Represents a free-form text question.
+ */
 export class QuestionFreeform implements Question {
     public readonly questionType = QuestionType.Freeform;
     public readonly id: number;
@@ -66,6 +89,9 @@ export class QuestionFreeform implements Question {
     }
 }
 
+/**
+ * Translates a question type ID to a human-friendly question type description.
+ */
 export function GetQuestionTypeName(questionType: QuestionType): string {
     switch (questionType) {
         case QuestionType.Locate:
