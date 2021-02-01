@@ -44,7 +44,7 @@ export default class QuizMasterManager {
         const quiz = await QuizApi.load(quizUuid);
         this.quiz = quiz;
         this.questions = this.quiz.questions;
-        this.nextQuestionId = 0;
+        this.nextQuestionId = Math.max(...this.quiz.questions.map(q => q.id)) + 1;
 
         // Before populating the UI, we need the name of the labels.
         await this.labelManager.loadWithModelById(this.quiz.labelSet);
