@@ -1,14 +1,15 @@
-import * as THREE from "three";
 import { Renderer } from "../renderer";
-import { LabelUi } from "./labelUi";
-import { uniq } from "../utils";
+import LabelUi from "./labelUi";
 import { Label, LabelSet } from "./Label";
-import { BufferAttribute, Vector3 } from "three";
 import { ModelManager } from "../modelManager";
 import LabelApi from "../Api/labelset";
-import ModelApi from "../Api/models";
+import LabelsetApi from "../Api/labelset";
+import { HashAddress, HashAddressType } from "../HashAddress";
 
-export class LabelManager {
+/**
+ * Manages a set of labels and their state.
+ */
+export default class LabelManager {
     public labelSet: LabelSet;
     public labels: Label[];
     public renderer: Renderer;
@@ -18,27 +19,40 @@ export class LabelManager {
     constructor(renderer: Renderer, showUi: boolean, modelId: number, modelManager: ModelManager) {
         this.renderer = renderer;
         this.modelManager = modelManager;
-        this.userInterface = new LabelUi(this, showUi);
+        this.userInterface = new LabelUi(this, renderer, showUi);
         this.labelSet = new LabelSet(null, null, modelId, []);
         this.labels = this.labelSet.labels;
     }
 
+    /**
+     * Gets a label by it's ID.
+     */
     public getLabel(labelId: number): Label | null {
         return this.labels.find(l => l.id == labelId) ?? null;
     }
 
-    /// Loads labels and orders renderer to load the related model.
+    /**
+     * Loads a label set by it's UUID, and then orders the renderer to load the
+     * model the set belongs to.
+     */
     public async loadWithModelByUuid(uuid: string): Promise<void> {
         const labelSet = await LabelApi.loadByUuid(uuid);
         await this.loadWithModel(labelSet);
     }
 
-    /// Loads labels and orders renderer to load the related model.
+    /**
+     * Loads a label set by it's ID, and then orders the renderer to load the
+     * model the set belongs to.
+     */
     public async loadWithModelById(id: number): Promise<void> {
         const labelSet = await LabelApi.load(id);
         await this.loadWithModel(labelSet);
     }
 
+    /**
+     * Loads the given labelset, and then orders the renderer to load the model
+     * the set belongs to.
+     */
     private async loadWithModel(labelSet: LabelSet): Promise<void> {
         this.labelSet = labelSet;
         const mesh = await ModelManager.loadAsync(this.labelSet.modelId);
@@ -46,10 +60,19 @@ export class LabelManager {
         this.reset(this.labelSet);
     }
 
+    /**
+     * Informs the LabelManager that a new model has been loaded and to reset
+     * its wordlview accordingly. Notably by clearing the loaded labelset.
+     * @param id The model ID of the new model.
+     */
     public newModel(id: number): void {
         this.reset(new LabelSet(null, null, id, []))
     }
 
+    /**
+     * Resets the LabelManager state.
+     * @param set A labelset to use afterwards, or null to start from a clean slate.
+     */
     public reset(set: LabelSet | null = null): void {
         this.labels.forEach(pos => {
             const id = "label-row-" + String(pos.id);
@@ -70,6 +93,9 @@ export class LabelManager {
         this.userInterface.reload(this.renderer.gui);
     }
 
+    /**
+     * Remove a label from the set.
+     */
     public removeLabel(pos: Label): void {
         let index = -1;
         for (let i = 0; i < this.labels.length; i++) {
@@ -89,105 +115,102 @@ export class LabelManager {
         }
     }
 
-    private revisualize(): void {
-        this.renderer.resetVertexColors();
-        this.labels.forEach(pos => {
-            this.renderer.setColorForVertices(pos.vertices, pos.color);
-        });
-    }
-
+    /**
+     * Show or hide all labels.
+     */
     public setVisibility(visible: boolean): void {
-        this.userInterface.visible = visible;
-        if (this.userInterface.visible) {
-            this.revisualize();
-        } else {
-            this.renderer.resetVertexColors();
-        }
+        this.userInterface.setVisibility(visible);
     }
 
-    /// Toggle visibility of all labels.
-    public toggleVisibilityAll(): void {
-        this.setVisibility(this.userInterface.visible);
-    }
-
-    /// Instruct renderer to render or not render a label as set in label.visibility.
-    public updateLabelVisibility(label: Label): void {
-        const vertices = label.vertices;
-        if (label.visible) this.renderer.setColorForVertices(vertices, label.color);
-        else this.renderer.resetColorForVertices(label.vertices);
-    }
-
-    /// Add or remove vertices from a label.
-    public editVerticesForLabel(add: boolean, hit: THREE.Intersection): void {
-        if (this.userInterface.activeLabel == null || hit.face == null) return;
-
-        const label = this.labels
-            .find(label => label.id == this.userInterface.activeLabel);
-        if (label == null) return;
-
-        const pos = hit.point;
-        const radius = this.userInterface.brushSize;
-        const geo = this.renderer.getModelGeometry();
-        if (geo == null) throw "No model geometry!";
-
-        const posAttr = geo.attributes["position"] as BufferAttribute;
-        const vertices = [];
-        for (let i = 0; i < posAttr.array.length; i += 3) {
-            const vPos = new Vector3(posAttr.array[i], posAttr.array[i + 1], posAttr.array[i + 2]);
-            if (pos.distanceTo(vPos) < radius) {
-                vertices.push(i / 3);
-            }
-        }
-
-        if (add) {
-            label.vertices = label.vertices.concat(vertices);
-            label.vertices.sort();
-            uniq(label.vertices);
-        } else {
-            this.renderer.resetColorForVertices(label.vertices);
-            const setFilter = new Set(vertices);
-            label.vertices = label.vertices.filter(v => !setFilter.has(v));
-        }
-
-        this.renderer.setColorForVertices(label.vertices, label.color);
-    }
-
-    /// Returns the most recent label that was clicked.
+    /**
+     * Returns the label that was most recently clicked on.
+     */
     public mostRecentlyClickedLabel(): Label | null {
         const id = this.userInterface.activeLabel;
         if (id == null) return null;
         return this.getLabel(id);
     }
 
-    /// Returns the last click, which is `null` if it did not hit a label.
+    /**
+     * Returns the label the most recent click hit, or null if it did not click on a label.
+     */
     public lastClicked(): Label | null {
         const id = this.userInterface.lastClickTarget;
         if (id == null) return null;
         return this.getLabel(id);
     }
 
+    /**
+     * Get the stored UUID of the albelset in use if there is one.
+     */
     public getSavedLabelUuid(): string | null {
         return this.labelSet?.uuid ?? null;
     }
 
-    public async getModelName(): Promise<string> {
-        const modelId = this.labelSet?.modelId ?? null;
-        if (modelId == null) return Promise.reject("No modelId!");
-        return await ModelApi.lookup(modelId);
-    }
-
+    /**
+     * Sets a callback to call every time the selected label changes.
+     */
     public setOnActiveLabelChangeHandler(handler: ((label: Label) => void) | null): void {
         this.userInterface.onActiveLabelChangeHandler = handler;
     }
 
+    /**
+     * Moves the light fixture to the selected label.
+     */
     public moveLightToLabel(label: Label): void {
         this.renderer.moveLightToVertexAverage(label.vertices);
     }
 
+    /**
+     * Moves the camera to the selected label.
+     */
     public moveCameraToLabel(label: Label): void {
         const index = Math.floor(Math.random() * (label.vertices.length - 1));
         const vertexId = label.vertices[index];
         this.renderer.moveCameraToVertex(vertexId);
+    }
+
+    /**
+     * Stores the current labels as a new labelset on the server.
+     */
+    public async storeLabels(): Promise<void> {
+        if (this.labelSet == null) return Promise.reject("No labels to store");
+        this.userInterface.updateFromUi();
+        const uuid = await LabelsetApi.post(this.labelSet);
+        this.labelSet.uuid = uuid;
+        this.userInterface.reload(null, false);
+
+        new HashAddress(uuid, HashAddressType.Label).set();
+    }
+
+    /**
+     * Stores the current labels as a new labelset on the server, overwriting previous data.
+     */
+    public async updateLabels(): Promise<void> {
+        if (this.labelSet == null) return Promise.reject("No labels to store");
+        this.userInterface.updateFromUi();
+        await LabelsetApi.put(this.labelSet);
+    }
+
+    /**
+     * Deletes the current labelset from the server.
+     */
+    public async deleteLabels(): Promise<void> {
+        if (this.labelSet?.uuid == null) return Promise.reject("No labels to store");
+        await LabelsetApi.delete(this.labelSet.uuid);
+        this.labelSet.uuid = null;
+        this.userInterface.reload(null, false);
+
+        HashAddress.unset();
+    }
+
+    /**
+     * Open the quiz editor, referencing this labelset.
+     */
+    public createQuiz(): void {
+        if (this.labelSet.uuid == null) throw "No stored labels to make quiz of!";
+        new HashAddress(this.labelSet.uuid, HashAddressType.QuizCreate).set();
+        location.reload();
     }
 }
 

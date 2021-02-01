@@ -1,5 +1,5 @@
 import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName, QuestionFreeform, Quiz } from "./quiz";
-import { LabelManager } from "../labels/labelManager";
+import LabelManager from "../labels/labelManager";
 import { Label } from "../labels/Label";
 import QuizMasterManager from "./quizMasterManager";
 

@@ -1,5 +1,5 @@
 import UserApi from "../Api/user"
-import { LabelManager } from "../labels/labelManager"
+import LabelManager from "../labels/labelManager"
 import { HashAddress, HashAddressType } from "../HashAddress"
 import QuizMasterManager from "../quizmaster/quizMasterManager"
 import { ModelManager } from "../modelManager"

@@ -1,5 +1,5 @@
 import { Renderer } from "./renderer";
-import { LabelManager } from "./labels/labelManager";
+import LabelManager from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
