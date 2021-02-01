@@ -3,17 +3,27 @@ import { LZW } from "../lzw";
 import { colorToHex, hexToColor, toHex } from "../utils";
 import { URL, sendRequest } from "./api";
 
+/**
+ * Handles communicating with the labelset API.
+ */
 export default class LabelsetApi {
     private static url = URL + "labels/";
 
     /**
      * POSTs the set if it does not have a UUID, otherwise PUTs it.
+     * @param set The Labelset to upload.
+     * @returns The UUID identifying the labelset on the server.
      */
     public static async upload(set: LabelSet): Promise<string> {
         if (set.uuid == null) return this.post(set);
         else return this.put(set);
     }
 
+    /**
+     * Uploads a labelset with a UUID, replacing any existing labelset with that UUID.
+     * @param set The Labelset to upload.
+     * @returns The UUID identifying the labelset on the server.
+     */
     public static async put(set: LabelSet): Promise<string> {
         if (set.uuid == null) return Promise.reject("Can not PUT without UUID.");
         const url = LabelsetApi.url + set.uuid;
@@ -27,6 +37,11 @@ export default class LabelsetApi {
         return await response.json() as string;
     }
 
+    /**
+     * Uploads a labelset without considering any pre-existing UUID.
+     * @param set The Labelset to upload.
+     * @returns The UUID identifying the labelset on the server.
+     */
     public static async post(set: LabelSet): Promise<string> {
         const options = {
             method: "POST",
@@ -38,6 +53,9 @@ export default class LabelsetApi {
         return await response.json() as string;
     }
 
+    /**
+     * Load a labelset by it's UUID.
+     */
     public static async loadByUuid(uuid: string): Promise<LabelSet> {
         const url = `${LabelsetApi.url}uuid/${uuid}`;
         const options = { method: "GET" };
@@ -47,6 +65,9 @@ export default class LabelsetApi {
         return JsonLabelSet.toLabelset(jsonSet);
     }
 
+    /**
+     * Loads a labelset by its ID number.
+     */
     public static async load(id: number): Promise<LabelSet> {
         const url = LabelsetApi.url + String(id);
         const options = { method: "GET" };
@@ -56,6 +77,9 @@ export default class LabelsetApi {
         return JsonLabelSet.toLabelset(jsonSet);
     }
 
+    /**
+     * Deletes a labelset by its UUID.
+     */
     public static async delete(uuid: string): Promise<void> {
         const url = LabelsetApi.url + uuid;
         const options = { method: "DELETE" };
@@ -63,6 +87,10 @@ export default class LabelsetApi {
     }
 }
 
+/**
+ * Labelset representation matching what the server expects.
+ * Used for converting between the local and the remote format.
+ */
 class JsonLabelSet {
     id: number | null;
     name: string;
@@ -93,6 +121,11 @@ class JsonLabelSet {
     }
 }
 
+/**
+ * Label representation matching what the server expects.
+ * Used for converting between the local and the remote format.
+ * Notably, it compresses the list of labels
+ */
 class JsonLabel {
     name: string;
     colour: string;

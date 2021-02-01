@@ -1,8 +1,14 @@
 import { URL, sendRequest } from "./api";
 
+/**
+ * Handles communicating with the users API.
+ */
 export default class Users {
     private static url = URL + "users/";
 
+    /**
+     * Registers a new user with the server.
+     */
     public static async register(username: string, password: string): Promise<void> {
         const url = Users.url + "create";
         const options: RequestInit = {
@@ -15,6 +21,11 @@ export default class Users {
         await sendRequest(url, options);
     }
 
+    /**
+     * Attempts to logs in with the specified credentials.
+     * If successful, we will have a login cookie to use when calling APIs
+     * requiring authorization.
+     */
     public static async login(username: string, password: string): Promise<void> {
         const url = Users.url + "login";
         const options: RequestInit = {
@@ -26,12 +37,23 @@ export default class Users {
         await sendRequest(url, options);
     }
 
+    /**
+     * Instructs the server to log us out, deleting the login cookie.
+     */
     public static async logout(): Promise<void> {
         const url = Users.url + "logout";
         const options: RequestInit = { method: "POST", credentials: "include" };
         await sendRequest(url, options);
     }
 
+    /**
+     * Asks the server if the currently logged in account has administrative
+     * privileges. If there is no logged in user, the API returns 401
+     * Unauthorized, and the Promise is rejected.
+     * 
+     * This function is used for determining whether or not admin UIs should be
+     * displayed. It is not used for security purposes.
+     */
     public static async isadmin(): Promise<boolean> {
         const url = Users.url + "isadmin";
         const options: RequestInit = { method: "GET", credentials: "include" };
@@ -40,7 +62,8 @@ export default class Users {
     }
 
     /**
-     * Attempts to refresh the logged in session. Returns true if no longer logged in.
+     * Attempts to refresh the logged in session. Returns false if the server'
+     * does not accept our login cookie, or we are otherwise not logged in.
      */
     public static async refresh(): Promise<boolean> {
         const url = Users.url + "refresh";
@@ -64,20 +87,30 @@ export default class Users {
      * Groups functions handling bookmarked labelsets.
      */
     public static Labels = {
-        url: Users.url + "users/labelsets/",
+        url: Users.url + "labelsets/",
 
+        /**
+         * Bookmark a labelset with the given UUID.
+         */
         async add(labelsetUuid: string): Promise<void> {
             const url = this.url + labelsetUuid;
             const options: RequestInit = { method: "PUT", credentials: "include" };
             await sendRequest(url, options);
         },
 
+        /**
+         * Remove a bookmark for a labelset with the given UUID. Rejects the
+         * Promise if it is not bookmarked, as the server will return 404.
+         */
         async remove(labelsetUuid: string): Promise<void> {
             const url = this.url + labelsetUuid;
             const options: RequestInit = { method: "DELETE", credentials: "include" };
             await sendRequest(url, options);
         },
 
+        /**
+         * Get a list of all bookmarked labelsets.
+         */
         async get(): Promise<JsonUserLabelSet[]> {
             const options: RequestInit = { method: "GET", credentials: "include" };
             const response = await sendRequest(this.url, options);
@@ -89,20 +122,30 @@ export default class Users {
      * Groups functions handling bookmarked quizzes.
      */
     public static Quizzes = {
-        url: Users.url + "users/quizzes/",
+        url: Users.url + "quizzes/",
 
+        /**
+         * Bookmark a quiz with the given UUID.
+         */
         async add(quizUuid: string): Promise<void> {
             const url = this.url + quizUuid;
             const options: RequestInit = { method: "PUT", credentials: "include" };
             await sendRequest(url, options);
         },
 
+        /**
+         * Remove a bookmark for a quiz with the given UUID. Rejects the Promise
+         * if it is not bookmarked, as the server will return 404.
+         */
         async remove(quizUuid: string): Promise<void> {
             const url = this.url + quizUuid;
             const options: RequestInit = { method: "DELETE", credentials: "include" };
             await sendRequest(url, options);
         },
 
+        /**
+         * Get a list of all bookmarked quizzes.
+         */
         async get(): Promise<JsonUserLabelSet[]> {
             const options: RequestInit = { method: "GET", credentials: "include" };
             const response = await sendRequest(this.url, options);

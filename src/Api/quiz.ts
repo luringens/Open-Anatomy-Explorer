@@ -1,17 +1,27 @@
 import { Question, QuestionFreeform, QuestionLocate, QuestionName, QuestionType, Quiz } from "../quizmaster/Question";
 import { URL, sendRequest } from "./api";
 
+/**
+ * Handles communicating with the quiz API.
+ */
 export default class QuizApi {
     private static url = URL + "quiz/";
 
     /**
-     * POSTs the set if it does not have a UUID, otherwise PUTs it.
+     * POSTs the quiz if it does not have a UUID, otherwise PUTs it.
+     * @param set The Quiz to upload.
+     * @returns The UUID identifying the quiz on the server.
      */
     public static async upload(quiz: Quiz): Promise<string> {
         if (quiz.uuid == null) return this.post(quiz);
         else return this.put(quiz);
     }
 
+    /**
+     * Uploads a quiz with a UUID, replacing any existing quiz with that UUID.
+     * @param set The Quiz to upload.
+     * @returns The UUID identifying the quiz on the server.
+     */
     public static async put(quiz: Quiz): Promise<string> {
         if (quiz.uuid == null) return Promise.reject("Can not PUT without UUID.");
         const url = QuizApi.url + quiz.uuid;
@@ -25,6 +35,11 @@ export default class QuizApi {
         return await response.json() as string;
     }
 
+    /**
+     * Uploads a quiz without considering any pre-existing UUID.
+     * @param set The Quiz to upload.
+     * @returns The UUID identifying the quiz on the server.
+     */
     public static async post(quiz: Quiz): Promise<string> {
         const options = {
             method: "POST",
@@ -35,6 +50,9 @@ export default class QuizApi {
         return await response.json() as string;
     }
 
+    /**
+     * Load a quiz by its UUID.
+     */
     public static async load(uuid: string): Promise<Quiz> {
         const url = QuizApi.url + uuid;
         const options = { method: "GET" };
@@ -43,6 +61,9 @@ export default class QuizApi {
         return JsonQuiz.toQuiz(jsonQuiz, uuid);
     }
 
+    /**
+     * Loads a quiz by its ID number.
+     */
     public static async delete(uuid: string): Promise<void> {
         const url = QuizApi.url + uuid;
         const options = { method: "DELETE" };
@@ -50,6 +71,10 @@ export default class QuizApi {
     }
 }
 
+/**
+ * Quiz representation matching what the server expects.
+ * Used for converting between the local and the remote format.
+ */
 class JsonQuiz {
     name: string;
     labelSet: number;
@@ -77,6 +102,12 @@ class JsonQuiz {
     }
 }
 
+/**
+ * Question representation matching what the server expects.
+ * Used for converting between the local and the remote format.
+ * Notably, it create the appropriate Question implementation as determined by
+ * the type number.
+ */
 class JsonQuestion {
     questionType: number;
     textPrompt: string;

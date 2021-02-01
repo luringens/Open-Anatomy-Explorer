@@ -1,5 +1,8 @@
 import { URL, sendRequest } from "./api";
 
+/**
+ * Handles communicating with the models API, primarily listing, lookup and uploading.
+ */
 export default class ModelApi {
     private static url = URL + "modelstorage/";
 
@@ -37,6 +40,9 @@ export default class ModelApi {
 }
 
 
+/**
+ * Represents a model in a model list as returned by the server.
+ */
 class JsonModel {
     id: number;
     filename: string;
