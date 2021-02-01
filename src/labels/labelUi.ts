@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { BufferAttribute, Vector3 } from "three";
 import { GUI } from "dat.gui";
 import LabelManager from "./labelManager";
 import { Label, LabelSet } from "./Label";
@@ -415,11 +414,15 @@ export default class LabelUi {
         const geo = this.renderer.getModelGeometry();
         if (geo == null) throw "No model geometry!";
 
-        const posAttr = geo.attributes["position"] as BufferAttribute;
+        const posAttr = geo.attributes["position"] as THREE.BufferAttribute;
         const vertices = [];
         for (let i = 0; i < posAttr.array.length; i += 3) {
-            const vPos = new Vector3(posAttr.array[i], posAttr.array[i + 1], posAttr.array[i + 2]);
-            if (pos.distanceTo(vPos) < radius) {
+            const x2 = Math.pow(pos.x - posAttr.array[i], 2);
+            const y2 = Math.pow(pos.y - posAttr.array[i + 1], 2);
+            const z2 = Math.pow(pos.z - posAttr.array[i + 2], 2);
+            const dist = Math.sqrt(x2 + y2 + z2);
+
+            if (dist < radius) {
                 vertices.push(i / 3);
             }
         }
