@@ -3,7 +3,7 @@ import Notification, { StatusType } from "../notification";
 /**
  * The base URL of the API.
  */
-export const URL = "http://oah.stiansoltvedt.com/";
+export const URL = "http://localhost:8001/";
 
 /**
  * Wraps the `fetch` API with status messages and some error handling.

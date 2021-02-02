@@ -27,6 +27,9 @@ export default class UserManagerUi {
     private iconUser: HTMLTableDataCellElement;
     private userStatus: HTMLTableDataCellElement;
 
+    private idElement: HTMLInputElement;
+    private pwdElement: HTMLInputElement;
+
     public constructor(userManager: UserManager) {
         this.userManager = userManager;
 
@@ -34,8 +37,12 @@ export default class UserManagerUi {
         this.loggedinAdminElements = document.getElementsByClassName("row-logged-in-admin");
         this.loggedinElements = document.getElementsByClassName("row-logged-in");
         this.loginElements = document.getElementsByClassName("row-login");
-
+        this.idElement = document.getElementById("user-id") as HTMLInputElement;
+        this.pwdElement = document.getElementById("user-pwd") as HTMLInputElement;
         this.expandPadding = document.getElementById("row-login-padding") as HTMLTableRowElement;
+        this.iconChevron = document.getElementById("user-chevron") as HTMLTableDataCellElement;
+        this.iconUser = document.getElementById("user-state-icon") as HTMLTableDataCellElement;
+        this.userStatus = document.getElementById("user-status") as HTMLTableDataCellElement;
 
         const iconLabelAdd = document.getElementById("user-icon-labels-add") as HTMLTableDataCellElement;
         const iconLabels = document.getElementById("user-icon-labels") as HTMLTableDataCellElement;
@@ -45,13 +52,8 @@ export default class UserManagerUi {
         const iconQuizzes = document.getElementById("user-icon-quizzes") as HTMLTableDataCellElement;
         const iconQuizzesAdd = document.getElementById("user-icon-quizzes-add") as HTMLTableDataCellElement;
         const iconUpload = document.getElementById("user-icon-upload") as HTMLTableDataCellElement;
-        const idElement = document.getElementById("user-id") as HTMLInputElement;
-        const pwdElement = document.getElementById("user-pwd") as HTMLInputElement;
         const registerCell = document.getElementById("user-login-register") as HTMLTableDataCellElement;
         const submitCell = document.getElementById("user-login-submit") as HTMLTableDataCellElement;
-        this.iconChevron = document.getElementById("user-chevron") as HTMLTableDataCellElement;
-        this.iconUser = document.getElementById("user-state-icon") as HTMLTableDataCellElement;
-        this.userStatus = document.getElementById("user-status") as HTMLTableDataCellElement;
 
         // Set SVG icons.
         iconLabelAdd.innerHTML = SVG_PLUS_CIRCLE;
@@ -70,20 +72,37 @@ export default class UserManagerUi {
 
         const headerRow = this.iconChevron.parentElement as HTMLTableRowElement;
         headerRow.onclick = this.toggleInterfaceExpanded.bind(this);
-        iconLabelAdd.onclick = this.userManager.addLabel.bind(this);
-        iconLogout.onclick = this.userManager.submitLogout.bind(this);
-        iconQuizzesAdd.onclick = this.userManager.addQuiz.bind(this);
-        iconUpload.onclick = this.userManager.uploadModel.bind(this);
-        registerCell.onclick = this.userManager.submitRegister.bind(this, idElement.value, pwdElement.value);
-        submitCell.onclick = this.userManager.submitLogin.bind(this.userManager, idElement.value, pwdElement.value);
+        iconLabelAdd.onclick = this.userManager.addLabel.bind(this.userManager);
+        iconLogout.onclick = this.userManager.submitLogout.bind(this.userManager);
+        iconQuizzesAdd.onclick = this.userManager.addQuiz.bind(this.userManager);
+        iconUpload.onclick = this.userManager.uploadModel.bind(this.userManager);
+        registerCell.onclick = this.submitRegister.bind(this);
+        submitCell.onclick = this.submitLogin.bind(this);
+        this.pwdElement.addEventListener("keyup", this.submitLoginKeyEvent.bind(this));
+    }
 
-        // Bind the ENTER key to submit the login.
-        (document.getElementById("user-pwd") as HTMLInputElement).addEventListener("keyup", event => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                void this.userManager.submitLogin(idElement.value, pwdElement.value);
-            }
-        });
+    /**
+     * Log in with a user and update the UI accordingly.
+     */
+    public async submitLogin(): Promise<void> {
+        await this.userManager.submitLogin(this.idElement.value, this.pwdElement.value);
+    }
+
+    /**
+     * Log in with a user and update the UI accordingly.
+     */
+    public submitLoginKeyEvent(event: KeyboardEvent): void {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            void this.userManager.submitLogin(this.idElement.value, this.pwdElement.value);
+        }
+    }
+
+    /**
+     * Register a new user, log in, and update the UI accordingly.
+     */
+    public async submitRegister(): Promise<void> {
+        await this.userManager.submitRegister(this.idElement.value, this.pwdElement.value);
     }
 
     /**

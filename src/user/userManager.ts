@@ -118,9 +118,14 @@ export default class UserManager {
             .then(this.setLoggedInCookie.bind(this, id))
             .then(this.updateState.bind(this))
             .then(Notification.message("User registered!", StatusType.Info, 5))
-            .catch(() => {
+            .catch(message => {
+                // Check if the issue is that the username already exists.
+                if (typeof message == "string" && message.search("409") != -1) {
+                    Notification.message(`The user '${id}' is already registered.`, StatusType.Warning)
+                } else {
+                    Notification.message("Failed to register a new user.", StatusType.Error)
+                }
                 this.setLoggedInCookie(null);
-                Notification.message("Failed to register user.", StatusType.Error)
             });
     }
 
