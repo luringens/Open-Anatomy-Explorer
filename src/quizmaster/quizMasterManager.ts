@@ -1,8 +1,8 @@
 import { Question, QuestionName, QuestionLocate, QuestionType, QuestionFreeform, Quiz } from "./quiz";
 import LabelManager from "../labels/labelManager";
-import { Label } from "../labels/Label";
+import { Label } from "../labels/label";
 import QuizApi from "../Api/quiz";
-import { HashAddress, HashAddressType } from "../HashAddress";
+import { HashAddress, HashAddressType } from "../hashAddress";
 import QuizMasterUi from "./quizMasterUi";
 
 export default class QuizMasterManager {

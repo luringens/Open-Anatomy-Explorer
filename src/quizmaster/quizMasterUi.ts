@@ -1,6 +1,6 @@
 import { Question, QuestionName, QuestionLocate, QuestionType, GetQuestionTypeName, QuestionFreeform, Quiz } from "./quiz";
 import LabelManager from "../labels/labelManager";
-import { Label } from "../labels/Label";
+import { Label } from "../labels/label";
 import QuizMasterManager from "./quizMasterManager";
 
 export default class QuizMasterUi {

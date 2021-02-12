@@ -1,9 +1,9 @@
 import QuizMasterManager from "../quizmaster/quizMasterManager";
 import LabelManager from "../labels/labelManager";
 import { QuestionType, QuestionName, QuestionLocate, Question, QuestionFreeform } from "../quizmaster/quiz";
-import { QuizTakerUi } from "./QuizTakerUi";
+import { QuizTakerUi } from "./quizTakerUi";
 import { Answer } from "./answer";
-import { Label } from "../labels/Label";
+import { Label } from "../labels/label";
 
 /**
  * Manages the quiz taking process.

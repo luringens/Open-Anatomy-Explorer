@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GUI } from "dat.gui";
 import LabelManager from "./labelManager";
-import { Label, LabelSet } from "./Label";
+import { Label, LabelSet } from "./label";
 import { toHex, binarySearch, uniq } from "../utils";
 import { ActiveTool } from "../activeTool";
 import SVG_EYE from "../../static/eye.svg"

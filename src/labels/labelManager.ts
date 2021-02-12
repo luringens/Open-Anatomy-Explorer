@@ -1,10 +1,10 @@
 import Renderer from "../renderer";
 import LabelUi from "./labelUi";
-import { Label, LabelSet } from "./Label";
+import { Label, LabelSet } from "./label";
 import { ModelManager } from "../modelManager";
 import LabelApi from "../Api/labelset";
 import LabelsetApi from "../Api/labelset";
-import { HashAddress, HashAddressType } from "../HashAddress";
+import { HashAddress, HashAddressType } from "../hashAddress";
 
 /**
  * Manages a set of labels and their state.

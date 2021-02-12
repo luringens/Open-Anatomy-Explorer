@@ -3,7 +3,7 @@ import LabelManager from "./labels/labelManager";
 import { ModelManager } from "./modelManager";
 import QuizMasterManager from "./quizmaster/quizMasterManager";
 import QuizTakerManager from "./quizTaker/quizTakerManager";
-import { HashAddress, HashAddressType } from "./HashAddress";
+import { HashAddress, HashAddressType } from "./hashAddress";
 import UserManager from "./user/userManager";
 
 const defaultModel = 1;

@@ -1,4 +1,4 @@
-import { Label, LabelSet } from "../labels/Label";
+import { Label, LabelSet } from "../labels/label";
 import { LZW } from "../lzw";
 import { colorToHex, hexToColor, toHex } from "../utils";
 import { URL, sendRequest } from "./api";
