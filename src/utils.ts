@@ -65,6 +65,6 @@ export function binarySearch<T>(array: ArrayLike<T>, value: T): number | null {
  * IMPORTANT: Sort first!
  * @param array The array to search through
  */
-export function uniq(array: number[]): void {
-    array.filter((item, pos, array) => !pos || item != array[pos - 1]);
+export function uniq(array: number[]): number[] {
+    return array = array.filter((item, pos, array) => !pos || item != array[pos - 1]);
 }

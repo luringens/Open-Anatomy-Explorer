@@ -429,14 +429,14 @@ export default class LabelUi {
 
         if (add) {
             label.vertices = label.vertices.concat(vertices);
-            label.vertices.sort();
-            uniq(label.vertices);
         } else {
             this.renderer.resetColorForVertices(label.vertices);
             const setFilter = new Set(vertices);
             label.vertices = label.vertices.filter(v => !setFilter.has(v));
         }
 
+        label.vertices.sort(function (a, b) { return a - b });
+        label.vertices = uniq(label.vertices);
         this.renderer.setColorForVertices(label.vertices, label.color);
     }
 }
