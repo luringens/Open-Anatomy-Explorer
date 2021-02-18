@@ -87,6 +87,7 @@ export default class Renderer {
         this.container.addEventListener('mousedown', this.onMouseDown.bind(this), false);
         this.container.addEventListener('mouseup', this.onMouseUp.bind(this), false);
         this.container.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+        this.container.addEventListener('keydown', this.keydown.bind(this), false);
 
         // Bind the camera tool radio-buttons to our handling function.
         (document.getElementById("tool-camera") as HTMLInputElement)
@@ -143,6 +144,27 @@ export default class Renderer {
                     this.setCameraControls(false);
                     break;
             }
+        }
+    }
+
+
+    /**
+     * Event handler for keyboard input to the canvas.
+     */
+    private keydown(event: KeyboardEvent): void {
+        const camera = document.getElementById("tool-camera") as HTMLInputElement;
+        const picker = document.getElementById("tool-picker") as HTMLInputElement;
+        const labeller = document.getElementById("tool-labeler") as HTMLInputElement;
+        const unlabeller = document.getElementById("tool-unlabeler") as HTMLInputElement;
+        const labelgroup = document.getElementById("tool-group-labeler") as HTMLDivElement;
+        const labelgroupVisible = !labelgroup.classList.contains("hide");
+
+        switch (event.key) {
+            case "q": camera.click(); break;
+            case "w": picker.click(); break;
+            case "e": if (labelgroupVisible) { labeller.click(); } break;
+            case "r": if (labelgroupVisible) { unlabeller.click(); } break;
+            default: break;
         }
     }
 

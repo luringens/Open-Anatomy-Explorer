@@ -33,7 +33,7 @@ export default class LabelUi {
         this.showUi = showUi;
         if (showUi) {
             document.getElementById("label-editor")?.classList.remove("hide");
-            document.getElementById("tool-group-labeller")?.classList.remove("hide");
+            document.getElementById("tool-group-labeler")?.classList.remove("hide");
             (document.getElementById("tool-labeler") as HTMLInputElement)
                 .onchange = this.onToolChange.bind(this);
             (document.getElementById("tool-unlabeler") as HTMLInputElement)
