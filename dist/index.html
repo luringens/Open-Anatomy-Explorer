@@ -5,10 +5,33 @@
     <meta charset="utf-8">
     <title>Open Anatomy Explorer</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="spin.css">
 </head>
 
 <body>
-    <div class="grid">
+    <div id="splash" class="splash">
+        <h1 class="splash-title">Open Anatomy Explorer</h1>
+        <table class="splash-table">
+            <coldef>
+                <col style="width: 20px;" />
+                <col />
+                <col style="width: 20px;" />
+            </coldef>
+            <tbody>
+                <tr class="splash-row-login">
+                    <td id="splash-user-login-id-icon"></td>
+                    <td><input id="splash-user-id" type="text" placeholder="Username"></td>
+                    <td rowspan="2" id="splash-user-login-submit"></td>
+                </tr>
+                <tr class="splash-row-login">
+                    <td id="splash-user-login-pwd-icon"></td>
+                    <td><input id="splash-user-pwd" type="password" placeholder="Password"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div id="spinner-space"></div>
+    </div>
+    <div id="main" class="grid hide">
         <div id="canvas-container" class="canvas-container">
             <div id="status-bar" class="status-bar hide">
                 <ul class="status-bar-list" id="status-bar-list"></ul>

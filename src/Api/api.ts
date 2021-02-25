@@ -12,6 +12,7 @@ export const URL = "http://localhost:8001/";
  */
 export async function sendRequest(url: string, options: RequestInit): Promise<Response> {
     const clearStatus = Notification.message("Please wait...", StatusType.Info);
+    options.credentials = "include";
     const response = await fetch(url, options);
     clearStatus();
 

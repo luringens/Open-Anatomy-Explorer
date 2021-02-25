@@ -266,6 +266,14 @@ export default class Renderer {
     }
 
     /**
+     * Nudges the renderer to produce a new frame.
+     * Useful if the first frame was silently left undrawn because the canvas was hidden...
+     */
+    public poke(): void {
+        this.onWindowResize();
+    }
+
+    /**
      * Event handler for the window being resized.
      * Adjusts the camera projection matrix to keep the aspect sensible.
      */

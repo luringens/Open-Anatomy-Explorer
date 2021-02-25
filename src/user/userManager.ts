@@ -4,6 +4,7 @@ import { HashAddress, HashAddressType } from "../hashAddress"
 import QuizMasterManager from "../quizmaster/quizMasterManager"
 import { ModelManager } from "../modelManager"
 import UserManagerUi from "./userManagerUi"
+import UserManagerSplashUi from "./userManagerSplashUi"
 import Notification, { StatusType } from "../notification"
 import ModelApi from "../Api/models"
 
@@ -13,23 +14,55 @@ import ModelApi from "../Api/models"
 export default class UserManager {
     private static readonly SESSION_REFRESH_INTERVAL_MINUTES: number = 15;
     private ui: UserManagerUi;
+    private splashUi: UserManagerSplashUi;
 
-    private modelManager: ModelManager;
-    private labelManager: LabelManager;
-    private quizManager: QuizMasterManager | null;
+    private modelManager: ModelManager | null = null;
+    private labelManager: LabelManager | null = null;
+    private quizManager: QuizMasterManager | null = null;
 
     private lastLoggedInCheck: Date = new Date(2000, 1);
+    private loginCallback: (() => Promise<unknown>) | null = null;
     public loggedInUsername: string | null = null;
 
-    public constructor(modelManager: ModelManager, labelManager: LabelManager, quizManager: QuizMasterManager | null = null) {
+    /**
+     * Constructs a new UserManager with it's UI.
+     */
+    private constructor() {
+        this.ui = new UserManagerUi(this);
+        this.splashUi = new UserManagerSplashUi(this);
+    }
+
+    /**
+     * Public "constructor" that also performs first-start async setup.
+     */
+    public static async initialize(): Promise<UserManager> {
+        const manager = new UserManager();
+        await manager.updateState();
+        await manager.listLabels();
+        await manager.listQuizzes();
+        return manager;
+    }
+
+    /**
+     * Provides the UserManager with access to other managers, which is used to load labels,
+     * quizzes, upload models, etc.
+     */
+    public setManagers(
+        modelManager: ModelManager | null,
+        labelManager: LabelManager | null = null,
+        quizManager: QuizMasterManager | null = null
+    ): void {
         this.modelManager = modelManager;
         this.labelManager = labelManager;
         this.quizManager = quizManager;
-        this.ui = new UserManagerUi(this);
+    }
 
-        void this.updateState()
-            .then(this.listLabels.bind(this))
-            .then(this.listQuizzes.bind(this));
+    /**
+     * Binds a function to be called the next time the UserManager logs in.
+     * Will only be called once.
+     */
+    public bindLoginCallback(callback: () => Promise<unknown>): void {
+        this.loginCallback = callback;
     }
 
     /**
@@ -105,6 +138,11 @@ export default class UserManager {
             .then(this.listLabels.bind(this))
             .then(this.listQuizzes.bind(this))
             .catch(this.setLoggedInCookie.bind(this, null));
+
+        if (this.loginCallback != null && this.loggedInUsername != null) {
+            await this.loginCallback();
+            this.loginCallback = null;
+        }
     }
 
     /**
@@ -147,6 +185,10 @@ export default class UserManager {
      * the server.
      */
     public async uploadModel(): Promise<void> {
+        if (this.modelManager == null) {
+            Notification.message("No modelmanager!", StatusType.Error);
+            return Promise.reject();
+        }
         const filePicker = document.getElementById("file-upload") as HTMLInputElement;
         if (filePicker.files == null) return;
         const name = filePicker.files[0].name;
@@ -160,6 +202,10 @@ export default class UserManager {
      * Bookmark a label on the user account.
      */
     public async addLabel(): Promise<void> {
+        if (this.labelManager == null) {
+            Notification.message("No labelmanager!", StatusType.Error);
+            return Promise.reject();
+        }
         const id = this.labelManager.labelSet.uuid;
         if (id == null) return;
 
@@ -171,7 +217,10 @@ export default class UserManager {
      * Bookmark a quiz on the user account.
      */
     public async addQuiz(): Promise<void> {
-        if (this.quizManager == null) return Promise.reject("No quizmanager");
+        if (this.quizManager == null) {
+            Notification.message("No quizmanager!", StatusType.Error);
+            return Promise.reject();
+        }
         const uuid = this.quizManager.getQuizUuid();
         if (uuid == null) return Promise.reject("No saved quiz in quizmanager");
 
@@ -223,7 +272,7 @@ export default class UserManager {
      * Go to a bookmarked labelset. May refresh the page.
      */
     public async goToLabel(uuid: string): Promise<void> {
-        if (HashAddress.isOfType([null, HashAddressType.Label])) {
+        if (this.labelManager != null && HashAddress.isOfType([null, HashAddressType.Label])) {
             await this.labelManager.loadWithModelByUuid(uuid);
             new HashAddress(uuid, HashAddressType.Label)
         }
