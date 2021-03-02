@@ -1,6 +1,6 @@
 import Renderer from "./renderer";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { URL } from "./Api/api";
 import Notification, { StatusType } from "./notification";
 import ModelApi from "./Api/models";
@@ -44,7 +44,7 @@ export class ModelManager {
         const name = await ModelApi.lookup(modelId);
         if (name.endsWith(".obj")) {
             // OBJ file loading
-            const group = await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
+            const group = await new OBJLoader().loadAsync(this.url + name);
             clearStatus();
             return group;
         } else {
