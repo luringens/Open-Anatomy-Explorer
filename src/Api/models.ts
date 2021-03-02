@@ -10,21 +10,20 @@ export default class ModelApi {
      * Looks up a model ID and returns it's file name.
      * @param modelId The model ID to look up.
      */
-    public static async lookup(modelId: number): Promise<string> {
+    public static async lookup(modelId: number): Promise<JsonModel> {
         const url = `${this.url}lookup/${modelId}`;
         const options = { method: "GET" };
         const response = await sendRequest(url, options);
-        return await response.json() as string;
+        return await response.json() as JsonModel;
     }
 
     /**
      * Lists all available model ID's and their corresponding file name.
      */
-    public static async list(): Promise<[number, string][]> {
+    public static async list(): Promise<JsonModel[]> {
         const options = { method: "GET" };
         const response = await sendRequest(this.url, options);
-        const models = await response.json() as JsonModel[];
-        return models.map(m => [m.id, m.filename])
+        return await response.json() as JsonModel[];
     }
 
     /**
@@ -43,12 +42,16 @@ export default class ModelApi {
 /**
  * Represents a model in a model list as returned by the server.
  */
-class JsonModel {
+export class JsonModel {
     id: number;
     filename: string;
+    material: string | null;
+    texture: string | null;
 
-    constructor(id: number, filename: string) {
+    constructor(id: number, filename: string, material: string | null, texture: string | null) {
         this.id = id;
         this.filename = filename;
+        this.material = material;
+        this.texture = texture;
     }
 }

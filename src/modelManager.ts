@@ -1,9 +1,12 @@
 import Renderer from "./renderer";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
+import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
+import * as THREE from "three";
 import { URL } from "./Api/api";
 import Notification, { StatusType } from "./notification";
-import ModelApi from "./Api/models";
+import ModelApi, { JsonModel } from "./Api/models";
+import { MtlObjBridge } from "three/examples/jsm/loaders/obj2/bridge/MtlObjBridge.js";
 
 /**
  * This class handles loading and parsing models and the list of models from a remote server.
@@ -36,20 +39,52 @@ export class ModelManager {
      * Load and parse a model with the specified ID.
      * Currently supports:
      * - Single OBJ files, with or without vertex colours.
+     * - OBJ files with an associated materials and texture file.
      * - GLB files, which are compressed GLTF files with an embedded texture.
-     * @param modelId The ID of the model to load
+     * @param modelId The ID of the model to load, or the JsonModel returned by ModelApi.lookup.
      */
-    public static async loadAsync(modelId: number): Promise<THREE.Group> {
-        const clearStatus = Notification.message("Loading model...", StatusType.Info);
-        const name = await ModelApi.lookup(modelId);
-        if (name.endsWith(".obj")) {
-            // OBJ file loading
-            const group = await new OBJLoader2().loadAsync(this.url + name) as THREE.Group;
-            clearStatus();
-            return group;
+    public static async loadAsync(modelReference: JsonModel | number): Promise<THREE.Object3D> {
+
+        let model: JsonModel;
+        if (typeof (modelReference) == "number") {
+            model = await ModelApi.lookup(modelReference);
         } else {
-            // Default to GLTF
-            const data = await new GLTFLoader().loadAsync(this.url + name) as GLTF;
+            model = modelReference;
+        }
+
+        const clearStatus = Notification.message("Loading model...", StatusType.Info);
+
+        // OBJ file loading
+        if (model.filename.endsWith(".obj")) {
+
+            // Seperate material and texture handling
+            if (model.material != null && model.texture != null) {
+                const manager = new THREE.LoadingManager();
+                const materials = await new MTLLoader(manager)
+                    .setPath(this.url)
+                    .loadAsync(model.material) as MTLLoader.MaterialCreator;
+                // materials.loadTexture(this.url + model.texture, );
+                materials.preload();
+
+                const loader = new OBJLoader2(manager);
+                loader.addMaterials(MtlObjBridge.addMaterialsFromMtlLoader(materials), true);
+                loader.setPath(this.url);
+                const group = await loader.loadAsync(this.url + model.filename) as THREE.Group;
+
+                return group;
+            }
+
+            // Vertex colours.
+            else {
+                const group = await new OBJLoader2().loadAsync(this.url + model.filename) as THREE.Group;
+                clearStatus();
+                return group;
+            }
+        }
+
+        // Default to GLTF
+        else {
+            const data = await new GLTFLoader().loadAsync(this.url + model.filename) as GLTF;
             clearStatus();
             return data.scene; // ?
         }
@@ -80,7 +115,7 @@ export class ModelManager {
      * Renders the model list interface.
      * @param list List of model IDs and names.
      */
-    private populateModelList(list: [number, string][]): void {
+    private populateModelList(list: JsonModel[]): void {
         // Remove existing rows if present first.
         const oldElements = document.getElementsByClassName("model-list-row");
         while (oldElements.length > 0) {
@@ -89,11 +124,10 @@ export class ModelManager {
 
         const div = document.getElementById("models") as HTMLElement;
         list.forEach(entry => {
-            const id = entry[0], name = entry[1];
             const row = document.createElement("tr");
             row.classList.add("model-list-row");
 
-            const friendlyName = name.replace(/\.[^/.]+$/, "")
+            const friendlyName = entry.filename.replace(/\.[^/.]+$/, "")
                 .replace(/^\w/, function (c) { return c.toUpperCase(); });
 
             const nameCell = document.createElement("td");
@@ -113,9 +147,9 @@ export class ModelManager {
 
             // On click, load the model, pass it to the renderer, and call the callback.
             button.onclick = async (): Promise<void> => {
-                const model = await ModelManager.loadAsync(id);
+                const model = await ModelManager.loadAsync(entry);
                 this.renderer.loadObject(model);
-                if (this.onload != null) this.onload(id);
+                if (this.onload != null) this.onload(entry.id);
             }
         });
     }
