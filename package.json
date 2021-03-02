@@ -33,6 +33,6 @@
   "dependencies": {
     "dat.gui": "^0.7",
     "spin.js": "^4.1.0",
-    "three": "^0.122"
+    "three": "0.124"
   }
 }
