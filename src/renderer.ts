@@ -452,7 +452,7 @@ export default class Renderer {
         const bufferGeometry = mesh.geometry as BufferGeometry;
 
         // Note down existing texture or vertex color if present.
-        if (mesh.material instanceof THREE.MeshStandardMaterial) {
+        if (mesh.material instanceof THREE.MeshStandardMaterial || mesh.material instanceof THREE.MeshPhongMaterial) {
             if (mesh.material.map != null) {
                 texture = mesh.material.map;
                 useTexture = true;

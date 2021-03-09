@@ -1,12 +1,12 @@
 import Renderer from "./renderer";
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OBJLoader2 } from 'three/examples/jsm/loaders/OBJLoader2';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
 import * as THREE from "three";
 import { URL } from "./Api/api";
 import Notification, { StatusType } from "./notification";
 import ModelApi, { JsonModel } from "./Api/models";
-import { MtlObjBridge } from "three/examples/jsm/loaders/obj2/bridge/MtlObjBridge.js";
 
 /**
  * This class handles loading and parsing models and the list of models from a remote server.
@@ -59,18 +59,18 @@ export class ModelManager {
 
             // Seperate material and texture handling
             if (model.material != null && model.texture != null) {
-                const manager = new THREE.LoadingManager();
-                const materials = await new MTLLoader(manager)
+                const materials = await new MTLLoader()
                     .setPath(this.url)
+                    .setResourcePath(this.url)
                     .loadAsync(model.material) as MTLLoader.MaterialCreator;
-                // materials.loadTexture(this.url + model.texture, );
                 materials.preload();
 
-                const loader = new OBJLoader2(manager);
-                loader.addMaterials(MtlObjBridge.addMaterialsFromMtlLoader(materials), true);
-                loader.setPath(this.url);
-                const group = await loader.loadAsync(this.url + model.filename) as THREE.Group;
+                const group = await new OBJLoader()
+                    .setMaterials(materials)
+                    .setPath(this.url)
+                    .loadAsync(model.filename) as THREE.Group;
 
+                clearStatus();
                 return group;
             }
 
@@ -86,7 +86,7 @@ export class ModelManager {
         else {
             const data = await new GLTFLoader().loadAsync(this.url + model.filename) as GLTF;
             clearStatus();
-            return data.scene; // ?
+            return data.scene;
         }
     }
 
