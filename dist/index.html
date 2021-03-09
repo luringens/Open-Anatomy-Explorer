@@ -153,16 +153,16 @@
             <div id="user">
                 <table id="user-table">
                     <coldef>
+                        <col style="width: 40px;" />
+                        <col style="width: auto" />
                         <col style="width: 20px;" />
-                        <col style="width: 20px;" />
-                        <col style="margin: 50px 0px;" />
                         <col style="width: 20px;" />
                     </coldef>
                     <thead>
                         <tr>
                             <td id="user-state-icon"></td>
-                            <td></td>
                             <td id="user-status"></td>
+                            <td></td>
                             <td id="user-chevron"></td>
                         </tr>
 
@@ -173,29 +173,29 @@
                         </tr>
                         <tr class="hide row-login">
                             <td id="user-login-id-icon"></td>
-                            <td></td>
                             <td><input id="user-id" type="text" placeholder="Username"></td>
+                            <td></td>
                             <td id="user-login-register"></td>
                         </tr>
                         <tr class="hide row-login">
                             <td id="user-login-pwd-icon"></td>
-                            <td></td>
                             <td><input id="user-pwd" type="password" placeholder="Password"></td>
+                            <td></td>
                             <td id="user-login-submit"></td>
                         </tr>
 
                         <tr class="hide row-logged-in">
                             <td id="user-icon-logout"></td>
-                            <td></td>
                             <td>Log out</td>
+                            <td></td>
                             <td></td>
                         </tr>
 
                         <tr class="hide row-logged-in-admin">
                             <td id="user-icon-upload"></td>
-                            <td></td>
                             <td><input type="file" id="file-upload"></td>
-                            <td></td>
+                            <td id="user-icon-upload-texture"></td>
+                            <td id="user-icon-upload-material"></td>
                         </tr>
 
                         <tr class="hide row-logged-in">
@@ -206,8 +206,8 @@
 
                         <tr class="hide row-logged-in" id="logged-in-label-header">
                             <td id="user-icon-labels"></td>
-                            <td></td>
                             <td>Labels:</td>
+                            <td></td>
                             <td id="user-icon-labels-add"></td>
                         </tr>
 
@@ -219,13 +219,13 @@
 
                         <tr class="hide row-logged-in" id="logged-in-quizzes-header">
                             <td id="user-icon-quizzes"></td>
-                            <td></td>
                             <td>Quizzes:</td>
+                            <td></td>
                             <td id="user-icon-quizzes-add"></td>
                         </tr>
 
                         <tr class="hide row-logged-in" id="row-userquiz-footer">
-                            <td colspan="3">&nbsp;</td>
+                            <td colspan="4">&nbsp;</td>
                         </tr>
                     </thead>
                     <tbody id="quizzer-table">

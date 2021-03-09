@@ -133,11 +133,18 @@ export default class UserManager {
     public async submitLogin(id: string, pwd: string): Promise<void> {
         this.lastLoggedInCheck = new Date();
         await UserApi.login(id, pwd)
-            .then(this.setLoggedInCookie.bind(this, id))
-            .then(this.updateState.bind(this))
-            .then(this.listLabels.bind(this))
-            .then(this.listQuizzes.bind(this))
-            .catch(this.setLoggedInCookie.bind(this, null));
+            .then(() => {
+                this.setLoggedInCookie(id);
+                return Promise.resolve();
+            })
+            .catch((reason) => {
+                this.setLoggedInCookie(null);
+                console.error(reason);
+            });
+        await this.updateState();
+        await this.listLabels();
+        await this.listQuizzes();
+
 
         if (this.loginCallback != null && this.loggedInUsername != null) {
             await this.loginCallback();
@@ -175,8 +182,11 @@ export default class UserManager {
         await UserApi.logout()
             .then(this.setLoggedInCookie.bind(this, null))
             .then(this.updateState.bind(this))
-            .then(Notification.message("Logged out!", StatusType.Info, 5))
-            .catch(Notification.message("Failed to log out?", StatusType.Error));
+            .then(() => { Notification.message("Logged out!", StatusType.Info, 5); return Promise.resolve() })
+            .catch((reason) => {
+                Notification.message("Failed to log out?", StatusType.Error);
+                console.error(reason);
+            });
     }
 
     /**
@@ -192,10 +202,41 @@ export default class UserManager {
         const filePicker = document.getElementById("file-upload") as HTMLInputElement;
         if (filePicker.files == null) return;
         const name = filePicker.files[0].name;
+        const mm = this.modelManager;
         await ModelApi.upload(name, filePicker.files[0])
-            .then(Notification.message("File uploaded!", StatusType.Info, 5))
-            .catch(Notification.message("Failed to upload file!", StatusType.Error))
-            .then(this.modelManager.loadModelList.bind(this.modelManager));
+            .then(() => {
+                Notification.message("File uploaded!", StatusType.Info, 5);
+                return mm.loadModelList();
+            })
+            .catch((reason) => {
+                Notification.message("Failed to upload file!: ", StatusType.Error);
+                console.error(reason);
+            });
+    }
+
+    /**
+     * Upload a material or texture to the server.
+     * This requires the logged in user to be have administrative privileges, which is enforced by
+     * the server.
+     */
+    public async uploadMaterials(type: "MATERIAL" | "TEXTURE"): Promise<void> {
+        if (this.modelManager == null) {
+            Notification.message("No modelmanager!", StatusType.Error);
+            return Promise.reject();
+        }
+        const filePicker = document.getElementById("file-upload") as HTMLInputElement;
+        if (filePicker.files == null) return;
+        const name = filePicker.files[0].name;
+        const modelId = this.modelManager.loadedModelId;
+        await ModelApi.uploadMaterials(name, type, modelId, filePicker.files[0])
+            .then(() => {
+                Notification.message("File uploaded!", StatusType.Info, 5);
+                return Promise.resolve();
+            })
+            .catch((reason) => {
+                Notification.message("Failed to upload file!: ", StatusType.Error);
+                console.error(reason);
+            });
     }
 
     /**

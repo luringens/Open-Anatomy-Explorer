@@ -59,7 +59,7 @@ async function startupRenderer(userManager: UserManager) {
 
     // If nothing else is specified in the address, just load the label editor from scratch.
     if (action == null) {
-        const model = await ModelManager.loadAsync(defaultModel);
+        const model = await modelManager.loadAsync(defaultModel);
         renderer.loadObject(model);
         labelManager = new LabelManager(renderer, true, defaultModel, modelManager);
         labelManager.reset();

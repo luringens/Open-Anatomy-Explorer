@@ -36,6 +36,23 @@ export default class ModelApi {
         const options: RequestInit = { method: "PUT", credentials: "include", body: data };
         await sendRequest(url, options);
     }
+
+    /**
+     * Uploads a texture or material to the server.
+     * @param name The file name of the model.
+     * @param data The binary data of the model file.
+     */
+    public static async uploadMaterials(name: string, type: "MATERIAL" | "TEXTURE", modelId: number, data: Blob | BufferSource | ReadableStream): Promise<void> {
+        let subpath;
+        switch (type) {
+            case "MATERIAL": subpath = "mtl"; break;
+            case "TEXTURE": subpath = "tex"; break;
+        }
+
+        const url = `${this.url}upload/${subpath}/${modelId}/${name}`;
+        const options: RequestInit = { method: "PUT", credentials: "include", body: data };
+        await sendRequest(url, options);
+    }
 }
 
 

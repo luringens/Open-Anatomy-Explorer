@@ -55,7 +55,7 @@ export default class LabelManager {
      */
     private async loadWithModel(labelSet: LabelSet): Promise<void> {
         this.labelSet = labelSet;
-        const mesh = await ModelManager.loadAsync(this.labelSet.modelId);
+        const mesh = await this.modelManager.loadAsync(this.labelSet.modelId);
         this.renderer.loadObject(mesh);
         this.reset(this.labelSet);
     }

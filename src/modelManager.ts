@@ -16,6 +16,7 @@ export class ModelManager {
     private static readonly url = URL + "models/";
     private readonly renderer: Renderer;
     private onload: ((id: number) => void) | null = null;
+    public loadedModelId = 0;
 
     /**
      * Constructs the ModelManager
@@ -43,7 +44,8 @@ export class ModelManager {
      * - GLB files, which are compressed GLTF files with an embedded texture.
      * @param modelId The ID of the model to load, or the JsonModel returned by ModelApi.lookup.
      */
-    public static async loadAsync(modelReference: JsonModel | number): Promise<THREE.Object3D> {
+    public async loadAsync(modelReference: JsonModel | number): Promise<THREE.Object3D> {
+        let result: THREE.Object3D;
 
         let model: JsonModel;
         if (typeof (modelReference) == "number") {
@@ -60,34 +62,32 @@ export class ModelManager {
             // Seperate material and texture handling
             if (model.material != null && model.texture != null) {
                 const materials = await new MTLLoader()
-                    .setPath(this.url)
-                    .setResourcePath(this.url)
+                    .setPath(ModelManager.url)
+                    .setResourcePath(ModelManager.url)
                     .loadAsync(model.material) as MTLLoader.MaterialCreator;
                 materials.preload();
 
-                const group = await new OBJLoader()
+                result = await new OBJLoader()
                     .setMaterials(materials)
-                    .setPath(this.url)
+                    .setPath(ModelManager.url)
                     .loadAsync(model.filename) as THREE.Group;
-
-                clearStatus();
-                return group;
             }
 
             // Vertex colours.
             else {
-                const group = await new OBJLoader2().loadAsync(this.url + model.filename) as THREE.Group;
-                clearStatus();
-                return group;
+                result = await new OBJLoader2().loadAsync(ModelManager.url + model.filename) as THREE.Group;
             }
         }
 
         // Default to GLTF
         else {
-            const data = await new GLTFLoader().loadAsync(this.url + model.filename) as GLTF;
-            clearStatus();
-            return data.scene;
+            const gltf = await new GLTFLoader().loadAsync(ModelManager.url + model.filename) as GLTF;
+            result = gltf.scene;
         }
+
+        clearStatus();
+        this.loadedModelId = model.id;
+        return result;
     }
 
     /**
@@ -147,7 +147,7 @@ export class ModelManager {
 
             // On click, load the model, pass it to the renderer, and call the callback.
             button.onclick = async (): Promise<void> => {
-                const model = await ModelManager.loadAsync(entry);
+                const model = await this.loadAsync(entry);
                 this.renderer.loadObject(model);
                 if (this.onload != null) this.onload(entry.id);
             }

@@ -3,6 +3,7 @@ import SVG_KEY from "../../static/key.svg";
 import SVG_QUIZ from "../../static/help-circle.svg";
 import SVG_USER from "../../static/user.svg";
 import SVG_USER_X from "../../static/user-x.svg";
+import SVG_FILE_TEXT from "../../static/file-text.svg";
 import SVG_USER_PLUS from "../../static/user-plus.svg";
 import SVG_USER_CHECK from "../../static/user-check.svg";
 import SVG_CHEVRON_UP from "../../static/chevron-up.svg";
@@ -11,6 +12,7 @@ import SVG_CHEVRON_RIGHT from "../../static/chevron-right.svg";
 import SVG_PLUS_CIRCLE from "../../static/plus-circle.svg";
 import SVG_DELETE from "../../static/delete.svg";
 import SVG_UPLOAD from "../../static/upload.svg";
+import SVG_IMAGE from "../../static/image.svg";
 import { JsonUserLabelSet, JsonUserQuiz } from "../Api/user";
 import UserManager from "./userManager";
 
@@ -52,6 +54,8 @@ export default class UserManagerUi {
         const iconQuizzes = document.getElementById("user-icon-quizzes") as HTMLTableDataCellElement;
         const iconQuizzesAdd = document.getElementById("user-icon-quizzes-add") as HTMLTableDataCellElement;
         const iconUpload = document.getElementById("user-icon-upload") as HTMLTableDataCellElement;
+        const iconUploadTexture = document.getElementById("user-icon-upload-texture") as HTMLTableDataCellElement;
+        const iconUploadMaterial = document.getElementById("user-icon-upload-material") as HTMLTableDataCellElement;
         const registerCell = document.getElementById("user-login-register") as HTMLTableDataCellElement;
         const submitCell = document.getElementById("user-login-submit") as HTMLTableDataCellElement;
 
@@ -64,6 +68,8 @@ export default class UserManagerUi {
         iconQuizzes.innerHTML = SVG_QUIZ;
         iconQuizzesAdd.innerHTML = SVG_PLUS_CIRCLE;
         iconUpload.innerHTML = SVG_UPLOAD;
+        iconUploadTexture.innerHTML = SVG_IMAGE;
+        iconUploadMaterial.innerHTML = SVG_FILE_TEXT;
         registerCell.innerHTML = SVG_USER_PLUS;
         submitCell.innerHTML = SVG_CHEVRON_RIGHT;
         this.iconChevron.innerHTML = SVG_CHEVRON_UP;
@@ -76,6 +82,8 @@ export default class UserManagerUi {
         iconLogout.onclick = this.userManager.submitLogout.bind(this.userManager);
         iconQuizzesAdd.onclick = this.userManager.addQuiz.bind(this.userManager);
         iconUpload.onclick = this.userManager.uploadModel.bind(this.userManager);
+        iconUploadMaterial.onclick = this.userManager.uploadMaterials.bind(this.userManager, "MATERIAL");
+        iconUploadTexture.onclick = this.userManager.uploadMaterials.bind(this.userManager, "TEXTURE");
         registerCell.onclick = this.submitRegister.bind(this);
         submitCell.onclick = this.submitLogin.bind(this);
         this.pwdElement.addEventListener("keyup", this.submitLoginKeyEvent.bind(this));
@@ -217,8 +225,8 @@ export default class UserManagerUi {
         items.forEach(item => {
             const row = document.createElement("tr");
             const tdLabelDelete = document.createElement("td");
-            const tdLabelBlank = document.createElement("td");
             const tdLabelName = document.createElement("td");
+            const tdLabelBlank = document.createElement("td");
             const tdLabelLoad = document.createElement("td");
 
             tdLabelDelete.innerHTML = SVG_DELETE;
@@ -231,8 +239,8 @@ export default class UserManagerUi {
 
             classNames.forEach(className => row.classList.add(className));
             row.appendChild(tdLabelDelete);
-            row.appendChild(tdLabelBlank);
             row.appendChild(tdLabelName);
+            row.appendChild(tdLabelBlank);
             row.appendChild(tdLabelLoad);
 
             const table = footer.parentNode as HTMLTableSectionElement;
