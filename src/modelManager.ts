@@ -122,35 +122,65 @@ export class ModelManager {
             oldElements[oldElements.length - 1].remove();
         }
 
+        // Group by category
+        const groups: Record<string, JsonModel[]> = {};
+        list.forEach((model) => {
+            if (groups[model.category ?? "Uncategorized"] == undefined) {
+                groups[model.category ?? "Uncategorized"] = [];
+            }
+            groups[model.category ?? "Uncategorized"].push(model);
+        });
+
+        // Sort categories
+        const keys = Object.keys(groups).sort();
+
+        // Sort within categories
+        keys.forEach((key) =>
+            groups[key] = groups[key].sort((a, b) => a.filename.localeCompare(b.filename))
+        );
+
         const div = document.getElementById("models") as HTMLElement;
-        list.forEach(entry => {
+        keys.forEach(key => {
+            const group = groups[key];
+
+            const headercell = document.createElement("th");
+            headercell.innerText = key;
+            headercell.colSpan = 2;
+
             const row = document.createElement("tr");
             row.classList.add("model-list-row");
-
-            const friendlyName = entry.filename.replace(/\.[^/.]+$/, "")
-                .replace(/^\w/, function (c) { return c.toUpperCase(); });
-
-            const nameCell = document.createElement("td");
-            const nameLabel = document.createElement("label");
-            nameLabel.innerText = friendlyName;
-            nameLabel.classList.add("label-name");
-            nameCell.appendChild(nameLabel);
-            row.appendChild(nameCell);
-
-            const buttonCell = document.createElement("td");
-            const button = document.createElement("button");
-            button.innerText = "Load";
-            buttonCell.appendChild(button);
-            row.appendChild(buttonCell);
-
+            row.appendChild(headercell);
             div.appendChild(row);
 
-            // On click, load the model, pass it to the renderer, and call the callback.
-            button.onclick = async (): Promise<void> => {
-                const model = await this.loadAsync(entry);
-                this.renderer.loadObject(model);
-                if (this.onload != null) this.onload(entry.id);
-            }
+            group.forEach((entry) => {
+                const row = document.createElement("tr");
+                row.classList.add("model-list-row");
+
+                const friendlyName = entry.filename.replace(/\.[^/.]+$/, "")
+                    .replace(/^\w/, function (c) { return c.toUpperCase(); });
+
+                const nameCell = document.createElement("td");
+                const nameLabel = document.createElement("label");
+                nameLabel.innerText = friendlyName;
+                nameLabel.classList.add("label-name");
+                nameCell.appendChild(nameLabel);
+                row.appendChild(nameCell);
+
+                const buttonCell = document.createElement("td");
+                const button = document.createElement("button");
+                button.innerText = "Load";
+                buttonCell.appendChild(button);
+                row.appendChild(buttonCell);
+
+                div.appendChild(row);
+
+                // On click, load the model, pass it to the renderer, and call the callback.
+                button.onclick = async (): Promise<void> => {
+                    const model = await this.loadAsync(entry);
+                    this.renderer.loadObject(model);
+                    if (this.onload != null) this.onload(entry.id);
+                }
+            });
         });
     }
 }

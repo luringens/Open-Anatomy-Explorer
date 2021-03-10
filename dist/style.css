@@ -265,3 +265,24 @@ td > svg {
     color: rgb(255, 104, 104);
     font-weight: bold;
 }
+
+.model-list-row, .model-list-row > * {
+    border: none;
+}
+
+.models-table, .model-list-row, .model-list-row > * {
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom-color: #444;
+    border-bottom-width: thick;
+}
+
+.model-list-row > th {
+    background-color: #444;
+    padding: 5px 20px;
+}
+
+.model-list-row > td > button {
+    width: 75px;
+}

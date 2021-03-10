@@ -55,7 +55,6 @@ export default class ModelApi {
     }
 }
 
-
 /**
  * Represents a model in a model list as returned by the server.
  */
@@ -64,11 +63,19 @@ export class JsonModel {
     filename: string;
     material: string | null;
     texture: string | null;
+    category: string | null;
 
-    constructor(id: number, filename: string, material: string | null, texture: string | null) {
+    constructor(
+        id: number,
+        filename: string,
+        material: string | null,
+        texture: string | null,
+        category: string | null
+    ) {
         this.id = id;
         this.filename = filename;
         this.material = material;
         this.texture = texture;
+        this.category = category;
     }
 }
