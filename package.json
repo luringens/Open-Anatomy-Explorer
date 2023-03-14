@@ -27,7 +27,7 @@
     "raw-loader": "^4.0",
     "ts-loader": "^8.0",
     "typescript": "^4.0",
-    "webpack": "^5.4",
+    "webpack": "^5.76",
     "webpack-cli": "^4.2.0"
   },
   "dependencies": {
